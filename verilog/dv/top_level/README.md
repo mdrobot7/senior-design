@@ -33,3 +33,9 @@ Pip packages can be installed normally using `pip` after the venv has been activ
 - `ply_to_obj.py`: Convert a PLY polygon file model to OBJ format.
   - Usage: `ply_to_obj.py [infile.ply] [outfile.obj]
   - Dependencies: `open3d`
+- `obj_locality-analyzer.py`: Counts distance between vertex reuse, saves CSVs to ./reuse_csvs/*.reuse_count.csv
+  - Usage: `ply_to_obj.py [model1.obj model2.obj ...]
+  - Dependencies: `open3d, numpy`
+- `filter_reuse.sh`: Filter out any occurence counts below a given [count] value. Optionally save the new list to [output.csv]
+  - Usage: `./filter_reuse.sh input.csv X [output.csv]`
+  - Dependencies: ``
