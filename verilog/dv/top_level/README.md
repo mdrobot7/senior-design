@@ -37,5 +37,5 @@ Pip packages can be installed normally using `pip` after the venv has been activ
   - Usage: `ply_to_obj.py [model1.obj model2.obj ...]
   - Dependencies: `open3d, numpy`
 - `filter_reuse.sh`: Filter out any occurence counts below a given [count] value. Optionally save the new list to [output.csv]
-  - Usage: `./filter_reuse.sh input.csv X [output.csv]`
+  - Usage: `./filter_reuse.sh input.csv [count] [output.csv]`
   - Dependencies: ``
