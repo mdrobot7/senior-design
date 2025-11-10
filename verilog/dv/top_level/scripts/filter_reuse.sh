@@ -1,6 +1,6 @@
 #!/bin/bash
 # Usage:
-#   ./filter_reuse_hist.sh input.csv X [output.csv]
+#   ./filter_reuse.sh input.csv X [output.csv]
 
 # Filter out any reuse counts less than X
 # If output.csv is given, will save to output.csv otherwise will just print to stdout
