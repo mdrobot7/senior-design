@@ -13,3 +13,5 @@ plt.yscale("log")   # optional — if the range of counts is large
 plt.grid(True, which="both", linestyle="--", alpha=0.5)
 plt.tight_layout()
 plt.show()
+
+#TODO add output to .png 
