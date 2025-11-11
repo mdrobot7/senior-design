@@ -36,9 +36,9 @@ Pip packages can be installed normally using `pip` after the venv has been activ
 - `obj_locality-analyzer.py`: Counts distance between vertex reuse, saves CSVs to ./reuse_csvs/*.reuse_count.csv
   - Usage: `ply_to_obj.py [model1.obj model2.obj ...]
   - Dependencies: `open3d, numpy`
-- `filter_reuse.sh`: Filter out any occurence counts below a given [count] value. Optionally save the new list to [output.csv]
-  - Usage: `./filter_reuse.sh [input.csv] [count] [output.csv]`
-  - Dependencies: ``
+- `filter_reuse.py`: Filter out any occurence counts below a given [count] value. Optionally save the new list to [output.csv]
+  - Usage: `filter_reuse.py [input.csv] [count] [output.csv]`
+  - Dependencies: `pandas`
 - `plot_locality.py`: Plots the output CSVs from locality analyzer to visualize reuse patterns. Optionally comment out plt.xscale or plot.yscale.
   - Usage: `plot_locality.py [input.csv]`
   - Dependencies: `pandas, matplotlib`
