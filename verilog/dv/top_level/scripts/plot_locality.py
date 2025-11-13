@@ -9,10 +9,10 @@ df = pd.read_csv(input_csv)
 
 def make_plot(xlog=False):
     plt.figure()
-    plt.plot(df["reuse_distance"], df["cumulative_fraction_gtX"], marker="o")
+    plt.plot(df["reuse_distance"], df["cumulative_fraction_leqX"], marker="o")
     plt.xlabel("Reuse distance (triangles)")
-    plt.ylabel("Cumulative fraction (> X)")
-    plt.title("Vertex Reuse Distance CCDF (> X)" + (" [log X]" if xlog else ""))
+    plt.ylabel("Cumulative fraction (≤ X)")
+    plt.title("Vertex Reuse Distance CDF (≤ X)" + (" [log X]" if xlog else ""))
     if xlog:
         plt.xscale("log")
     plt.grid(True, which="both", linestyle="--", alpha=0.5)

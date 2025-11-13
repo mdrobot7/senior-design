@@ -34,17 +34,19 @@ for path in obj_files:
 
     total = sum(count.values())
     distances = np.array(sorted(count.keys()))
-    occurences = np.array([count[d] for d in distances])
+    occurrences = np.array([count[d] for d in distances])
 
-    suffix = np.cumsum(occurences[::-1])[::-1]          # sum of >= X
-    fraction = (suffix - occurences) / total if total > 0 else np.zeros_like(occurences, dtype=float)
+    if total > 0:
+        prefix = np.cumsum(occurrences)             # sum of counts for <= X
+        fraction_leq = prefix / total
+    else:
+        fraction_leq = np.zeros_like(occurrences, dtype=float)
 
-    
     base = os.path.splitext(os.path.basename(path))[0]
     out_csv = os.path.join(outdir, f"{base}.reuse_count.csv")
 
     with open(out_csv, "w") as f:
-        f.write("reuse_distance,cumulative_fraction_gtX\n")
-        for d, c in zip(distances, fraction):
+        f.write("reuse_distance,cumulative_fraction_leqX\n")
+        for d, c in zip(distances, fraction_leq):
             f.write(f"{d},{c}\n")
     print(f"wrote {out_csv}")
