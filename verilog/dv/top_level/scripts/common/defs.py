@@ -1,0 +1,8 @@
+# Fixed point values
+DECIMAL_POS = 10
+FIXED_POINT_SIZE = 32
+
+# Shader core registers
+NUM_LOCAL_REGS = 16
+NUM_GLOBAL_REGS = 48
+NUM_OUTBOX_REGS = 8
