@@ -1,36 +1,38 @@
 ; Opcodes
-OPCODE_ADD      = 0x0`6
-OPCODE_ADDI     = 0x1`6
-OPCODE_SUB      = 0x2`6
-OPCODE_MUL      = 0x3`6
-OPCODE_MULI     = 0x4`6
-OPCODE_AND      = 0x5`6
-OPCODE_ANDI     = 0x6`6
-OPCODE_OR       = 0x7`6
-OPCODE_ORI      = 0x8`6
-OPCODE_XOR      = 0x9`6
-OPCODE_XORI     = 0xA`6
-OPCODE_SLL      = 0xB`6
-OPCODE_SRL      = 0xC`6
-OPCODE_SRA      = 0xD`6
-OPCODE_OUT      = 0xE`6
-OPCODE_MAC      = 0xF`6
-OPCODE_MACCL    = 0x10`6
-OPCODE_MACRD    = 0x11`6
-OPCODE_SPEQ     = 0x12`6
-OPCODE_SPLT     = 0x13`6
-OPCODE_CLRP     = 0x14`6
-OPCODE_SPR      = 0x15`6
-OPCODE_SREQ     = 0x16`6
-OPCODE_SRLT     = 0x17`6
-OPCODE_LW       = 0x18`6
-OPCODE_SW       = 0x19`6
-OPCODE_SB       = 0x1A`6
-OPCODE_LWV      = 0x1B`6
-OPCODE_SWV      = 0x1C`6
-OPCODE_SBV      = 0x1D`6
-OPCODE_JUMP     = 0x1E`6
-OPCODE_HALT     = 0x1F`6
+OPCODE_ADD = 0x0`6
+OPCODE_ADDI = 0x1`6
+OPCODE_SUB = 0x2`6
+OPCODE_MUL = 0x3`6
+OPCODE_MULI = 0x4`6
+OPCODE_AND = 0x5`6
+OPCODE_ANDI = 0x6`6
+OPCODE_OR = 0x7`6
+OPCODE_ORI = 0x8`6
+OPCODE_XOR = 0x9`6
+OPCODE_XORI = 0xA`6
+OPCODE_SLL = 0xB`6
+OPCODE_SRL = 0xC`6
+OPCODE_SRA = 0xD`6
+OPCODE_LUI = 0xE`6
+OPCODE_LLI = 0xF`6
+OPCODE_OUT = 0x10`6
+OPCODE_MAC = 0x11`6
+OPCODE_MACCL = 0x12`6
+OPCODE_MACRD = 0x13`6
+OPCODE_SPEQ = 0x14`6
+OPCODE_SPLT = 0x15`6
+OPCODE_CLRP = 0x16`6
+OPCODE_SPR = 0x17`6
+OPCODE_SREQ = 0x18`6
+OPCODE_SRLT = 0x19`6
+OPCODE_LW = 0x1A`6
+OPCODE_SW = 0x1B`6
+OPCODE_SB = 0x1C`6
+OPCODE_LWV = 0x1D`6
+OPCODE_SWV = 0x1E`6
+OPCODE_SBV = 0x1F`6
+OPCODE_JUMP = 0x20`6
+OPCODE_HALT = 0x21`6
 
 
 ; Registers and Immediates
@@ -86,13 +88,7 @@ OPCODE_HALT     = 0x1F`6
 }
 
 ; Immediates
-#fn decimal_to_fixed(int, frac) => {
-    assert(frac < 1000000)
-    frac = (frac * (1 << 10)) / 1000000
-    int`22 @ frac`10
-}
-
-#subruledef immediate {
+#subruledef immediate13 {
     ; Autodetect integer or fixed point:
     ; 1 -> integer, 1. or 1.0 or 1.11123 or 2/135 -> fixed point.
     {n: s13}         => n
@@ -111,6 +107,28 @@ OPCODE_HALT     = 0x1F`6
         int = n / d
         frac = ((n * (1 << 10)) / d) - (int * (1 << 10))
         int`3 @ frac`10
+    }
+}
+
+#subruledef immediate16 {
+    ; Same as above but with a 6 bit integer part.
+    ; 1 -> integer, 1. or 1.0 or 1.11123 or 2/135 -> fixed point.
+    {n: s16}         => n
+    {i: s6}.         => i @ 0`10
+
+    ; customasm doesn't have if conditions, floats, or string processing
+    ; so we can't get leading/trailing zeros on the fractional portion.
+    ; Instead, just force the user to pad decimals to 6 places.
+    {i: s6}.{f: i32} => {
+        assert(f < 1000000)
+        frac = (f * (1 << 10)) / 1000000
+        i @ frac`10
+    }
+
+    {n: s32}/{d: s32} => {
+        int = n / d
+        frac = ((n * (1 << 10)) / d) - (int * (1 << 10))
+        int`6 @ frac`10
     }
 }
 
@@ -146,20 +164,24 @@ OPCODE_HALT     = 0x1F`6
 #ruledef instructions {
     ; Basic math
     {pred: predicate} add     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_ADD   @ pred @ rd @ rs1 @ rs2 @ 0`7
-    {pred: predicate} addi    {rd: destreg}, {rs1: srcreg}, {imm: immediate}    => OPCODE_ADDI  @ pred @ rd @ rs1 @ imm
+    {pred: predicate} addi    {rd: destreg}, {rs1: srcreg}, {imm: immediate13}  => OPCODE_ADDI  @ pred @ rd @ rs1 @ imm
     {pred: predicate} sub     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_SUB   @ pred @ rd @ rs1 @ rs2 @ 0`7
     {pred: predicate} mul     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_MUL   @ pred @ rd @ rs1 @ rs2 @ 0`7
-    {pred: predicate} muli    {rd: destreg}, {rs1: srcreg}, {imm: immediate}    => OPCODE_MULI  @ pred @ rd @ rs1 @ imm
+    {pred: predicate} muli    {rd: destreg}, {rs1: srcreg}, {imm: immediate13}  => OPCODE_MULI  @ pred @ rd @ rs1 @ imm
     {pred: predicate} and     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_AND   @ pred @ rd @ rs1 @ rs2 @ 0`7
-    {pred: predicate} andi    {rd: destreg}, {rs1: srcreg}, {imm: immediate}    => OPCODE_ANDI  @ pred @ rd @ rs1 @ imm
+    {pred: predicate} andi    {rd: destreg}, {rs1: srcreg}, {imm: immediate13}  => OPCODE_ANDI  @ pred @ rd @ rs1 @ imm
     {pred: predicate} or      {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_OR    @ pred @ rd @ rs1 @ rs2 @ 0`7
-    {pred: predicate} ori     {rd: destreg}, {rs1: srcreg}, {imm: immediate}    => OPCODE_ORI   @ pred @ rd @ rs1 @ imm
+    {pred: predicate} ori     {rd: destreg}, {rs1: srcreg}, {imm: immediate13}  => OPCODE_ORI   @ pred @ rd @ rs1 @ imm
     {pred: predicate} xor     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_XOR   @ pred @ rd @ rs1 @ rs2 @ 0`7
-    {pred: predicate} xori    {rd: destreg}, {rs1: srcreg}, {imm: immediate}    => OPCODE_XORI  @ pred @ rd @ rs1 @ imm
+    {pred: predicate} xori    {rd: destreg}, {rs1: srcreg}, {imm: immediate13}  => OPCODE_XORI  @ pred @ rd @ rs1 @ imm
     {pred: predicate} sll     {rd: destreg}, {rs1: srcreg}, {shift: u5}         => OPCODE_SLL   @ pred @ rd @ rs1 @ 0`8 @ shift
     {pred: predicate} srl     {rd: destreg}, {rs1: srcreg}, {shift: u5}         => OPCODE_SRL   @ pred @ rd @ rs1 @ 0`8 @ shift
     {pred: predicate} sra     {rd: destreg}, {rs1: srcreg}, {shift: u5}         => OPCODE_SRA   @ pred @ rd @ rs1 @ 0`8 @ shift
     {pred: predicate} out     {rs: srcreg}                                      => OPCODE_OUT   @ pred @ 0`4 @ rs @ 0`13
+
+    ; Load immediate
+    {pred: predicate} lui     {rd: destreg}, {imm: immediate16} -> OPCODE_LUI @ pred @ rd @ 0`3 @ imm
+    {pred: predicate} lli     {rd: destreg}, {imm: immediate16} -> OPCODE_LLI @ pred @ rd @ 0`3 @ imm
 
     ; MAC
     {pred: predicate} mac     {rs1: srcreg}, {rs2: srcreg}  => OPCODE_MAC   @ pred @ 0`4 @ rs1 @ rs2 @ 0`7
@@ -175,12 +197,12 @@ OPCODE_HALT     = 0x1F`6
     {pred: predicate} srlt    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}               => OPCODE_SRLT  @ pred @ rd @ rs1 @ rs2 @ 0`7
 
     ; Memory
-    {pred: predicate} lw      {rd: destreg}, {imm: immediate}[{roff: srcreg}] => OPCODE_LW   @ pred @ rd @ roff @ imm
-    {pred: predicate} sw      {rs: destreg}, {imm: immediate}[{roff: srcreg}] => OPCODE_SW   @ pred @ rs @ roff @ imm
-    {pred: predicate} sb      {rs: destreg}, {imm: immediate}[{roff: srcreg}] => OPCODE_SB   @ pred @ rs @ roff @ imm
-    {pred: predicate} lwv     {rd: destreg}, {imm: immediate}[{roff: srcreg}] => OPCODE_LWV  @ pred @ rd @ roff @ imm
-    {pred: predicate} swv     {rs: destreg}, {imm: immediate}[{roff: srcreg}] => OPCODE_SWV  @ pred @ rs @ roff @ imm
-    {pred: predicate} sbv     {rs: destreg}, {imm: immediate}[{roff: srcreg}] => OPCODE_SBV  @ pred @ rs @ roff @ imm
+    {pred: predicate} lw      {rd: destreg}, {imm: immediate13}[{roff: srcreg}] => OPCODE_LW   @ pred @ rd @ roff @ imm
+    {pred: predicate} sw      {rs: destreg}, {imm: immediate13}[{roff: srcreg}] => OPCODE_SW   @ pred @ rs @ roff @ imm
+    {pred: predicate} sb      {rs: destreg}, {imm: immediate13}[{roff: srcreg}] => OPCODE_SB   @ pred @ rs @ roff @ imm
+    {pred: predicate} lwv     {rd: destreg}, {imm: immediate13}[{roff: srcreg}] => OPCODE_LWV  @ pred @ rd @ roff @ imm
+    {pred: predicate} swv     {rs: destreg}, {imm: immediate13}[{roff: srcreg}] => OPCODE_SWV  @ pred @ rs @ roff @ imm
+    {pred: predicate} sbv     {rs: destreg}, {imm: immediate13}[{roff: srcreg}] => OPCODE_SBV  @ pred @ rs @ roff @ imm
 
     ; Jump
     {pred: predicate} jump    {offset: jumpoffset} => OPCODE_JUMP @ pred @ offset
@@ -252,15 +274,11 @@ OPCODE_HALT     = 0x1F`6
 
     ; Miscellaneous
     {pred: predicate} li {rd: destreg}, {imm: immediate32} => asm {
-        {pred} andi {rd}, {rd}, 0`13
-        {pred} ori  {rd}, {rd}, ({imm} >> 19)
-        {pred} sll  {rd}, {rd}, 12
-        {pred} ori  {rd}, {rd}, (({imm} >> 7) & 0xFFF)
-        {pred} sll  {rd}, {rd}, 12
-        {pred} ori  {rd}, {rd}, ({imm} & 0xFFF)
+        {pred} lui {rd}, imm[31:16]
+        {pred} lli {rd}, imm[15:0]
     }
     {pred: predicate} mov {rd: destreg}, {rs: srcreg} => asm {
-        {pred} addi {rd}, {rs}, 0`13
+        {pred} addi {rd}, {rs}, 0
     }
     {pred: predicate} trunc {rd: destreg}, {rs: srcreg} => asm {
         {pred} srl {rd}, {rs}, 10
