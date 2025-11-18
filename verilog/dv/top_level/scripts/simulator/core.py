@@ -11,10 +11,10 @@ class Core:
     NUM_OUTBOX_REGS = 8
 
     # Pass all arguments by *reference*
-    def __init__(self, tid: int, global_regs: List[int], memory: List[int]) -> None:
+    def __init__(self, tid: int, global_regs: List[int], memory: bytearray) -> None:
         # Initialize registers to garbage
         self.local_regs = [random.randrange(0, 0xFFFFFFFF, 1) for _ in range(Core.NUM_LOCAL_REGS)]
-        self.local_regs[0] = tid
+        self.local_regs[0] = tid & 0xFFFFFFFF
         self.predicate = random.randrange(0, 0b111, 1)
         self.mac = random.randrange(0, 0xFFFFFFFF, 1)
         self.outbox = [random.randrange(0, 0xFFFFFFFF, 1) for _ in range(Core.NUM_OUTBOX_REGS)]

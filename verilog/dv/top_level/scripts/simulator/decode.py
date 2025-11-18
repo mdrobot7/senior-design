@@ -168,7 +168,7 @@ class Instruction:
         next_pc: The PC that should be jumped to for the next instruction.
     """
     def run(self, local_regs: List[int], global_regs: List[int], predicate: int,\
-            mac: int, outbox: List[int], memory: List[int], pc: int) -> Tuple[bool, int]:
+            mac: int, outbox: List[int], memory: bytearray, pc: int) -> Tuple[bool, int]:
         regs = local_regs + global_regs
         new_pc = pc + 4
 
