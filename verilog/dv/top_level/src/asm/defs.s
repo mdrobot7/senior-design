@@ -1,3 +1,6 @@
+; Local consts
+#const(noemit) DECIMAL_POS = 10
+
 ; Opcodes
 OPCODE_ADD = 0x0`6
 OPCODE_ADDI = 0x1`6
@@ -91,62 +94,62 @@ OPCODE_HALT = 0x21`6
 #subruledef immediate13 {
     ; Autodetect integer or fixed point:
     ; 1 -> integer, 1. or 1.0 or 1.11123 or 2/135 -> fixed point.
-    {n: s13}         => n
-    {i: s3}.         => i @ 0`10
+    {n: i13}         => n
+    {i: s3}.         => i @ 0`DECIMAL_POS
 
     ; customasm doesn't have if conditions, floats, or string processing
     ; so we can't get leading/trailing zeros on the fractional portion.
     ; Instead, just force the user to pad decimals to 6 places.
-    {i: s3}.{f: i32} => {
+    {i: s3}.{f: u32} => {
         assert(f < 1000000)
         frac = (f * (1 << 10)) / 1000000
-        i @ frac`10
+        i @ frac`DECIMAL_POS
     }
 
     {n: s32}/{d: s32} => {
         int = n / d
         frac = ((n * (1 << 10)) / d) - (int * (1 << 10))
-        int`3 @ frac`10
+        int`3 @ frac`DECIMAL_POS
     }
 }
 
 #subruledef immediate16 {
     ; Same as above but with a 6 bit integer part.
     ; 1 -> integer, 1. or 1.0 or 1.11123 or 2/135 -> fixed point.
-    {n: s16}         => n
-    {i: s6}.         => i @ 0`10
+    {n: i16}         => n
+    {i: s6}.         => i @ 0`DECIMAL_POS
 
     ; customasm doesn't have if conditions, floats, or string processing
     ; so we can't get leading/trailing zeros on the fractional portion.
     ; Instead, just force the user to pad decimals to 6 places.
-    {i: s6}.{f: i32} => {
+    {i: s6}.{f: u32} => {
         assert(f < 1000000)
         frac = (f * (1 << 10)) / 1000000
-        i @ frac`10
+        i @ frac`DECIMAL_POS
     }
 
     {n: s32}/{d: s32} => {
         int = n / d
         frac = ((n * (1 << 10)) / d) - (int * (1 << 10))
-        int`6 @ frac`10
+        int`6 @ frac`DECIMAL_POS
     }
 }
 
 #subruledef immediate32 {
     ; Same as above but with the full integer part.
-    {n: s32}         => n
-    {i: s22}.         => i @ 0`10
+    {n: i32}        => n
+    {i: s22}.       => i @ 0`DECIMAL_POS
 
-    {i: s22}.{f: i32} => {
+    {i: s22}.{f: u32} => {
         assert(f < 1000000)
         frac = (f * (1 << 10)) / 1000000
-        i @ frac`10
+        i @ frac`DECIMAL_POS
     }
 
     {n: s32}/{d: s32} => {
         int = n / d
         frac = ((n * (1 << 10)) / d) - (int * (1 << 10))
-        int`22 @ frac`10
+        int`22 @ frac`DECIMAL_POS
     }
 }
 
@@ -180,8 +183,8 @@ OPCODE_HALT = 0x21`6
     {pred: predicate} out     {rs: srcreg}                                      => OPCODE_OUT   @ pred @ 0`4 @ rs @ 0`13
 
     ; Load immediate
-    {pred: predicate} lui     {rd: destreg}, {imm: immediate16} -> OPCODE_LUI @ pred @ rd @ 0`3 @ imm
-    {pred: predicate} lli     {rd: destreg}, {imm: immediate16} -> OPCODE_LLI @ pred @ rd @ 0`3 @ imm
+    {pred: predicate} lui     {rd: destreg}, {imm: immediate16} => OPCODE_LUI @ pred @ rd @ 0`3 @ imm
+    {pred: predicate} lli     {rd: destreg}, {imm: immediate16} => OPCODE_LLI @ pred @ rd @ 0`3 @ imm
 
     ; MAC
     {pred: predicate} mac     {rs1: srcreg}, {rs2: srcreg}  => OPCODE_MAC   @ pred @ 0`4 @ rs1 @ rs2 @ 0`7

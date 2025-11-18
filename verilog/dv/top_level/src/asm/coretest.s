@@ -53,6 +53,13 @@
 () sra $r15, $r15, 10
 
 
+; Load immediate
+() lui $r15, 0x1234
+() lli $r15, 0x5678
+() lli $r15, 0x9090
+() lui $r15, 0x5555
+
+
 ; Outbox
 () out $r0
 
