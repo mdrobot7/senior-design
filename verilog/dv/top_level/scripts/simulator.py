@@ -11,7 +11,7 @@ argparser = argparse.ArgumentParser(
     """,
     formatter_class=argparse.RawTextHelpFormatter
 )
-argparser.add_argument("shader_program.bin", type=str, help="Path to shader program binary")
+argparser.add_argument("shader_program", type=str, help="Path to shader program binary")
 argparser.add_argument("-m", type=str, default=None, help="Path to memory binary (little-endian, must be word-aligned)")
 argparser.add_argument("-g", type=str, default=None, help="Path to global register file binary (little-endian, must be 48 words long)")
 argparser.add_argument("-tid", type=int, default=0, help="Core thread ID")
@@ -21,7 +21,7 @@ args = argparser.parse_args()
 
 if __name__ == "__main__":
     try:
-        cc = CoreController(args.prog, args.m, args.g, args.tid)
+        cc = CoreController(args.shader_program, args.m, args.g, args.tid)
         if args.i:
             while input("Step over [Enter], Quit [Ctrl-D]") and not cc.step():
                 print(cc.core_to_str())

@@ -2,9 +2,10 @@ import random
 from typing import Union
 import os
 
-from core import Core
-from decode import Instruction
-from utils import all_equal
+from .defs import *
+from .core import Core
+from .decode import Instruction
+from .utils import all_equal
 
 class CoreController:
     class ProgramError(Exception):
@@ -46,11 +47,11 @@ class CoreController:
         if global_registers_path:
             with open(global_registers_path, "rb") as f:
                 global_regs_bytes = f.read()
-            if len(global_regs_bytes) != Core.NUM_GLOBAL_REGS * 4:
+            if len(global_regs_bytes) != NUM_GLOBAL_REGS * 4:
                 raise RegError("Global reg file provided is not exactly 48 words long.")
-            self.global_regs = [int.from_bytes(global_regs_bytes[i:i+4], byteorder="little") for i in range(Core.NUM_GLOBAL_REGS)]
+            self.global_regs = [int.from_bytes(global_regs_bytes[i:i+4], byteorder="little") for i in range(NUM_GLOBAL_REGS)]
         else:
-            self.global_regs = [random.randrange(0, 0xFFFFFFFF, 1) for _ in range(Core.NUM_GLOBAL_REGS)]
+            self.global_regs = [random.randrange(0, 0xFFFFFFFF, 1) for _ in range(NUM_GLOBAL_REGS)]
 
         self.core = Core(tid, self.global_regs, self.memory)
 

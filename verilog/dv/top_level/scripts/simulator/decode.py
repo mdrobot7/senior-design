@@ -1,8 +1,8 @@
 from typing import List, Tuple
 import math
 
-from core import Core
-from utils import bits, signed
+from .defs import *
+from .utils import bits, signed
 
 class Instruction:
     class OpcodeError(Exception):
@@ -184,10 +184,10 @@ class Instruction:
             regs[self.rd] = regs[self.rs1] - regs[self.rs2]
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == Opcode.MUL:
-            regs[self.rd] = (regs[self.rs1] * regs[self.rs2]) >> Core.DECIMAL_POS
+            regs[self.rd] = (regs[self.rs1] * regs[self.rs2]) >> DECIMAL_POS
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == Opcode.MULI:
-            regs[self.rd] = (regs[self.rs1] * self.imm13) >> Core.DECIMAL_POS
+            regs[self.rd] = (regs[self.rs1] * self.imm13) >> DECIMAL_POS
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == Opcode.AND:
             regs[self.rd] = regs[self.rs1] & regs[self.rs2]
@@ -224,16 +224,16 @@ class Instruction:
             regs[self.rd] = (regs[self.rs1] & 0xFFFF0000) | self.imm16
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == Opcode.OUT:
-            outbox[0] = regs[(self.rs1 + 0) % Core.NUM_LOCAL_REGS]
-            outbox[1] = regs[(self.rs1 + 1) % Core.NUM_LOCAL_REGS]
-            outbox[2] = regs[(self.rs1 + 2) % Core.NUM_LOCAL_REGS]
-            outbox[3] = regs[(self.rs1 + 3) % Core.NUM_LOCAL_REGS]
-            outbox[4] = regs[(self.rs1 + 4) % Core.NUM_LOCAL_REGS]
-            outbox[5] = regs[(self.rs1 + 5) % Core.NUM_LOCAL_REGS]
-            outbox[6] = regs[(self.rs1 + 6) % Core.NUM_LOCAL_REGS]
-            outbox[7] = regs[(self.rs1 + 7) % Core.NUM_LOCAL_REGS]
+            outbox[0] = regs[(self.rs1 + 0) % NUM_LOCAL_REGS]
+            outbox[1] = regs[(self.rs1 + 1) % NUM_LOCAL_REGS]
+            outbox[2] = regs[(self.rs1 + 2) % NUM_LOCAL_REGS]
+            outbox[3] = regs[(self.rs1 + 3) % NUM_LOCAL_REGS]
+            outbox[4] = regs[(self.rs1 + 4) % NUM_LOCAL_REGS]
+            outbox[5] = regs[(self.rs1 + 5) % NUM_LOCAL_REGS]
+            outbox[6] = regs[(self.rs1 + 6) % NUM_LOCAL_REGS]
+            outbox[7] = regs[(self.rs1 + 7) % NUM_LOCAL_REGS]
         elif self.opcode == Opcode.MAC:
-            mult = (regs[self.rs1] * regs[self.rs2]) >> Core.DECIMAL_POS
+            mult = (regs[self.rs1] * regs[self.rs2]) >> DECIMAL_POS
             mac += mult & 0xFFFFFFFF
         elif self.opcode == Opcode.MACCL:
             mac = 0
@@ -290,7 +290,7 @@ class Instruction:
         else:
             raise OpcodeError()
 
-        local_regs = regs[0:Core.NUM_LOCAL_REGS]
+        local_regs = regs[0:NUM_LOCAL_REGS]
         return (True, new_pc)
 
     def _str_rtype(self):
