@@ -10,14 +10,14 @@ def bits(bitfield: int, top: int, bot: int) -> int:
 """
 Convert an unsigned integer to a signed integer.
 """
-def signed(unsigned_bits: int, size: int) -> int:
-    if unsigned_bits >= (1 << (size - 1)):
-        return unsigned_bits - (1 << size)
+def signed(unsigned_bits: int, size_bits: int) -> int:
+    if unsigned_bits >= (1 << (size_bits - 1)):
+        return unsigned_bits - (1 << size_bits)
     else:
         return unsigned_bits
 
 """
 Convert a signed integer to an unsigned integer.
 """
-def unsigned(signed_bits: int, size: int) -> int:
-    return signed_bits & ((1 << size) - 1)
+def unsigned(signed_bits: int, size_bits: int) -> int:
+    return signed_bits & ((1 << size_bits) - 1)

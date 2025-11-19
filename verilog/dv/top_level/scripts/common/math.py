@@ -16,7 +16,7 @@ def fixed_to_float(signed_fixed: int) -> float:
 Convert a float to a signed fixed point integer.
 """
 def float_to_fixed(signed_float: float) -> int:
-    return signed(int(signed_float * (1 << DECIMAL_POS)), FIXED_POINT_SIZE)
+    return signed(int(signed_float * (1 << DECIMAL_POS)), FIXED_POINT_SIZE_BITS)
 
 """
 Convert a float to an unsigned fixed point integer.
@@ -26,7 +26,7 @@ but has the negative sign that lets Python interpret
 it correctly.
 """
 def float_to_unsigned_fixed(signed_float: float) -> int:
-    return unsigned(int(signed_float * (1 << DECIMAL_POS)), FIXED_POINT_SIZE)
+    return unsigned(int(signed_float * (1 << DECIMAL_POS)), FIXED_POINT_SIZE_BITS)
 
 """
 Convert a vector of floats to a list of fixed point signed integers.
