@@ -115,13 +115,10 @@ OPCODE_HALT = 0x21`6
 
 #subruledef immediate16 {
     ; Same as above but with a 6 bit integer part.
-    ; 1 -> integer, 1. or 1.0 or 1.11123 or 2/135 -> fixed point.
     {n: i16}         => n
     {i: s6}.         => i @ 0`DECIMAL_POS
 
-    ; customasm doesn't have if conditions, floats, or string processing
-    ; so we can't get leading/trailing zeros on the fractional portion.
-    ; Instead, just force the user to pad decimals to 6 places.
+    ; Reminder: Pad decimals to 6 places.
     {i: s6}.{f: u32} => {
         assert(f < 1000000)
         frac = (f * (1 << 10)) / 1000000
@@ -146,6 +143,7 @@ OPCODE_HALT = 0x21`6
         i @ frac`DECIMAL_POS
     }
 
+    ; Reminder: Pad decimals to 6 places
     {n: s32}/{d: s32} => {
         int = n / d
         frac = ((n * (1 << 10)) / d) - (int * (1 << 10))
@@ -276,9 +274,10 @@ OPCODE_HALT = 0x21`6
     }
 
     ; Miscellaneous
-    {pred: predicate} li {rd: destreg}, {imm: immediate32} => asm {
-        {pred} lui {rd}, imm[31:16]
-        {pred} lli {rd}, imm[15:0]
+    ; Load immediate directly generates lui, lli instructions.
+    ; Required because of how customasm expands subruledefs.
+    {pred: predicate} li {rd: destreg}, {imm: immediate32} => {
+        OPCODE_LUI @ pred @ rd @ 0`3 @ imm[31:16] @ OPCODE_LLI @ pred @ rd @ 0`3 @ imm[15:0]
     }
     {pred: predicate} mov {rd: destreg}, {rs: srcreg} => asm {
         {pred} addi {rd}, {rs}, 0
