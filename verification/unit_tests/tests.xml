@@ -1,6 +1,0 @@
-<testsuites>
-  <testsuite name="__ts">
-    <testcase classname="div_pipe_m_ut" name="simple">
-    </testcase>
-  </testsuite>
-</testsuites>

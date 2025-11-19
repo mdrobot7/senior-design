@@ -5,7 +5,7 @@ module div_pipe_m #(
     parameter [WIDTH - 1:0] STAGE_LOCS = 0,
 
     parameter IN_SIZE = 2 * WIDTH,
-    parameter OUT_SIZE = 2 * WIDTH
+    parameter OUT_SIZE = WIDTH
 ) (
     input wire clk_i,
     input wire nrst_i,
@@ -24,18 +24,26 @@ module div_pipe_m #(
     assign a = in_data[1 * WIDTH+:WIDTH];
     assign b = in_data[0 * WIDTH+:WIDTH];
 
-    reg               present  [WIDTH:0];
-    reg               ready    [WIDTH:0];
+    reg       [WIDTH:0]          present;
+    reg         [WIDTH:0]       ready   ;
     reg [WIDTH - 1:0] dividend [WIDTH:0];
     reg [WIDTH - 1:0] divisor  [WIDTH:0];
     reg [WIDTH - 1:0] quotient [WIDTH:0];
 
     always @(*) begin
-        present[0]       = sstream_i[`STREAM_SI_VALID(IN_SIZE)];
-        ready[WIDTH - 1] = mstream_i[`STREAM_MI_READY(OUT_SIZE)];
-        dividend[0]      = a;
-        divisor[0]       = b;
-        quotient[0]      = 0;
+        present[0]      <= sstream_i[`STREAM_SI_VALID(IN_SIZE)];
+        ready[WIDTH]    <= mstream_i[`STREAM_MI_READY(OUT_SIZE)];
+        dividend[0]     <= a;
+        divisor[0]      <= b;
+        quotient[0]     <= 0;
+    end
+
+    always @(*) begin
+        sstream_o[`STREAM_SO_READY(IN_SIZE)] <= ready[0];
+
+        mstream_o[`STREAM_MO_VALID(OUT_SIZE)] <= present[WIDTH];
+        mstream_o[`STREAM_MO_DATA(OUT_SIZE)]  <= quotient[WIDTH];
+        mstream_o[`STREAM_MO_LAST(OUT_SIZE)]  <= 0;
     end
 
     generate

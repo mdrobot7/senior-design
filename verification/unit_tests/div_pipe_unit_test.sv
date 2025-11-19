@@ -20,8 +20,8 @@ module div_pipe_m_unit_test;
   reg  [`STREAM_SIPORT(32 * 2)] sstreamai;
   wire [`STREAM_SOPORT(32 * 2)] sstreamao;
 
-  reg  [`STREAM_MIPORT(32 * 2)] mstreamai;
-  wire [`STREAM_MOPORT(32 * 2)] mstreamao;
+  reg  [`STREAM_MIPORT(32)] mstreamai;
+  wire [`STREAM_MOPORT(32)] mstreamao;
 
   //===================================
   // This is the UUT that we're 
@@ -29,7 +29,7 @@ module div_pipe_m_unit_test;
   //===================================
   div_pipe_m #(
     32,
-    32'b0000_0000_0000_0000_0000_0000_0000_0000
+    32'b0000_0000_0000_0100_0000_0000_1000_0001
   ) dut(
     .clk_i(clk),
     .nrst_i(nrst),
@@ -41,6 +41,19 @@ module div_pipe_m_unit_test;
     .mstream_o(mstreamao)
   );
 
+  stream_master_m #(32 * 2) pipe0_master(
+    .clk_i(clk),
+
+    .mstream_i(sstreamao),
+    .mstream_o(sstreamai)
+  );
+
+  stream_slave_m #(32) pipe0_slave(
+    .clk_i(clk),
+
+    .sstream_i(mstreamao),
+    .sstream_o(mstreamai)
+  );
 
   //===================================
   // Build
@@ -86,9 +99,31 @@ module div_pipe_m_unit_test;
   //   `SVTEST_END
   //===================================
   `SVUNIT_TESTS_BEGIN
-    `SVTEST(single_value)
+    `SVTEST(main)
+      integer i;
 
+      reg [31:0] a, b;
+      reg [31:0] div;
+
+      for (i = 0; i < 1000; i = i + 1) begin
+        a = $random;
+        b = $random;
+
+        TEST_DIV(a, b, div);
+
+        $display("%d / %d == %d == %d", a, b, div, a / b);
+        `FAIL_UNLESS_EQUAL(div, (a / b));
+      end
     `SVTEST_END
   `SVUNIT_TESTS_END
+
+  task TEST_DIV;
+    input [31:0] a, b;
+    output [31:0] y;
+  begin
+      pipe0_master.WRITE({ a, b });
+      pipe0_slave.READ(y);
+  end
+  endtask
 
 endmodule
