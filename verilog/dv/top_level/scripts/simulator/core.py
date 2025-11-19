@@ -10,8 +10,8 @@ class Core:
         # Initialize registers to garbage
         self.local_regs = [random.randrange(0, 0xFFFFFFFF, 1) for _ in range(NUM_LOCAL_REGS)]
         self.local_regs[0] = tid & 0xFFFFFFFF
-        self.predicate = random.randrange(0, 0b111, 1)
-        self.mac = random.randrange(0, 0xFFFFFFFF, 1)
+        self.predicate = [0] # random.randrange(0, 0b111, 1)
+        self.mac = [random.randrange(0, 0xFFFFFFFF, 1)]
         self.outbox = [random.randrange(0, 0xFFFFFFFF, 1) for _ in range(NUM_OUTBOX_REGS)]
 
         # References to global stuff
@@ -22,8 +22,6 @@ class Core:
         return inst.run(self.local_regs, self.global_regs, self.predicate, self.mac, self.outbox, self.memory, pc)
 
     def __str__(self) -> str:
-        pred = f"{self.predicate:b}".zfill(3)
-
         reg_strs = [f"$r{i}: {val:08X}\n" for i, val in enumerate(self.local_regs)]
         regs = ""
         for r in reg_strs:
@@ -36,8 +34,8 @@ class Core:
 
         return \
 f"""\
-Predicates: ({pred})
-MAC: 0x{self.mac:08X}
+Predicates: ({self.predicate[0]:03b})
+MAC: 0x{self.mac[0]:08X}
 
 Register File:
 {regs}

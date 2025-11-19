@@ -140,7 +140,6 @@ class Instruction:
 
 
     def __init__(self, inst_bytes: bytes) -> None:
-        print(inst_bytes.hex())
         inst = int.from_bytes(inst_bytes, byteorder='big') # IMEM is a bitfield, it's effectively big-endian
         self.opcode = bits(inst, 31, 26)
         self.pred = bits(inst, 25, 23)
@@ -159,22 +158,26 @@ class Instruction:
 
     local_regs: The local register file, as a list of registers.
     global_regs: The global register file, as a list of registers.
-    predicate: The predicate register, as a bitfield.
-    mac: MAC output regsiter.
+    predicate: The predicate register, as a bitfield (in a reference to a one-element List)
+    mac: MAC output regsiter (as a reference to a one-element List)
     outbox: Outbox to the rasterizer.
     memory: SRAM, in a list of bytes.
     pc: Program counter
+
+    Most parameters are pass-by-reference so the instruction can
+    easily modify the calling core's state. Keep in mind: ints are
+    immutable and cannot be modified inside a function call.
 
     Returns: Tuple of (should_continue, next_pc).
         should_continue: True if the program should keep running, False if halted
         next_pc: The PC that should be jumped to for the next instruction.
     """
-    def run(self, local_regs: List[int], global_regs: List[int], predicate: int,\
-            mac: int, outbox: List[int], memory: bytearray, pc: int) -> Tuple[bool, int]:
+    def run(self, local_regs: List[int], global_regs: List[int], predicate: List[int],\
+            mac: List[int], outbox: List[int], memory: bytearray, pc: int) -> Tuple[bool, int]:
         regs = local_regs + global_regs
         new_pc = pc + 4
 
-        if self.pred != predicate:
+        if self.pred != predicate[0]:
             return (True, new_pc)
         elif self.opcode == self.Opcode.ADD:
             regs[self.rd] = regs[self.rs1] + regs[self.rs2]
@@ -220,10 +223,10 @@ class Instruction:
             regs[self.rd] = regs[self.rs1] >> self.shift
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == self.Opcode.LUI:
-            regs[self.rd] = (regs[self.rs1] & 0x0000FFFF) | (self.imm16 << 16)
+            regs[self.rd] = (regs[self.rd] & 0x0000FFFF) | (self.imm16 << 16)
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == self.Opcode.LLI:
-            regs[self.rd] = (regs[self.rs1] & 0xFFFF0000) | self.imm16
+            regs[self.rd] = (regs[self.rd] & 0xFFFF0000) | self.imm16
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == self.Opcode.OUT:
             outbox[0] = regs[(self.rs1 + 0) % NUM_LOCAL_REGS]
@@ -236,34 +239,35 @@ class Instruction:
             outbox[7] = regs[(self.rs1 + 7) % NUM_LOCAL_REGS]
         elif self.opcode == self.Opcode.MAC:
             mult = (regs[self.rs1] * regs[self.rs2]) >> DECIMAL_POS
-            mac += mult & 0xFFFFFFFF
+            mac[0] += mult & 0xFFFFFFFF
         elif self.opcode == self.Opcode.MACCL:
-            mac = 0
+            mac[0] = 0
         elif self.opcode == self.Opcode.MACRD:
-            regs[self.rd] = mac
+            regs[self.rd] = mac[0]
         elif self.opcode == self.Opcode.SPEQ:
             cond = bool(regs[self.rs1] == regs[self.rs2])
-            predicate &= (1 << self.pred_data)
-            predicate |= (cond << self.pred_data)
+            predicate[0] &= (1 << self.pred_data)
+            predicate[0] |= (cond << self.pred_data)
         elif self.opcode == self.Opcode.SPLT:
             cond = bool(regs[self.rs1] < regs[self.rs2])
-            predicate &= (1 << self.pred_data)
-            predicate |= (cond << self.pred_data)
+            predicate[0] &= (1 << self.pred_data)
+            predicate[0] |= (cond << self.pred_data)
         elif self.opcode == self.Opcode.CLRP:
-            predicate &= ~self.pred_data
+            predicate[0] &= ~self.pred_data
         elif self.opcode == self.Opcode.SPR:
-            regs[self.rd] = predicate
+            regs[self.rd] = predicate[0]
         elif self.opcode == self.Opcode.SREQ:
             regs[self.rd] = bool(self.rs1 == self.rs2)
         elif self.opcode == self.Opcode.SRLT:
             regs[self.rd] = bool(self.rs1 < self.rs2)
         elif self.opcode == self.Opcode.LW:
             offset = regs[self.rs1] + self.mem_offset
+            print(offset)
             if (offset % 4) != 0:
                 raise self.MemoryAlignError()
             if offset > len(memory):
                 raise self.MemoryAddressError()
-            regs[self.rd] = memory[offset]
+            regs[self.rd] = int.from_bytes(memory[offset:offset+4], byteorder="little", signed=False)
         elif self.opcode == self.Opcode.SW:
             offset = regs[self.rs1] + self.mem_offset
             if (offset % 4) != 0:
@@ -292,53 +296,63 @@ class Instruction:
         else:
             raise self.OpcodeError()
 
-        local_regs = regs[0:NUM_LOCAL_REGS]
+        # Copy back *without destroying the reference*
+        for i, r in enumerate(regs[0:NUM_LOCAL_REGS]):
+            local_regs[i] = r
         return (True, new_pc)
 
     def _str_rtype(self):
         rs1 = f"$r{self.rs1}"
         rs2 = f"$r{self.rs2}"
         rd = f"$r{self.rd}"
-        pred = f"{self.pred:b}".zfill(3)
+        pred = f"{self.pred:03b}"
+        if self.opcode in (self.Opcode.MACCL, self.Opcode.HALT): # 0 operands
+            return f"({pred}) {self.Opcode.to_string(self.opcode)}"
+        if self.opcode in (self.Opcode.OUT, self.Opcode.MACRD, self.Opcode.SPR): # 1 operand
+            return f"({pred}) {self.Opcode.to_string(self.opcode)} {rd}"
+        if self.opcode == self.Opcode.MAC:
+            return f"({pred}) {self.Opcode.to_string(self.opcode)} {rs1}, {rs2}"
         return f"({pred}) {self.Opcode.to_string(self.opcode)} {rd}, {rs1}, {rs2}"
 
     def _str_itype(self):
         rs1 = f"$r{self.rs1}"
         imm = f"0x{self.imm13:X}"
         rd = f"$r{self.rd}"
-        pred = f"{self.pred:b}".zfill(3)
+        pred = f"{self.pred:03b}"
         return f"({pred}) {self.Opcode.to_string(self.opcode)} {rd}, {rs1}, {imm}"
 
     def _str_dtype(self):
         imm = f"0x{self.imm16:X}"
         rd = f"$r{self.rd}"
-        pred = f"{self.pred:b}".zfill(3)
+        pred = f"{self.pred:03b}"
         return f"({pred}) {self.Opcode.to_string(self.opcode)} {rd}, {imm}"
 
     def _str_jtype(self):
         offset = f"0x{self.jump_offset:X}"
-        pred = f"{self.pred:b}".zfill(3)
+        pred = f"{self.pred:03b}"
         return f"({pred}) {self.Opcode.to_string(self.opcode)} {offset}"
 
     def _str_ptype(self):
         rs1 = f"$r{self.rs1}"
         rs2 = f"$r{self.rs2}"
         pred_dest = f"$p{int(math.log2(self.pred_data))}"
-        pred = f"{self.pred:b}".zfill(3)
+        pred = f"{self.pred:03b}"
+        if self.opcode == self.Opcode.CLRP:
+            return f"({pred}) {self.Opcode.to_string(self.opcode)} {self.pred_data:03b}"
         return f"({pred}) {self.Opcode.to_string(self.opcode)} {pred_dest}, {rs1}, {rs2}"
 
     def _str_mtype(self):
-        reg_offset = f"$r{self.mem_offset}"
-        imm_offset = f"{self.imm13}"
+        reg_offset = f"$r{self.rs1}"
+        mem_offset = f"{self.mem_offset}"
         rds = f"$r{self.rd}"
-        pred = f"{self.pred:b}".zfill(3)
-        return f"({pred}) {self.Opcode.to_string(self.opcode)} {rds}, {imm_offset}[{reg_offset}]"
+        pred = f"{self.pred:03b}"
+        return f"({pred}) {self.Opcode.to_string(self.opcode)} {rds}, {mem_offset}[{reg_offset}]"
 
     def _str_stype(self):
         rs1 = f"$r{self.rs1}"
         shift = f"{self.shift}"
         rd = f"$r{self.rd}"
-        pred = f"{self.pred:b}".zfill(3)
+        pred = f"{self.pred:03b}"
         return f"({pred}) {self.Opcode.to_string(self.opcode)} {rd}, {rs1}, {shift}"
 
     def __str__(self) -> str:

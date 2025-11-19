@@ -1,6 +1,7 @@
 import random
 from typing import Union
 import os
+import copy
 
 from common.defs import *
 from .core import Core
@@ -26,7 +27,9 @@ class CoreController:
     def __init__(self, program_path: str, memory_path: Union[str, None],
                  global_registers_path: Union[str, None], tid: int) -> None:
         self.pc = 0
+        self.next_pc = 4
         self.inst = None
+        self.next_inst = None
 
         with open(program_path, "rb") as f:
             self.prog = f.read()
@@ -48,11 +51,13 @@ class CoreController:
                 global_regs_bytes = f.read()
             if len(global_regs_bytes) != NUM_GLOBAL_REGS * 4:
                 raise self.RegError("Global reg file provided is not exactly 48 words long.")
-            self.global_regs = [int.from_bytes(global_regs_bytes[i:i+4], byteorder="little") for i in range(NUM_GLOBAL_REGS)]
+            self.global_regs = [int.from_bytes(global_regs_bytes[i:i+4], byteorder="big") for i in range(0, NUM_GLOBAL_REGS*4, 4)]
         else:
             self.global_regs = [random.randrange(0, 0xFFFFFFFF, 1) for _ in range(NUM_GLOBAL_REGS)]
 
         self.core = Core(tid, self.global_regs, self.memory)
+
+        self.next_inst = Instruction(self.prog[0:4])
 
     """
     Run the program from the current PC to the end.
@@ -80,8 +85,15 @@ class CoreController:
     Read an instruction from IMEM.
     """
     def _read_inst(self) -> None:
-        inst_bytes = self.prog[self.pc:self.pc+4]
-        self.inst = Instruction(inst_bytes)
+        self.pc = self.next_pc
+        if self.pc > len(self.prog):
+            raise self.ProgramError(f"Fatal error: PC reached instruction address outside of program memory. PC: 0x{self.pc:08X}")
+        self.inst = copy.deepcopy(self.next_inst)
+        if self.pc + 4 > len(self.prog):
+            self.next_inst = None
+        else:
+            inst_bytes = self.prog[self.pc:self.pc+4]
+            self.next_inst = Instruction(inst_bytes)
 
     """
     Run an instruction.
@@ -90,15 +102,12 @@ class CoreController:
     program should continue executing.
     """
     def _run_inst(self) -> bool:
-        should_continue, new_pc = self.core.run(self.inst, self.pc)
+        should_continue, next_pc = self.core.run(self.inst, self.pc)
 
         if not should_continue:
             return True
         else:
-            # Handle jumps: only jump if all cores agree to jump
-            self.pc = new_pc
-            if self.pc > len(self.prog):
-                raise self.ProgramError(f"Fatal error: PC reached instruction address outside of program memory. PC: 0x{self.pc:08X}")
+            self.next_pc = next_pc
             return False
 
     def dump_memory(self, path: str) -> None:
@@ -109,12 +118,8 @@ class CoreController:
         return self.core.__str__()
 
     def __str__(self) -> str:
-        print("asdfasdfasdfadsadsf")
-        print(self.inst)
-        print(self.pc)
-        print("adsfafdasdfasdfafdsasdfa")
         return \
 f"""\
 PC: {self.pc:08X}
-Instruction: {self.inst}\
+Next Instruction: {self.next_inst}\
 """
