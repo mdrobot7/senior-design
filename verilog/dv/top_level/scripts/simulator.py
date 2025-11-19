@@ -1,5 +1,3 @@
-import sys
-import os
 import argparse
 
 from simulator.core_controller import CoreController
@@ -19,13 +17,16 @@ argparser.add_argument("-i", action="store_true", help="Interactive step-through
 
 args = argparser.parse_args()
 
+SEPARATOR = "----------------------------------------"
+
 if __name__ == "__main__":
     try:
         cc = CoreController(args.shader_program, args.m, args.g, args.tid)
         if args.i:
-            while input("Step over [Enter], Quit [Ctrl-D]") and not cc.step():
+            while input("Step over [Enter], Quit [Ctrl-D]") is not None and not cc.step():
                 print(cc.core_to_str())
                 print(cc)
+                print(SEPARATOR)
             cc.dump_memory("memory.bin")
         else:
             cc.run()
@@ -35,7 +36,8 @@ if __name__ == "__main__":
             cc.dump_memory("memory.bin")
     except (EOFError, KeyboardInterrupt):
         # Ctrl-D quit command or Ctrl-C
+        print()
         pass
-    except Exception as e:
-        print(e)
-        exit(1)
+    # except Exception as e:
+    #     print(e)
+    #     exit(1)

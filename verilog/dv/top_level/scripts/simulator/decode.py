@@ -1,8 +1,8 @@
 from typing import List, Tuple
 import math
 
-from .defs import *
-from .utils import bits, signed
+from common.defs import *
+from common.bits import bits, signed
 
 class Instruction:
     class OpcodeError(Exception):
@@ -107,7 +107,7 @@ class Instruction:
             SRA:    "S",
             LUI:    "D",
             LLI:    "D",
-            OUT:    "Rv",
+            OUT:    "R",
             MAC:    "R",
             MACCL:  "R",
             MACRD:  "R",
@@ -132,14 +132,16 @@ class Instruction:
 
         @staticmethod
         def to_string(opcode: int) -> str:
-            return Opcode.OPCODE_TO_STRING[opcode]
+            return Instruction.Opcode.OPCODE_TO_STRING[opcode]
 
         @staticmethod
         def to_type(opcode: int) -> str:
-            return Opcode.OPCODE_TO_TYPE[opcode]
+            return Instruction.Opcode.OPCODE_TO_TYPE[opcode]
 
 
-    def __init__(self, inst: bytes) -> None:
+    def __init__(self, inst_bytes: bytes) -> None:
+        print(inst_bytes.hex())
+        inst = int.from_bytes(inst_bytes, byteorder='big') # IMEM is a bitfield, it's effectively big-endian
         self.opcode = bits(inst, 31, 26)
         self.pred = bits(inst, 25, 23)
         self.rd = bits(inst, 22, 19)
@@ -174,56 +176,56 @@ class Instruction:
 
         if self.pred != predicate:
             return (True, new_pc)
-        elif self.opcode == Opcode.ADD:
+        elif self.opcode == self.Opcode.ADD:
             regs[self.rd] = regs[self.rs1] + regs[self.rs2]
             regs[self.rd] &= 0xFFFFFFFF
-        elif self.opcode == Opcode.ADDI:
+        elif self.opcode == self.Opcode.ADDI:
             regs[self.rd] = regs[self.rs1] + self.imm13
             regs[self.rd] &= 0xFFFFFFFF
-        elif self.opcode == Opcode.SUB:
+        elif self.opcode == self.Opcode.SUB:
             regs[self.rd] = regs[self.rs1] - regs[self.rs2]
             regs[self.rd] &= 0xFFFFFFFF
-        elif self.opcode == Opcode.MUL:
+        elif self.opcode == self.Opcode.MUL:
             regs[self.rd] = (regs[self.rs1] * regs[self.rs2]) >> DECIMAL_POS
             regs[self.rd] &= 0xFFFFFFFF
-        elif self.opcode == Opcode.MULI:
+        elif self.opcode == self.Opcode.MULI:
             regs[self.rd] = (regs[self.rs1] * self.imm13) >> DECIMAL_POS
             regs[self.rd] &= 0xFFFFFFFF
-        elif self.opcode == Opcode.AND:
+        elif self.opcode == self.Opcode.AND:
             regs[self.rd] = regs[self.rs1] & regs[self.rs2]
             regs[self.rd] &= 0xFFFFFFFF
-        elif self.opcode == Opcode.ANDI:
+        elif self.opcode == self.Opcode.ANDI:
             regs[self.rd] = regs[self.rs1] & self.imm13
             regs[self.rd] &= 0xFFFFFFFF
-        elif self.opcode == Opcode.OR:
+        elif self.opcode == self.Opcode.OR:
             regs[self.rd] = regs[self.rs1] | regs[self.rs2]
             regs[self.rd] &= 0xFFFFFFFF
-        elif self.opcode == Opcode.ORI:
+        elif self.opcode == self.Opcode.ORI:
             regs[self.rd] = regs[self.rs1] | self.imm13
             regs[self.rd] &= 0xFFFFFFFF
-        elif self.opcode == Opcode.XOR:
+        elif self.opcode == self.Opcode.XOR:
             regs[self.rd] = regs[self.rs1] ^ regs[self.rs2]
             regs[self.rd] &= 0xFFFFFFFF
-        elif self.opcode == Opcode.XORI:
+        elif self.opcode == self.Opcode.XORI:
             regs[self.rd] = regs[self.rs1] ^ self.imm13
             regs[self.rd] &= 0xFFFFFFFF
-        elif self.opcode == Opcode.SLL:
+        elif self.opcode == self.Opcode.SLL:
             regs[self.rd] = regs[self.rs1] << self.shift
             regs[self.rd] &= 0xFFFFFFFF
-        elif self.opcode == Opcode.SRL:
+        elif self.opcode == self.Opcode.SRL:
             regs[self.rs1] &= 0xFFFFFFFF
             regs[self.rd] = regs[self.rs1] >> self.shift
             regs[self.rd] &= 0xFFFFFFFF
-        elif self.opcode == Opcode.SRA:
+        elif self.opcode == self.Opcode.SRA:
             regs[self.rd] = regs[self.rs1] >> self.shift
             regs[self.rd] &= 0xFFFFFFFF
-        elif self.opcode == Opcode.LUI:
+        elif self.opcode == self.Opcode.LUI:
             regs[self.rd] = (regs[self.rs1] & 0x0000FFFF) | (self.imm16 << 16)
             regs[self.rd] &= 0xFFFFFFFF
-        elif self.opcode == Opcode.LLI:
+        elif self.opcode == self.Opcode.LLI:
             regs[self.rd] = (regs[self.rs1] & 0xFFFF0000) | self.imm16
             regs[self.rd] &= 0xFFFFFFFF
-        elif self.opcode == Opcode.OUT:
+        elif self.opcode == self.Opcode.OUT:
             outbox[0] = regs[(self.rs1 + 0) % NUM_LOCAL_REGS]
             outbox[1] = regs[(self.rs1 + 1) % NUM_LOCAL_REGS]
             outbox[2] = regs[(self.rs1 + 2) % NUM_LOCAL_REGS]
@@ -232,63 +234,63 @@ class Instruction:
             outbox[5] = regs[(self.rs1 + 5) % NUM_LOCAL_REGS]
             outbox[6] = regs[(self.rs1 + 6) % NUM_LOCAL_REGS]
             outbox[7] = regs[(self.rs1 + 7) % NUM_LOCAL_REGS]
-        elif self.opcode == Opcode.MAC:
+        elif self.opcode == self.Opcode.MAC:
             mult = (regs[self.rs1] * regs[self.rs2]) >> DECIMAL_POS
             mac += mult & 0xFFFFFFFF
-        elif self.opcode == Opcode.MACCL:
+        elif self.opcode == self.Opcode.MACCL:
             mac = 0
-        elif self.opcode == Opcode.MACRD:
+        elif self.opcode == self.Opcode.MACRD:
             regs[self.rd] = mac
-        elif self.opcode == Opcode.SPEQ:
+        elif self.opcode == self.Opcode.SPEQ:
             cond = bool(regs[self.rs1] == regs[self.rs2])
             predicate &= (1 << self.pred_data)
             predicate |= (cond << self.pred_data)
-        elif self.opcode == Opcode.SPLT:
+        elif self.opcode == self.Opcode.SPLT:
             cond = bool(regs[self.rs1] < regs[self.rs2])
             predicate &= (1 << self.pred_data)
             predicate |= (cond << self.pred_data)
-        elif self.opcode == Opcode.CLRP:
+        elif self.opcode == self.Opcode.CLRP:
             predicate &= ~self.pred_data
-        elif self.opcode == Opcode.SPR:
+        elif self.opcode == self.Opcode.SPR:
             regs[self.rd] = predicate
-        elif self.opcode == Opcode.SREQ:
+        elif self.opcode == self.Opcode.SREQ:
             regs[self.rd] = bool(self.rs1 == self.rs2)
-        elif self.opcode == Opcode.SRLT:
+        elif self.opcode == self.Opcode.SRLT:
             regs[self.rd] = bool(self.rs1 < self.rs2)
-        elif self.opcode == Opcode.LW:
+        elif self.opcode == self.Opcode.LW:
             offset = regs[self.rs1] + self.mem_offset
             if (offset % 4) != 0:
-                raise MemoryAlignError()
+                raise self.MemoryAlignError()
             if offset > len(memory):
-                raise MemoryAddressError()
+                raise self.MemoryAddressError()
             regs[self.rd] = memory[offset]
-        elif self.opcode == Opcode.SW:
+        elif self.opcode == self.Opcode.SW:
             offset = regs[self.rs1] + self.mem_offset
             if (offset % 4) != 0:
-                raise MemoryAlignError()
+                raise self.MemoryAlignError()
             if offset > len(memory):
-                raise MemoryAddressError()
+                raise self.MemoryAddressError()
             memory[offset + 0] = bits(regs[self.rd],  7, 0)
             memory[offset + 1] = bits(regs[self.rd], 15, 8)
             memory[offset + 2] = bits(regs[self.rd], 23, 16)
             memory[offset + 3] = bits(regs[self.rd], 31, 24)
-        elif self.opcode == Opcode.SB:
+        elif self.opcode == self.Opcode.SB:
             offset = regs[self.rs1] + self.mem_offset
             if offset > len(memory):
-                raise MemoryAddressError()
+                raise self.MemoryAddressError()
             memory[offset] = bits(regs[self.rd], 7, 0)
-        elif self.opcode == Opcode.LWV:
+        elif self.opcode == self.Opcode.LWV:
             pass # TODO
-        elif self.opcode == Opcode.SWV:
+        elif self.opcode == self.Opcode.SWV:
             pass # TODO
-        elif self.opcode == Opcode.SBV:
+        elif self.opcode == self.Opcode.SBV:
             pass # TODO
-        elif self.opcode == Opcode.JUMP:
+        elif self.opcode == self.Opcode.JUMP:
             new_pc += self.jump_offset + 4
-        elif self.opcode == Opcode.HALT:
+        elif self.opcode == self.Opcode.HALT:
             return (False, new_pc)
         else:
-            raise OpcodeError()
+            raise self.OpcodeError()
 
         local_regs = regs[0:NUM_LOCAL_REGS]
         return (True, new_pc)
@@ -298,59 +300,60 @@ class Instruction:
         rs2 = f"$r{self.rs2}"
         rd = f"$r{self.rd}"
         pred = f"{self.pred:b}".zfill(3)
-        return f"({pred}) {Opcode.to_string(self.opcode)} {rd}, {rs1}, {rs2}"
+        return f"({pred}) {self.Opcode.to_string(self.opcode)} {rd}, {rs1}, {rs2}"
 
     def _str_itype(self):
         rs1 = f"$r{self.rs1}"
         imm = f"0x{self.imm13:X}"
         rd = f"$r{self.rd}"
         pred = f"{self.pred:b}".zfill(3)
-        return f"({pred}) {Opcode.to_string(self.opcode)} {rd}, {rs1}, {imm}"
+        return f"({pred}) {self.Opcode.to_string(self.opcode)} {rd}, {rs1}, {imm}"
 
     def _str_dtype(self):
         imm = f"0x{self.imm16:X}"
         rd = f"$r{self.rd}"
         pred = f"{self.pred:b}".zfill(3)
-        return f"({pred}) {Opcode.to_string(self.opcode)} {rd}, {imm}"
+        return f"({pred}) {self.Opcode.to_string(self.opcode)} {rd}, {imm}"
 
     def _str_jtype(self):
         offset = f"0x{self.jump_offset:X}"
         pred = f"{self.pred:b}".zfill(3)
-        return f"({pred}) {Opcode.to_string(self.opcode)} {offset}"
+        return f"({pred}) {self.Opcode.to_string(self.opcode)} {offset}"
 
     def _str_ptype(self):
         rs1 = f"$r{self.rs1}"
         rs2 = f"$r{self.rs2}"
         pred_dest = f"$p{int(math.log2(self.pred_data))}"
         pred = f"{self.pred:b}".zfill(3)
-        return f"({pred}) {Opcode.to_string(self.opcode)} {pred_dest}, {rs1}, {rs2}"
+        return f"({pred}) {self.Opcode.to_string(self.opcode)} {pred_dest}, {rs1}, {rs2}"
 
     def _str_mtype(self):
         reg_offset = f"$r{self.mem_offset}"
         imm_offset = f"{self.imm13}"
         rds = f"$r{self.rd}"
         pred = f"{self.pred:b}".zfill(3)
-        return f"({pred}) {Opcode.to_string(self.opcode)} {rds}, {imm_offset}[{reg_offset}]"
+        return f"({pred}) {self.Opcode.to_string(self.opcode)} {rds}, {imm_offset}[{reg_offset}]"
 
     def _str_stype(self):
         rs1 = f"$r{self.rs1}"
         shift = f"{self.shift}"
         rd = f"$r{self.rd}"
         pred = f"{self.pred:b}".zfill(3)
-        return f"({pred}) {Opcode.to_string(self.opcode)} {rd}, {rs1}, {shift}"
+        return f"({pred}) {self.Opcode.to_string(self.opcode)} {rd}, {rs1}, {shift}"
 
     def __str__(self) -> str:
-        if Opcode.to_type(self.opcode) == "R":
+        if self.Opcode.to_type(self.opcode) == "R":
             return self._str_rtype()
-        if Opcode.to_type(self.opcode) == "I":
+        if self.Opcode.to_type(self.opcode) == "I":
             return self._str_itype()
-        if Opcode.to_type(self.opcode) == "D":
+        if self.Opcode.to_type(self.opcode) == "D":
             return self._str_dtype()
-        if Opcode.to_type(self.opcode) == "J":
+        if self.Opcode.to_type(self.opcode) == "J":
             return self._str_jtype()
-        if Opcode.to_type(self.opcode) == "P":
+        if self.Opcode.to_type(self.opcode) == "P":
             return self._str_ptype()
-        if Opcode.to_type(self.opcode) == "M":
+        if self.Opcode.to_type(self.opcode) == "M":
             return self._str_mtype()
-        if Opcode.to_type(self.opcode) == "S":
+        if self.Opcode.to_type(self.opcode) == "S":
             return self._str_stype()
+        raise self.OpcodeError(f"Unknown opcode 0x{self.opcode:08X}")

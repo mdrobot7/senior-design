@@ -1,7 +1,7 @@
 import random
 from typing import List, Tuple
 
-from .defs import *
+from common.defs import *
 from .decode import Instruction
 
 class Core:
@@ -35,13 +35,12 @@ class Core:
             outbox += o
 
         return \
-f"""
+f"""\
 Predicates: ({pred})
 MAC: 0x{self.mac:08X}
 
 Register File:
 {regs}
-
 Outbox:
-{outbox}
+{outbox}\
 """
