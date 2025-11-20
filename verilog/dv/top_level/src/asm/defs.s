@@ -2,40 +2,40 @@
 #const(noemit) DECIMAL_POS = 10
 
 ; Opcodes
-OPCODE_ADD = 0x0`6
-OPCODE_ADDI = 0x1`6
-OPCODE_SUB = 0x2`6
-OPCODE_MUL = 0x3`6
-OPCODE_MULI = 0x4`6
-OPCODE_AND = 0x5`6
-OPCODE_ANDI = 0x6`6
-OPCODE_OR = 0x7`6
-OPCODE_ORI = 0x8`6
-OPCODE_XOR = 0x9`6
-OPCODE_XORI = 0xA`6
-OPCODE_SLL = 0xB`6
-OPCODE_SRL = 0xC`6
-OPCODE_SRA = 0xD`6
-OPCODE_LUI = 0xE`6
-OPCODE_LLI = 0xF`6
-OPCODE_OUT = 0x10`6
-OPCODE_MAC = 0x11`6
-OPCODE_MACCL = 0x12`6
-OPCODE_MACRD = 0x13`6
-OPCODE_SPEQ = 0x14`6
-OPCODE_SPLT = 0x15`6
-OPCODE_CLRP = 0x16`6
-OPCODE_SPR = 0x17`6
-OPCODE_SREQ = 0x18`6
-OPCODE_SRLT = 0x19`6
-OPCODE_LW = 0x1A`6
-OPCODE_SW = 0x1B`6
-OPCODE_SB = 0x1C`6
-OPCODE_LWV = 0x1D`6
-OPCODE_SWV = 0x1E`6
-OPCODE_SBV = 0x1F`6
-OPCODE_JUMP = 0x20`6
-OPCODE_HALT = 0x21`6
+OPCODE_ADD      = 0x0`6
+OPCODE_ADDI     = 0x1`6
+OPCODE_SUB      = 0x2`6
+OPCODE_MUL      = 0x3`6
+OPCODE_MULI     = 0x4`6
+OPCODE_AND      = 0x5`6
+OPCODE_ANDI     = 0x6`6
+OPCODE_OR       = 0x7`6
+OPCODE_ORI      = 0x8`6
+OPCODE_XOR      = 0x9`6
+OPCODE_XORI     = 0xA`6
+OPCODE_SLL      = 0xB`6
+OPCODE_SRL      = 0xC`6
+OPCODE_SRA      = 0xD`6
+OPCODE_LUI      = 0xE`6
+OPCODE_LLI      = 0xF`6
+OPCODE_OUT      = 0x10`6
+OPCODE_MAC      = 0x11`6
+OPCODE_MACCL    = 0x12`6
+OPCODE_MACRD    = 0x13`6
+OPCODE_SPEQ     = 0x14`6
+OPCODE_SPLT     = 0x15`6
+OPCODE_CLRP     = 0x16`6
+OPCODE_SPR      = 0x17`6
+OPCODE_SREQ     = 0x18`6
+OPCODE_SRLT     = 0x19`6
+OPCODE_LW       = 0x1A`6
+OPCODE_LB       = 0x1B`6
+OPCODE_SW       = 0x1C`6
+OPCODE_SB       = 0x1D`6
+OPCODE_JUMP     = 0x1E`6
+OPCODE_JAL      = 0x1F`6
+OPCODE_JRET     = 0x20`6
+OPCODE_HALT     = 0x21`6
 
 
 ; Registers and Immediates
@@ -50,8 +50,10 @@ OPCODE_HALT = 0x21`6
     }
 
     ; Special register names
-    $tid => 0`6
-    $at  => 15`6
+    $tid  =>  0`6 ; Thread ID
+    $at   => 14`6 ; Assembler temporary
+    $sp   => 15`6 ; Stack pointer
+    $zero => 63`6 ; Zero register
 }
 
 #subruledef destreg {
@@ -61,8 +63,9 @@ OPCODE_HALT = 0x21`6
     }
 
     ; Special register names
-    $tid => 0`4
-    $at  => 15`4
+    $tid  =>  0`4 ; Thread ID
+    $at   => 14`4 ; Assembler temporary
+    $sp   => 15`4 ; Stack pointer
 }
 
 ; Predicate bits, used as arguments to speq, splt, clrp
@@ -192,21 +195,21 @@ OPCODE_HALT = 0x21`6
     ; Branching and Predication
     {pred: predicate} speq    {pred_data: predicate_bit}, {rs1: srcreg}, {rs2: srcreg}  => OPCODE_SPEQ  @ pred @ pred_data @ rs1 @ rs2 @ 0`7
     {pred: predicate} splt    {pred_data: predicate_bit}, {rs1: srcreg}, {rs2: srcreg}  => OPCODE_SPLT  @ pred @ pred_data @ rs1 @ rs2 @ 0`7
-    {pred: predicate} clrp    {pred_data: predicate}                                    => OPCODE_CLRP  @ pred @ 0`1 @ pred_data @ 0`19
+                      clrp    {pred_data: predicate}                                    => OPCODE_CLRP  @  0`3 @ 0`1 @ pred_data @ 0`19
     {pred: predicate} spr     {rd: destreg}                                             => OPCODE_SPR   @ pred @ rd @ 0`19
     {pred: predicate} sreq    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}               => OPCODE_SREQ  @ pred @ rd @ rs1 @ rs2 @ 0`7
     {pred: predicate} srlt    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}               => OPCODE_SRLT  @ pred @ rd @ rs1 @ rs2 @ 0`7
 
     ; Memory
     {pred: predicate} lw      {rd: destreg}, {imm: immediate13}[{roff: srcreg}] => OPCODE_LW   @ pred @ rd @ roff @ imm
+    {pred: predicate} lb      {rd: destreg}, {imm: immediate13}[{roff: srcreg}] => OPCODE_LB   @ pred @ rd @ roff @ imm
     {pred: predicate} sw      {rs: destreg}, {imm: immediate13}[{roff: srcreg}] => OPCODE_SW   @ pred @ rs @ roff @ imm
     {pred: predicate} sb      {rs: destreg}, {imm: immediate13}[{roff: srcreg}] => OPCODE_SB   @ pred @ rs @ roff @ imm
-    {pred: predicate} lwv     {rd: destreg}, {imm: immediate13}[{roff: srcreg}] => OPCODE_LWV  @ pred @ rd @ roff @ imm
-    {pred: predicate} swv     {rs: destreg}, {imm: immediate13}[{roff: srcreg}] => OPCODE_SWV  @ pred @ rs @ roff @ imm
-    {pred: predicate} sbv     {rs: destreg}, {imm: immediate13}[{roff: srcreg}] => OPCODE_SBV  @ pred @ rs @ roff @ imm
 
     ; Jump
     {pred: predicate} jump    {offset: jumpoffset} => OPCODE_JUMP @ pred @ offset
+    {pred: predicate} jal     {offset: jumpoffset} => OPCODE_JAL  @ pred @ offset
+    {pred: predicate} jret                         => OPCODE_JRET @ pred @ 0`23
 
     ; Halt
     halt => OPCODE_HALT @ 0`26
@@ -216,20 +219,20 @@ OPCODE_HALT = 0x21`6
 ; Pseudoinstructions
 #ruledef pseudoinstructions {
     ; Linalg
-    {pred: predicate} dot4 {vector1: srcreg}, {vector2: srcreg} => asm{
+    {pred: predicate} dot4 {vector1: srcreg}, {vector2: srcreg} => asm {
         {pred} maccl
         {pred} mac {vector1} + 0, {vector2} + 0
         {pred} mac {vector1} + 1, {vector2} + 1
         {pred} mac {vector1} + 2, {vector2} + 2
         {pred} mac {vector1} + 3, {vector2} + 3
     }
-    {pred: predicate} dot3 {vector1: srcreg}, {vector2: srcreg} => asm{
+    {pred: predicate} dot3 {vector1: srcreg}, {vector2: srcreg} => asm {
         {pred} maccl
         {pred} mac {vector1} + 0, {vector2} + 0
         {pred} mac {vector1} + 1, {vector2} + 1
         {pred} mac {vector1} + 2, {vector2} + 2
     }
-    {pred: predicate} cross3 {vecdest: destreg}, {vector1: srcreg}, {vector2: srcreg} => asm{
+    {pred: predicate} cross3 {vecdest: destreg}, {vector1: srcreg}, {vector2: srcreg} => asm {
         ; v[0] = a[1] * b[2] - a[2] * b[1];
         {pred} mul {vecdest} + 0, {vector1} + 1, {vector2} + 2
         {pred} mul           $at, {vector1} + 2, {vector2} + 1
@@ -245,29 +248,29 @@ OPCODE_HALT = 0x21`6
         {pred} mul           $at, {vector1} + 1, {vector2} + 0
         {pred} sub {vecdest} + 2, {vecdest} + 2, $at
     }
-    {pred: predicate} addv4 {vecdest: destreg}, {vector1: srcreg}, {vector2: srcreg} => asm{
+    {pred: predicate} addv4 {vecdest: destreg}, {vector1: srcreg}, {vector2: srcreg} => asm {
         {pred} add {vecdest} + 0, {vector1} + 0, {vector2} + 0
         {pred} add {vecdest} + 1, {vector1} + 1, {vector2} + 1
         {pred} add {vecdest} + 2, {vector1} + 2, {vector2} + 2
         {pred} add {vecdest} + 3, {vector1} + 3, {vector2} + 3
     }
-    {pred: predicate} subv4 {vecdest: destreg}, {vector1: srcreg}, {vector2: srcreg} => asm{
+    {pred: predicate} subv4 {vecdest: destreg}, {vector1: srcreg}, {vector2: srcreg} => asm {
         {pred} sub {vecdest} + 0, {vector1} + 0, {vector2} + 0
         {pred} sub {vecdest} + 1, {vector1} + 1, {vector2} + 1
         {pred} sub {vecdest} + 2, {vector1} + 2, {vector2} + 2
         {pred} sub {vecdest} + 3, {vector1} + 3, {vector2} + 3
     }
-    {pred: predicate} addv3 {vecdest: destreg}, {vector1: srcreg}, {vector2: srcreg} => asm{
+    {pred: predicate} addv3 {vecdest: destreg}, {vector1: srcreg}, {vector2: srcreg} => asm {
         {pred} add {vecdest} + 0, {vector1} + 0, {vector2} + 0
         {pred} add {vecdest} + 1, {vector1} + 1, {vector2} + 1
         {pred} add {vecdest} + 2, {vector1} + 2, {vector2} + 2
     }
-    {pred: predicate} subv3 {vecdest: destreg}, {vector1: srcreg}, {vector2: srcreg} => asm{
+    {pred: predicate} subv3 {vecdest: destreg}, {vector1: srcreg}, {vector2: srcreg} => asm {
         {pred} sub {vecdest} + 0, {vector1} + 0, {vector2} + 0
         {pred} sub {vecdest} + 1, {vector1} + 1, {vector2} + 1
         {pred} sub {vecdest} + 2, {vector1} + 2, {vector2} + 2
     }
-    {pred: predicate} scalev3 {vecdest: destreg}, {vector: srcreg}, {scalar: srcreg} => asm{
+    {pred: predicate} scalev3 {vecdest: destreg}, {vector: srcreg}, {scalar: srcreg} => asm {
         {pred} mul {vecdest} + 0, {vector} + 0, {scalar}
         {pred} mul {vecdest} + 1, {vector} + 1, {scalar}
         {pred} mul {vecdest} + 2, {vector} + 2, {scalar}
