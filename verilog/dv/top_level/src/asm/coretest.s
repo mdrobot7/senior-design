@@ -5,6 +5,7 @@
 
 ; Global registers should be preloaded with *something*
 
+clrp (111)
 
 ; Preload registers
 () andi $r0, $r0, 0

@@ -4,8 +4,8 @@
 ; from memory. The following global registers must be
 ; preloaded by the management core:
 ; g0 -> g15: MVP matrix
-; g46: &index_buffer[0]
-; g47: &vertex_buffer[0]
+; g45: &index_buffer[0]
+; g46: &vertex_buffer[0]
 
 ; Vectors must be of the form:
 ; struct vector { u32 x, u32 y, u32 z, u32 tx, u32 ty }
@@ -14,12 +14,13 @@
 ; unrolled for better performance. Bunching up memory
 ; accesses will result in better cache hit rates.
 
-() clrp (111)
+clrp (111)
 
-; Thread ID (tid) is loaded into r0 by the core controller.
-; Calculate the memory address of our triangle.
-() sll $tid, $tid, 2
-() add $tid, $tid, $g46
+; Thread ID (tid) is the triangle, loaded into r0 by the
+; core controller. Calculate the memory address of our triangle.
+() li $r1, 6.000000
+() mul $tid, $tid, $r1
+() add $tid, $tid, $g45
 
 ; Load triangle indices
 () lw $r1, 0[$tid]
@@ -34,8 +35,7 @@
 () lw $r4, 0[$r1] ; vx
 () lw $r5, 4[$r1] ; vy
 () lw $r6, 8[$r1] ; vz
-() andi $r7, $r7, 0 ; Homogeneous term
-() ori $r7, $r7, 1.000000
+() lli $r4, 1.000000 ; Homogeneous term
 () lw $r12, 12[$r1] ; tx
 () lw $r13, 16[$r1] ; ty
 
