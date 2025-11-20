@@ -102,8 +102,8 @@ module div_pipe_m_unit_test;
     `SVTEST(main)
       integer i;
 
-      reg [31:0] a, b;
-      reg [31:0] div;
+      reg signed [31:0] a, b;
+      reg signed [31:0] div;
 
       for (i = 0; i < 1000; i = i + 1) begin
         a = $random;

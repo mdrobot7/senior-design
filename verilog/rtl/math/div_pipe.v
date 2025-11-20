@@ -20,21 +20,28 @@ module div_pipe_m #(
     wire [WIDTH * 2 - 1:0] in_data;
     assign in_data = sstream_i[`STREAM_SI_DATA(IN_SIZE)];
 
-    wire [WIDTH - 1:0] a, b;
+    wire signed [WIDTH - 1:0] a, b;
     assign a = in_data[1 * WIDTH+:WIDTH];
     assign b = in_data[0 * WIDTH+:WIDTH];
 
-    reg       [WIDTH:0]          present;
-    reg         [WIDTH:0]       ready   ;
+    reg               negate   [WIDTH:0];
+    reg               present  [WIDTH:0];
+    reg               ready    [WIDTH:0];
     reg [WIDTH - 1:0] dividend [WIDTH:0];
     reg [WIDTH - 1:0] divisor  [WIDTH:0];
     reg [WIDTH - 1:0] quotient [WIDTH:0];
 
     always @(*) begin
+        negate[0]       <= (a < 0) ^ (b < 0);
         present[0]      <= sstream_i[`STREAM_SI_VALID(IN_SIZE)];
         ready[WIDTH]    <= mstream_i[`STREAM_MI_READY(OUT_SIZE)];
-        dividend[0]     <= a;
-        divisor[0]      <= b;
+       
+        if (a < 0) dividend[0]     <= -a;
+        else       dividend[0]     <= a;
+
+        if (b < 0) divisor[0]      <= -b;
+        else       divisor[0]      <= b;
+        
         quotient[0]     <= 0;
     end
 
@@ -42,7 +49,14 @@ module div_pipe_m #(
         sstream_o[`STREAM_SO_READY(IN_SIZE)] <= ready[0];
 
         mstream_o[`STREAM_MO_VALID(OUT_SIZE)] <= present[WIDTH];
-        mstream_o[`STREAM_MO_DATA(OUT_SIZE)]  <= quotient[WIDTH];
+
+        if (negate[WIDTH]) begin
+            mstream_o[`STREAM_MO_DATA(OUT_SIZE)]  <= -quotient[WIDTH];
+        end
+        else begin
+            mstream_o[`STREAM_MO_DATA(OUT_SIZE)]  <= quotient[WIDTH];
+        end
+
         mstream_o[`STREAM_MO_LAST(OUT_SIZE)]  <= 0;
     end
 
@@ -74,6 +88,7 @@ module div_pipe_m #(
                     end
                     else if (clk_i) begin
                         if (ready[i + 1]) begin
+                            negate[i + 1]   <= negate[i];
                             present[i + 1]  <= present[i];
                             dividend[i + 1] <= d;
                             divisor[i + 1]  <= divisor[i];
@@ -84,6 +99,7 @@ module div_pipe_m #(
             end
             else begin
                 always @(*) begin
+                    negate[i + 1]   <= negate[i];
                     present[i + 1]  <= present[i];
                     dividend[i + 1] <= d;
                     divisor[i + 1]  <= divisor[i];
