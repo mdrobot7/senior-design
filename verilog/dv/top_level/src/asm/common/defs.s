@@ -294,4 +294,8 @@ OPCODE_HALT     = 0x21`6
     {pred: predicate} nop => asm {
         {pred} addi $r0, $r0, 0
     }
+    {pred: predicate} not {rd: destreg}, {rs: srcreg} => asm {
+        {pred} addi $at, $zero, -1
+        {pred} xor {rd}, {rs}, $at
+    }
 }
