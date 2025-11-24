@@ -18,26 +18,31 @@ OPCODE_XORI     = 0xA`6
 OPCODE_SLL      = 0xB`6
 OPCODE_SRL      = 0xC`6
 OPCODE_SRA      = 0xD`6
-OPCODE_LUI      = 0xE`6
-OPCODE_LLI      = 0xF`6
-OPCODE_OUT      = 0x10`6
-OPCODE_MAC      = 0x11`6
-OPCODE_MACCL    = 0x12`6
-OPCODE_MACRD    = 0x13`6
-OPCODE_SPEQ     = 0x14`6
-OPCODE_SPLT     = 0x15`6
-OPCODE_CLRP     = 0x16`6
-OPCODE_SPR      = 0x17`6
-OPCODE_SREQ     = 0x18`6
-OPCODE_SRLT     = 0x19`6
-OPCODE_LW       = 0x1A`6
-OPCODE_LB       = 0x1B`6
-OPCODE_SW       = 0x1C`6
-OPCODE_SB       = 0x1D`6
-OPCODE_JUMP     = 0x1E`6
-OPCODE_JAL      = 0x1F`6
-OPCODE_JRET     = 0x20`6
-OPCODE_HALT     = 0x21`6
+OPCODE_SLLV     = 0xE`6
+OPCODE_SRLV     = 0xF`6
+OPCODE_SRAV     = 0x10`6
+OPCODE_LUI      = 0x11`6
+OPCODE_LLI      = 0x12`6
+OPCODE_OUT      = 0x13`6
+OPCODE_MAC      = 0x14`6
+OPCODE_MACCL    = 0x15`6
+OPCODE_MACRD    = 0x16`6
+OPCODE_SPEQ     = 0x17`6
+OPCODE_SPLT     = 0x18`6
+OPCODE_SPLTU    = 0x19`6
+OPCODE_CLRP     = 0x1A`6
+OPCODE_SPR      = 0x1B`6
+OPCODE_SREQ     = 0x1C`6
+OPCODE_SRLT     = 0x1D`6
+OPCODE_SRLTU    = 0x1E`6
+OPCODE_LW       = 0x1F`6
+OPCODE_LB       = 0x20`6
+OPCODE_SW       = 0x21`6
+OPCODE_SB       = 0x22`6
+OPCODE_JUMP     = 0x23`6
+OPCODE_JAL      = 0x24`6
+OPCODE_JRET     = 0x25`6
+OPCODE_HALT     = 0x26`6
 
 
 ; Registers and Immediates
@@ -183,6 +188,9 @@ OPCODE_HALT     = 0x21`6
     {pred: predicate} sll     {rd: destreg}, {rs1: srcreg}, {shift: u5}         => OPCODE_SLL   @ pred @ rd @ rs1 @ 0`8 @ shift
     {pred: predicate} srl     {rd: destreg}, {rs1: srcreg}, {shift: u5}         => OPCODE_SRL   @ pred @ rd @ rs1 @ 0`8 @ shift
     {pred: predicate} sra     {rd: destreg}, {rs1: srcreg}, {shift: u5}         => OPCODE_SRA   @ pred @ rd @ rs1 @ 0`8 @ shift
+    {pred: predicate} sllv    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_SLLV  @ pred @ rd @ rs1 @ rs2 @ 0`7
+    {pred: predicate} srlv    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_SRLV  @ pred @ rd @ rs1 @ rs2 @ 0`7
+    {pred: predicate} srav    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_SRAV  @ pred @ rd @ rs1 @ rs2 @ 0`7
     {pred: predicate} out     {rs: srcreg}                                      => OPCODE_OUT   @ pred @ 0`4 @ rs @ 0`13
 
     ; Load immediate
@@ -197,10 +205,12 @@ OPCODE_HALT     = 0x21`6
     ; Branching and Predication
     {pred: predicate} speq    {pred_data: predicate_bit}, {rs1: srcreg}, {rs2: srcreg}  => OPCODE_SPEQ  @ pred @ pred_data @ rs1 @ rs2 @ 0`7
     {pred: predicate} splt    {pred_data: predicate_bit}, {rs1: srcreg}, {rs2: srcreg}  => OPCODE_SPLT  @ pred @ pred_data @ rs1 @ rs2 @ 0`7
+    {pred: predicate} spltu   {pred_data: predicate_bit}, {rs1: srcreg}, {rs2: srcreg}  => OPCODE_SPLTU @ pred @ pred_data @ rs1 @ rs2 @ 0`7
                       clrp    {pred_data: predicate}                                    => OPCODE_CLRP  @  0`3 @ 0`1 @ pred_data @ 0`19
     {pred: predicate} spr     {rd: destreg}                                             => OPCODE_SPR   @ pred @ rd @ 0`19
     {pred: predicate} sreq    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}               => OPCODE_SREQ  @ pred @ rd @ rs1 @ rs2 @ 0`7
     {pred: predicate} srlt    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}               => OPCODE_SRLT  @ pred @ rd @ rs1 @ rs2 @ 0`7
+    {pred: predicate} srltu   {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}               => OPCODE_SRLTU @ pred @ rd @ rs1 @ rs2 @ 0`7
 
     ; Memory
     {pred: predicate} lw      {rd: destreg}, {imm: immediate13}[{roff: srcreg}] => OPCODE_LW   @ pred @ rd @ roff @ imm

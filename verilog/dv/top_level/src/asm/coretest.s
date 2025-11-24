@@ -52,6 +52,13 @@ clrp (111)
 () addi $r15, $r15, -10
 () sra $r15, $r15, 1
 () sra $r15, $r15, 10
+() sllv $r14, $r1, $r2
+() sllv $r14, $r14, $r2
+() sllv $r14, $r2, $r14
+() addi $r14, $zero, -4000
+() srlv $r14, $r14, $r2
+() addi $r14, $zero, -4000
+() srav $r14, $r2, $r14
 
 
 ; Load immediate
@@ -100,8 +107,11 @@ clrp (111)
 (011) splt $p2, $r1, $r1 ; p2 -> 0
 (011) splt $p2, $r1, $r0 ; p2 -> 1
 (111) splt $p2, $r0, $r1 ; p2 -> 0
+(011) addi $r15, $zero, -1
+(011) splt $p2, $r15, $zero  ; p2 -> 1
+(111) spltu $p2, $r15, $zero ; p2 -> 0
 clrp (000)
-(011) spr $r15
+(011) spr $r12
 clrp (101)
 clrp (111)
 () sreq $r14, $r0, $r0
@@ -109,6 +119,9 @@ clrp (111)
 () srlt $r13, $r0, $r0
 () srlt $r13, $r1, $r0
 () srlt $r13, $r0, $r1
+() srlt $r13, $r0, $r15
+() srltu $r13, $r0, $r15
+() srltu $r13, $r15, $r0
 
 
 ; Control flow
