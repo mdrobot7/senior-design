@@ -1,4 +1,4 @@
-#include "defs.s"
+#include "common/defs.s"
 
 ; Performs a fragment shade on a fragment outputted
 ; by the rasterizer using Direct Illumination. The

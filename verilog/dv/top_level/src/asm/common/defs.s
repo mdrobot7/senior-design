@@ -1,3 +1,5 @@
+#once
+
 ; Local consts
 #const(noemit) DECIMAL_POS = 10
 

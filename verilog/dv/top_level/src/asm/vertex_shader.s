@@ -1,4 +1,4 @@
-#include "defs.s"
+#include "common/defs.s"
 
 ; Performs vertex shading on a full triangle loaded
 ; from memory. The following global registers must be

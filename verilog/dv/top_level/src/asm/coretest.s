@@ -1,4 +1,4 @@
-#include "defs.s"
+#include "common/defs.s"
 
 ; Program to test the core. Runs every instruction,
 ; some loops, nested conditionals, and edge cases.

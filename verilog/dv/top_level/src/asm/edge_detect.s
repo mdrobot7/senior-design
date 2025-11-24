@@ -1,4 +1,4 @@
-#include "defs.s"
+#include "common/defs.s"
 
 ; Performs edge detection on an image with a 3x3
 ; convolution. Uses the Sobel edge detection
