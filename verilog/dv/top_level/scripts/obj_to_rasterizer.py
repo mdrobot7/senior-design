@@ -3,9 +3,10 @@ import numpy as np
 import sys
 import random
 import math
-from typing import List
 
-# Usage: python obj_to_rasterizer.py [model.obj] [output.txt]
+from common.math import *
+
+# Usage: python obj_to_rasterizer.py [model.obj] [output.v]
 # NOTE: See design document Vertex Shader section for an explanation of the math
 
 # Clip space absolute limits: The x, y, z range of the rasterizer inputs. Lower bound is 0.
@@ -15,8 +16,6 @@ CLIP_LIMIT_Y = 240
 CLIP_LIMIT_Z_FIXED_POINT = 0x7FFFFFFF
 
 ###################################  CONFIGURATION  ########################################
-
-DECIMAL_POS = 10
 
 OUTPUT_WIDTH = 320
 OUTPUT_HEIGHT = 240
@@ -104,20 +103,6 @@ def screen_matrix(display_width, display_height) -> np.ndarray:
          [0, 0, 0, 1]]
     )
 
-def vertex_to_fixed_point(vertex: np.ndarray) -> List[int]:
-    signed_integer_part = [(0x100000000 + int(i)) & 0xFFFFFFFF for i in vertex]
-    fractional_part = [int((i % 1) * (1 << DECIMAL_POS)) for i in vertex]
-    return [((i << DECIMAL_POS) | f) & 0xFFFFFFFF for i, f in zip(signed_integer_part, fractional_part)]
-
-def vec_to_homogeneous(vec: np.ndarray) -> np.ndarray:
-    return np.array([vec[0], vec[1], vec[2], 1])
-
-def homogeneous_to_3vec(homogeneous: np.ndarray) -> np.ndarray:
-    if homogeneous[3] == 0:
-        print("Camera is touching the object (w = 0), cannot convert from homogeneous coordinates. Move the camera.")
-        exit(1)
-    return np.array([homogeneous[0]/homogeneous[3], homogeneous[1]/homogeneous[3], homogeneous[2]/homogeneous[3]])
-
 
 # Check inputs
 if OUTPUT_WIDTH > CLIP_LIMIT_X:
@@ -167,7 +152,7 @@ end
 run = 0;\n\n""")
 
     for n, t in enumerate(triangles):
-        vertices_transformed = [homogeneous_to_3vec(MVP_MATRIX @ vec_to_homogeneous(vertices[i])) for i in t]
+        vertices_transformed = [homogeneous_to_vertex(MVP_MATRIX @ vertex_to_homogeneous(vertices[i])) for i in t]
 
         triangle_fixed = [vertex_to_fixed_point(vt) for vt in vertices_transformed]
 
