@@ -112,6 +112,9 @@ clrp (111)
 (111) spltu $p2, $r15, $zero ; p2 -> 0
 clrp (000)
 (011) spr $r12
+clrp (111)
+() srp $r12
+(011) addi $r12, $r12, 1
 clrp (101)
 clrp (111)
 () sreq $r14, $r0, $r0

@@ -21,6 +21,7 @@
 #if DIV_UINT || DIV_FIXED || DIV_INT {
     ; Regs used: r4, __div_loop
 __div_uint:
+    clrp (111)
     (000) addi $sp, $sp, -24
     (000) sw $r4,  0[$sp]
     (000) sw $r5,  4[$sp]
@@ -39,11 +40,12 @@ __div_uint:
     (000) speq $p2, $r0, $r1
     (100) mov $r2, $r4          ; else if (n == d) ret = 1;
     (000) spr $r4
-    (000) speq $p0, $r4, $zero
-    (001) mov $r4, $r0
-    (001) mov $r5, $r1
-    (001) jal __div_loop
-    (001) mov $r2, $r6          ; else ret = __div_loop(n, d)
+    (000) addi $r4, $r4, -8
+    (000) splt $p0, $r4, $zero  ; Hack to invert speq $p0, $r4, $zero
+    (000) mov $r4, $r0
+    (000) mov $r5, $r1
+    (000) jal __div_loop
+    (000) mov $r2, $r6          ; else ret = __div_loop(n, d)
 
     clrp (111)
     (000) lw $r4,  0[$sp]
@@ -53,7 +55,7 @@ __div_uint:
     (000) lw $r8, 16[$sp]
     (000) lw $r9, 20[$sp]
     (000) addi $sp, $sp, 24
-    ; TODO: Restore predicates
+    (000) srp $r3
     jret
 }
 
@@ -61,6 +63,7 @@ __div_uint:
 #if DIV_FIXED {
 ; Regs used: __div_int, __div_loop
 __div_fixed:
+    clrp (111)
     (000) sra $r1, $r1, DECIMAL_POS
     ; Continue to __div_int
 }
@@ -69,6 +72,7 @@ __div_fixed:
 #if DIV_INT || DIV_FIXED {
 ; Regs used: $r10, $r11, $r12, $at, __div_uint, __div_loop
 __div_int:
+    clrp (111)
     (000) addi $sp, $sp, -12
     (000) sw $r10, 0[$sp]
     (000) sw $r11, 4[$sp]
@@ -86,7 +90,10 @@ __div_int:
     (001) addi $r1, $r1, 1     ; d = d < 0 ? -d : d
     clrp (111)
 
+    (000) mov $r12, $r3
+    (000) mov $r3, $zero
     (000) jal __div_uint ; else ret = __div_uint(n, d), call like an inline
+    (000) mov $r3, $r12
 
     (000) addi $r12, $zero, 1
     (000) sll $r12, $r12, 31
@@ -101,6 +108,7 @@ __div_int:
     (000) lw $r11, 4[$sp]
     (000) lw $r12, 8[$sp]
     (000) addi $sp, $sp, 12
+    (000) srp $r3
     jret
 }
 
@@ -108,6 +116,7 @@ __div_int:
 #if MOD_UINT || MOD_FIXED || MOD_INT {
 ; Regs used: $r4, __div_loop
 __mod_uint:
+    clrp (111)
     (000) addi $sp, $sp, -24
     (000) sw $r4,  0[$sp]
     (000) sw $r5,  4[$sp]
@@ -134,6 +143,7 @@ __mod_uint:
     (000) lw $r8, 16[$sp]
     (000) lw $r9, 20[$sp]
     (000) addi $sp, $sp, 24
+    (000) srp $r3
     jret
 }
 
@@ -146,11 +156,13 @@ __mod_fixed:
 
 ; r2 = r0 % r1
 #if MOD_INT || MOD_FIXED {
-; Regs used: $r10, $r11, $at, __div_loop
+; Regs used: $r10, $r11, $r12, $at, __div_loop
 __mod_int:
-    (000) addi $sp, $sp, -8
+    clrp (111)
+    (000) addi $sp, $sp, -12
     (000) sw $r10,  0[$sp]
     (000) sw $r11,  4[$sp]
+    (000) sw $r12,  8[$sp]
 
     (000) mov $r10, $r0
     (000) splt $p0, $r0, $zero
@@ -164,7 +176,10 @@ __mod_int:
     (001) addi $r1, $r1, 1     ; temp_d = d < 0 ? -d : d
     clrp (111)
 
+    (000) mov $r12, $r3
+    (000) mov $r3, $zero
     (000) jal __mod_uint ; else ret = __mod_uint(n, d), call like an inline
+    (000) mov $r3, $r12
 
     (000) splt $p0, $r10, $zero
     (001) not $r2, $r2
@@ -173,7 +188,9 @@ __mod_int:
     clrp (111)
     (000) lw $r10,  0[$sp]
     (000) lw $r11,  4[$sp]
-    (000) addi $sp, $sp, 8
+    (000) lw $r12,  8[$sp]
+    (000) addi $sp, $sp, 12
+    (000) srp $r3
     jret
 }
 
@@ -211,7 +228,6 @@ __div_loop_compare:
     (000) speq $p1, $r4, $zero ; while (shift >= 0 && n != 0)
     (000) jump __div_loop_start
 __div_exit:
-    clrp (110)
-    jret ; Return regardless of $p0, but preserve $p0 for callee
+    clrp (111)
     jret
 }
