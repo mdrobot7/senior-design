@@ -2,7 +2,7 @@ from typing import List, Tuple
 import math
 
 from common.defs import *
-from common.bits import bits, signed
+from common.bits import bits, signed, unsigned
 
 class Instruction:
     class OpcodeError(Exception):
@@ -17,77 +17,91 @@ class Instruction:
         def __init__(self, *args: object) -> None:
             super().__init__(*args)
 
+    class CallStackError(Exception):
+        def __init__(self, *args: object) -> None:
+            super().__init__(*args)
+
     class Opcode:
-        ADD = 0x0
-        ADDI = 0x1
-        SUB = 0x2
-        MUL = 0x3
-        MULI = 0x4
-        AND = 0x5
-        ANDI = 0x6
-        OR = 0x7
-        ORI = 0x8
-        XOR = 0x9
-        XORI = 0xA
-        SLL = 0xB
-        SRL = 0xC
-        SRA = 0xD
-        LUI = 0xE
-        LLI = 0xF
-        OUT = 0x10
-        MAC = 0x11
-        MACCL = 0x12
-        MACRD = 0x13
-        SPEQ = 0x14
-        SPLT = 0x15
-        CLRP = 0x16
-        SPR = 0x17
-        SREQ = 0x18
-        SRLT = 0x19
-        LW = 0x1A
-        SW = 0x1B
-        SB = 0x1C
-        LWV = 0x1D
-        SWV = 0x1E
-        SBV = 0x1F
-        JUMP = 0x20
-        HALT = 0x21
+        ADD     = 0x0
+        ADDI    = 0x1
+        SUB     = 0x2
+        MUL     = 0x3
+        MULI    = 0x4
+        AND     = 0x5
+        ANDI    = 0x6
+        OR      = 0x7
+        ORI     = 0x8
+        XOR     = 0x9
+        XORI    = 0xA
+        SLL     = 0xB
+        SRL     = 0xC
+        SRA     = 0xD
+        SLLV    = 0xE
+        SRLV    = 0xF
+        SRAV    = 0x10
+        LUI     = 0x11
+        LLI     = 0x12
+        OUT     = 0x13
+        MAC     = 0x14
+        MACCL   = 0x15
+        MACRD   = 0x16
+        SPEQ    = 0x17
+        SPLT    = 0x18
+        SPLTU   = 0x19
+        CLRP    = 0x1A
+        SPR     = 0x1B
+        SREQ    = 0x1C
+        SRLT    = 0x1D
+        SRLTU   = 0x1E
+        LW      = 0x1F
+        LB      = 0x20
+        SW      = 0x21
+        SB      = 0x22
+        JUMP    = 0x23
+        JAL     = 0x24
+        JRET    = 0x25
+        HALT    = 0x26
 
         OPCODE_TO_STRING = {
-            ADD:    "add",
-            ADDI:   "addi",
-            SUB:    "sub",
-            MUL:    "mul",
-            MULI:   "muli",
-            AND:    "and",
-            ANDI:   "andi",
-            OR:     "or",
-            ORI:    "ori",
-            XOR:    "xor",
-            XORI:   "xori",
-            SLL:    "sll",
-            SRL:    "srl",
-            SRA:    "sra",
-            LUI:    "lui",
-            LLI:    "lli",
-            OUT:    "out",
-            MAC:    "mac",
-            MACCL:  "maccl",
-            MACRD:  "macrd",
-            SPEQ:   "speq",
-            SPLT:   "splt",
-            CLRP:   "clrp",
-            SPR:    "spr",
-            SREQ:   "sreq",
-            SRLT:   "srlt",
-            LW:     "lw",
-            SW:     "sw",
-            SB:     "sb",
-            LWV:    "lwv",
-            SWV:    "swv",
-            SBV:    "sbv",
-            JUMP:   "jump",
-            HALT:   "halt",
+            ADD:     "add",
+            ADDI:    "addi",
+            SUB:     "sub",
+            MUL:     "mul",
+            MULI:    "muli",
+            AND:     "and",
+            ANDI:    "andi",
+            OR:      "or",
+            ORI:     "ori",
+            XOR:     "xor",
+            XORI:    "xori",
+            SLL:     "sll",
+            SRL:     "srl",
+            SRA:     "sra",
+            SLLV:    "sllv",
+            SRLV:    "srlv",
+            SRAV:    "srav",
+            LUI:     "lui",
+            LLI:     "lli",
+            OUT:     "out",
+            MAC:     "mac",
+            MACCL:   "maccl",
+            MACRD:   "macrd",
+            SPEQ:    "speq",
+            SPLT:    "splt",
+            SPLTU:   "spltu",
+            CLRP:    "clrp",
+            SPR:     "spr",
+            SREQ:    "sreq",
+            SRLT:    "srlt",
+            SRLTU:   "srltu",
+            LW:      "lw",
+            LB:      "lb",
+            SW:      "sw",
+            SB:      "sb",
+            JUMP:    "jump",
+            JAL:     "jal",
+            JRET:    "jret",
+            HALT:    "halt",
         }
 
         OPCODE_TO_TYPE = {
@@ -105,6 +119,9 @@ class Instruction:
             SLL:    "S",
             SRL:    "S",
             SRA:    "S",
+            SLLV:   "R",
+            SRLV:   "R",
+            SRAV:   "R",
             LUI:    "D",
             LLI:    "D",
             OUT:    "R",
@@ -113,17 +130,19 @@ class Instruction:
             MACRD:  "R",
             SPEQ:   "P",
             SPLT:   "P",
-            CLRP:   "P",
+            SPLTU:  "P",
+            CLRP:   "I",
             SPR:    "R",
             SREQ:   "R",
             SRLT:   "R",
+            SRLTU:  "R",
             LW:     "M",
+            LB:     "M",
             SW:     "M",
             SB:     "M",
-            LWV:    "M",
-            SWV:    "M",
-            SBV:    "M",
             JUMP:   "J",
+            JAL:    "J",
+            JRET:   "R",
             HALT:   "R",
         }
 
@@ -146,7 +165,8 @@ class Instruction:
         self.rd = bits(inst, 22, 19)
         self.rs1 = bits(inst, 18, 13)
         self.rs2 = bits(inst, 12, 7)
-        self.imm13 = signed(bits(inst, 12, 0), 13)
+        self.sign_ext_imm13 = signed(bits(inst, 12, 0), 13)
+        self.zero_ext_imm13 = bits(inst, 12, 0)
         self.imm16 = signed(bits(inst, 15, 0), 16)
         self.pred_data = bits(inst, 22, 19)
         self.mem_offset = signed(bits(inst, 12, 0), 13)
@@ -161,7 +181,9 @@ class Instruction:
     predicate: The predicate register, as a bitfield (in a reference to a one-element List)
     mac: MAC output regsiter (as a reference to a one-element List)
     outbox: Outbox to the rasterizer.
-    memory: SRAM, in a list of bytes.
+    memory: SRAM, in a bytearray.
+    call_stack: The global call stack.
+    max_call_stack_depth: Max global call stack depth.
     pc: Program counter
 
     Most parameters are pass-by-reference so the instruction can
@@ -173,17 +195,19 @@ class Instruction:
         next_pc: The PC that should be jumped to for the next instruction.
     """
     def run(self, local_regs: List[int], global_regs: List[int], predicate: List[int],\
-            mac: List[int], outbox: List[int], memory: bytearray, pc: int) -> Tuple[bool, int]:
+            mac: List[int], outbox: List[int], memory: bytearray, call_stack: List[int],\
+            max_call_stack_depth: int, pc: int) -> Tuple[bool, int]:
         regs = local_regs + global_regs
         new_pc = pc + 4
 
-        if self.pred != predicate[0]:
+        if self.pred != predicate[0] and self.opcode not \
+            in (self.Opcode.CLRP, self.Opcode.JRET, self.Opcode.HALT):
             return (True, new_pc)
         elif self.opcode == self.Opcode.ADD:
             regs[self.rd] = regs[self.rs1] + regs[self.rs2]
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == self.Opcode.ADDI:
-            regs[self.rd] = regs[self.rs1] + self.imm13
+            regs[self.rd] = regs[self.rs1] + self.sign_ext_imm13
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == self.Opcode.SUB:
             regs[self.rd] = regs[self.rs1] - regs[self.rs2]
@@ -192,25 +216,25 @@ class Instruction:
             regs[self.rd] = (regs[self.rs1] * regs[self.rs2]) >> DECIMAL_POS
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == self.Opcode.MULI:
-            regs[self.rd] = (regs[self.rs1] * self.imm13) >> DECIMAL_POS
+            regs[self.rd] = (regs[self.rs1] * self.sign_ext_imm13) >> DECIMAL_POS
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == self.Opcode.AND:
             regs[self.rd] = regs[self.rs1] & regs[self.rs2]
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == self.Opcode.ANDI:
-            regs[self.rd] = regs[self.rs1] & self.imm13
+            regs[self.rd] = regs[self.rs1] & self.zero_ext_imm13
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == self.Opcode.OR:
             regs[self.rd] = regs[self.rs1] | regs[self.rs2]
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == self.Opcode.ORI:
-            regs[self.rd] = regs[self.rs1] | self.imm13
+            regs[self.rd] = regs[self.rs1] | self.zero_ext_imm13
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == self.Opcode.XOR:
             regs[self.rd] = regs[self.rs1] ^ regs[self.rs2]
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == self.Opcode.XORI:
-            regs[self.rd] = regs[self.rs1] ^ self.imm13
+            regs[self.rd] = regs[self.rs1] ^ self.zero_ext_imm13
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == self.Opcode.SLL:
             regs[self.rd] = regs[self.rs1] << self.shift
@@ -221,6 +245,16 @@ class Instruction:
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == self.Opcode.SRA:
             regs[self.rd] = regs[self.rs1] >> self.shift
+            regs[self.rd] &= 0xFFFFFFFF
+        elif self.opcode == self.Opcode.SLLV:
+            regs[self.rd] = regs[self.rs1] << regs[self.rs2]
+            regs[self.rd] &= 0xFFFFFFFF
+        elif self.opcode == self.Opcode.SRLV:
+            regs[self.rs1] &= 0xFFFFFFFF
+            regs[self.rd] = regs[self.rs1] >> regs[self.rs2]
+            regs[self.rd] &= 0xFFFFFFFF
+        elif self.opcode == self.Opcode.SRAV:
+            regs[self.rd] = regs[self.rs1] >> regs[self.rs2]
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == self.Opcode.LUI:
             regs[self.rd] = (regs[self.rd] & 0x0000FFFF) | (self.imm16 << 16)
@@ -252,22 +286,32 @@ class Instruction:
             cond = bool(regs[self.rs1] < regs[self.rs2])
             predicate[0] &= (1 << self.pred_data)
             predicate[0] |= (cond << self.pred_data)
+        elif self.opcode == self.Opcode.SPLTU:
+            cond = bool(unsigned(regs[self.rs1], REGISTER_SIZE_BITS) < unsigned(regs[self.rs2], REGISTER_SIZE_BITS))
+            predicate[0] &= (1 << self.pred_data)
+            predicate[0] |= (cond << self.pred_data)
         elif self.opcode == self.Opcode.CLRP:
-            predicate[0] &= ~self.pred_data
+            predicate[0] &= ~self.zero_ext_imm13
         elif self.opcode == self.Opcode.SPR:
             regs[self.rd] = predicate[0]
         elif self.opcode == self.Opcode.SREQ:
             regs[self.rd] = bool(self.rs1 == self.rs2)
         elif self.opcode == self.Opcode.SRLT:
             regs[self.rd] = bool(self.rs1 < self.rs2)
+        elif self.opcode == self.Opcode.SRLTU:
+            regs[self.rd] = bool(unsigned(self.rs1, REGISTER_SIZE_BITS) < unsigned(self.rs2, REGISTER_SIZE_BITS))
         elif self.opcode == self.Opcode.LW:
             offset = regs[self.rs1] + self.mem_offset
-            print(offset)
             if (offset % 4) != 0:
                 raise self.MemoryAlignError()
             if offset > len(memory):
                 raise self.MemoryAddressError()
             regs[self.rd] = int.from_bytes(memory[offset:offset+4], byteorder="little", signed=False)
+        elif self.opcode == self.Opcode.LB:
+            offset = regs[self.rs1] + self.mem_offset
+            if offset > len(memory):
+                raise self.MemoryAddressError()
+            regs[self.rd] = signed(int(memory[offset]), 8)
         elif self.opcode == self.Opcode.SW:
             offset = regs[self.rs1] + self.mem_offset
             if (offset % 4) != 0:
@@ -283,14 +327,18 @@ class Instruction:
             if offset > len(memory):
                 raise self.MemoryAddressError()
             memory[offset] = bits(regs[self.rd], 7, 0)
-        elif self.opcode == self.Opcode.LWV:
-            pass # TODO
-        elif self.opcode == self.Opcode.SWV:
-            pass # TODO
-        elif self.opcode == self.Opcode.SBV:
-            pass # TODO
         elif self.opcode == self.Opcode.JUMP:
-            new_pc += self.jump_offset + 4
+            new_pc += self.jump_offset
+        elif self.opcode == self.Opcode.JAL:
+            if len(call_stack) == max_call_stack_depth:
+                raise self.CallStackError()
+            call_stack.append(new_pc)
+            new_pc += self.jump_offset
+        elif self.opcode == self.Opcode.JRET:
+            if len(call_stack) > 0:
+                new_pc = call_stack.pop()
+            else:
+                print("WARNING: jret from empty call stack!")
         elif self.opcode == self.Opcode.HALT:
             return (False, new_pc)
         else:
@@ -306,7 +354,7 @@ class Instruction:
         rs2 = f"$r{self.rs2}"
         rd = f"$r{self.rd}"
         pred = f"{self.pred:03b}"
-        if self.opcode in (self.Opcode.MACCL, self.Opcode.HALT): # 0 operands
+        if self.opcode in (self.Opcode.MACCL, self.Opcode.JRET, self.Opcode.HALT): # 0 operands
             return f"({pred}) {self.Opcode.to_string(self.opcode)}"
         if self.opcode in (self.Opcode.OUT, self.Opcode.MACRD, self.Opcode.SPR): # 1 operand
             return f"({pred}) {self.Opcode.to_string(self.opcode)} {rd}"
@@ -316,9 +364,12 @@ class Instruction:
 
     def _str_itype(self):
         rs1 = f"$r{self.rs1}"
-        imm = f"0x{self.imm13:X}"
         rd = f"$r{self.rd}"
         pred = f"{self.pred:03b}"
+        if self.opcode in (self.Opcode.ANDI, self.Opcode.ORI, self.Opcode.XORI):
+            imm = f"0x{self.zero_ext_imm13:X}"
+        else:
+            imm = f"0x{self.sign_ext_imm13:X}"
         return f"({pred}) {self.Opcode.to_string(self.opcode)} {rd}, {rs1}, {imm}"
 
     def _str_dtype(self):

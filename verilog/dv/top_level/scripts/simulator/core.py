@@ -6,7 +6,8 @@ from .decode import Instruction
 
 class Core:
     # Pass all arguments by *reference*
-    def __init__(self, tid: int, global_regs: List[int], memory: bytearray) -> None:
+    def __init__(self, tid: int, global_regs: List[int], memory: bytearray, call_stack: List[int],\
+                 max_call_stack_depth: int) -> None:
         # Initialize registers to garbage
         self.local_regs = [random.randrange(0, 0xFFFFFFFF, 1) for _ in range(NUM_LOCAL_REGS)]
         self.local_regs[0] = tid & 0xFFFFFFFF
@@ -17,9 +18,12 @@ class Core:
         # References to global stuff
         self.global_regs = global_regs
         self.memory = memory
+        self.call_stack = call_stack
+        self.max_call_stack_depth = max_call_stack_depth
 
     def run(self, inst: Instruction, pc: int) -> Tuple[bool, int]:
-        return inst.run(self.local_regs, self.global_regs, self.predicate, self.mac, self.outbox, self.memory, pc)
+        return inst.run(self.local_regs, self.global_regs, self.predicate, self.mac,\
+                        self.outbox, self.memory, self.call_stack, self.max_call_stack_depth, pc)
 
     def __str__(self) -> str:
         reg_strs = [f"$r{i}: {val:08X}\n" for i, val in enumerate(self.local_regs)]

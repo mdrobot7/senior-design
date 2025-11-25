@@ -1,5 +1,5 @@
 import random
-from typing import Union
+from typing import Union, List
 import os
 import copy
 
@@ -25,7 +25,7 @@ class CoreController:
             super().__init__(*args)
 
     def __init__(self, program_path: str, memory_path: Union[str, None],
-                 global_registers_path: Union[str, None], tid: int) -> None:
+                 global_registers_path: Union[str, None], tid: int, max_call_stack_depth: int) -> None:
         self.pc = 0
         self.next_pc = 4
         self.inst = None
@@ -55,7 +55,10 @@ class CoreController:
         else:
             self.global_regs = [random.randrange(0, 0xFFFFFFFF, 1) for _ in range(NUM_GLOBAL_REGS)]
 
-        self.core = Core(tid, self.global_regs, self.memory)
+        self.call_stack: List[int] = []
+        self.max_call_stack_depth = max_call_stack_depth
+
+        self.core = Core(tid, self.global_regs, self.memory, self.call_stack, self.max_call_stack_depth)
 
         self.next_inst = Instruction(self.prog[0:4])
 

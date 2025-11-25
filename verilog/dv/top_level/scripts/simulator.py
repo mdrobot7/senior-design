@@ -23,7 +23,7 @@ SEPARATOR = "----------------------------------------"
 if __name__ == "__main__":
     try:
         for i in range(args.n):
-            cc = CoreController(args.shader_program, args.m, args.g, args.tid + i)
+            cc = CoreController(args.shader_program, args.m, args.g, args.tid + i, 8)
             if args.i:
                 print(cc.core_to_str())
                 print(cc)
