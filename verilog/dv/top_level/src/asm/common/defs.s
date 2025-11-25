@@ -1,7 +1,7 @@
 #once
 
 ; Local consts
-#const(noemit) DECIMAL_POS = 10
+DECIMAL_POS = 10
 
 ; Opcodes
 OPCODE_ADD      = 0x0`6
@@ -221,7 +221,7 @@ OPCODE_HALT     = 0x26`6
     ; Jump
     {pred: predicate} jump    {offset: jumpoffset} => OPCODE_JUMP @ pred @ offset
     {pred: predicate} jal     {offset: jumpoffset} => OPCODE_JAL  @ pred @ offset
-    {pred: predicate} jret                         => OPCODE_JRET @ pred @ 0`23
+    jret                                           => OPCODE_JRET @ 0`26
 
     ; Halt
     halt => OPCODE_HALT @ 0`26
