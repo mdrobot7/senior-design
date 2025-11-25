@@ -208,13 +208,12 @@ exit:
 procedure:
     () addi $r8, $r8, 3.
     () mul $r8, $r8, $r8
-    (001) jret                 ; Skipped
     (110) jal nested_procedure ; Skipped
     () jal nested_procedure
-    () jret
+    jret
 
 nested_procedure:
     () xori $r8, $r8, 0x1FFF
     () ori $r8, $r9, 0x111
     () mov $r8, $zero
-    () jret
+    jret
