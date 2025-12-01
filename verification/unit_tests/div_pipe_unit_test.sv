@@ -29,7 +29,7 @@ module div_pipe_m_unit_test;
   //===================================
   div_pipe_m #(
     32,
-    32'b0000_0000_0000_0100_0000_0000_1000_0001
+    32'hFFFFFFFF
   ) dut(
     .clk_i(clk),
     .nrst_i(nrst),
@@ -48,7 +48,7 @@ module div_pipe_m_unit_test;
     .mstream_o(sstreamai)
   );
 
-  stream_slave_m #(32, 1000) pipe0_slave(
+  stream_slave_m #(32, 1) pipe0_slave(
     .clk_i(clk),
 
     .sstream_i(mstreamao),
@@ -117,7 +117,7 @@ module div_pipe_m_unit_test;
     `SVTEST_END
 
     `SVTEST(backpressure)
-      localparam BACKPRESSURE_AMOUNT = 3;
+      localparam BACKPRESSURE_AMOUNT = 33;
 
       integer i, j;
 
