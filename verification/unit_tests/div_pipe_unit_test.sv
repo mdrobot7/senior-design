@@ -48,7 +48,7 @@ module div_pipe_m_unit_test;
     .mstream_o(sstreamai)
   );
 
-  stream_slave_m #(32) pipe0_slave(
+  stream_slave_m #(32, 1000) pipe0_slave(
     .clk_i(clk),
 
     .sstream_i(mstreamao),
@@ -111,8 +111,36 @@ module div_pipe_m_unit_test;
 
         TEST_DIV(a, b, div);
 
-        $display("%d / %d == %d == %d", a, b, div, a / b);
+        // $display("%d / %d == %d == %d", a, b, div, a / b);
         `FAIL_UNLESS_EQUAL(div, (a / b));
+      end
+    `SVTEST_END
+
+    `SVTEST(backpressure)
+      localparam BACKPRESSURE_AMOUNT = 3;
+
+      integer i, j;
+
+      reg signed [31:0] a [BACKPRESSURE_AMOUNT - 1:0];
+      reg signed [31:0] b [BACKPRESSURE_AMOUNT - 1:0];
+      reg signed [31:0] div [BACKPRESSURE_AMOUNT - 1:0];
+
+      for (i = 0; i < 1000; i = i + 1) begin
+        for (j = 0; j < BACKPRESSURE_AMOUNT; j = j + 1) begin
+          a[j] = $random;
+          b[j] = $random;
+
+          pipe0_master.WRITE({ a[j], b[j] });
+        end
+
+        for (j = 0; j < BACKPRESSURE_AMOUNT; j = j + 1) begin
+          pipe0_slave.READ(div[j]);
+        end
+
+        for (j = 0; j < BACKPRESSURE_AMOUNT; j = j + 1) begin
+          // $display("%d / %d == %d == %d", a[j], b[j], div[j], a[j] / b[j]);
+          `FAIL_UNLESS_EQUAL(div[j], (a[j] / b[j]));
+        end
       end
     `SVTEST_END
   `SVUNIT_TESTS_END
