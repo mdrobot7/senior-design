@@ -7,7 +7,7 @@ module div_m #(parameter WIDTH = 32) (
     wire signed [WIDTH * 2 - 1:0] a, b;
     wire signed [WIDTH * 2 - 1:0] y;
 
-    // wire signed [WIDTH * 2 - 1:0] temp;
+    wire signed [WIDTH * 2 - 1:0] temp;
 
     // assign a = {{WIDTH{a_i[WIDTH - 1]}}, a_i };
     // assign b = {{WIDTH{b_i[WIDTH - 1]}}, b_i };
@@ -17,7 +17,6 @@ module div_m #(parameter WIDTH = 32) (
     // assign y = a * temp;
 
     // assign y_o = y >>> (2 * `DECIMAL_POS);
-
 
     assign a = {{WIDTH{a_i[WIDTH - 1]}}, a_i };
     assign b = {{WIDTH{b_i[WIDTH - 1]}}, b_i };
