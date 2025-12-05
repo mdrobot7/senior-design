@@ -50,6 +50,8 @@ module spi_chip_m #(
 
             wait(!cs_i);
 
+            $display("START!");
+
             wait(clk_i);
             command[3:0] = mosi_i;
             wait(!clk_i);
@@ -58,7 +60,7 @@ module spi_chip_m #(
             command[7:4] = mosi_i;
             wait(!clk_i);
 
-            $display("Got command 0x%h", command);
+            // $display("Got command 0x%h", command);
 
             for (i = 0; i < 4; i = i + 1) begin
                 wait(clk_i);
@@ -68,7 +70,7 @@ module spi_chip_m #(
             end
             #1;
 
-            $display("Got address 0x%h", address);
+            // $display("Got address 0x%h", address);
 
             begin : LATENCY
                 integer latency;
@@ -91,19 +93,20 @@ module spi_chip_m #(
                         wait(clk_i);
                     end
 
-                    if (command == CMD_READ) begin
-                        if (!collision) begin
-                            latency = 0;
-                        end
-                        else begin
-                            $display("Refresh collision");
-                            latency = LATENCY_COUNT;
-                            collision = 0;
-                        end
-                    end
-                    else begin
-                        latency = 0;
-                    end
+                    // if (command == CMD_READ) begin
+                    //     if (!collision) begin
+                    //         latency = 0;
+                    //     end
+                    //     else begin
+                    //         // $display("Refresh collision");
+                    //         latency = LATENCY_COUNT;
+                    //         collision = 0;
+                    //     end
+                    // end
+                    // else begin
+                    //     latency = 0;
+                    // end
+                    latency = 0;
                 end
             end
 
@@ -112,7 +115,7 @@ module spi_chip_m #(
                 integer delay;
                 delay = {$random} % 6 + 1;
 
-                $display("Offset delay: %d ns", delay);
+                // $display("Offset delay: %d ns", delay);
 
                 for (i = 0; i < PRE_CYCLES; i = i + 1) begin
                     wait(clk_i);
@@ -143,7 +146,7 @@ module spi_chip_m #(
                     #delay;
                     dqsm_o = 1;
 
-                    $display("Read 0x%h", mem[addr]);
+                    $display("Read 0x%h from 0x%h", mem[addr], addr);
 
                     addr = addr + 1;
 
@@ -154,8 +157,8 @@ module spi_chip_m #(
                 integer addr;
                 reg [7:0] write_data;
 
-                // wait(!clk_i);
-                // wait(clk_i);
+                wait(!clk_i);
+                wait(clk_i);
 
                 addr = address;
 
@@ -180,6 +183,8 @@ module spi_chip_m #(
                     end
                 end
             end
+
+            $display("DONE!");
         end
     end
 

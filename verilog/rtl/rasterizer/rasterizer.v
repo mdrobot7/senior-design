@@ -85,6 +85,7 @@ module rasterizer_m #(
     reg [2:0] state;
 
     reg bary_last;
+    reg bary_run;
     
     wire bary_init;
     wire bary_discard;
@@ -121,6 +122,8 @@ module rasterizer_m #(
 
             posx <= 0;
             posy <= 0;
+
+            bary_run <= 0;
         end
         else if (clk_i) begin
             case (state)
@@ -131,13 +134,20 @@ module rasterizer_m #(
                         // TODO: handle edge cases here
                         posx  <= bbx0;
                         posy  <= bby0;
+
+                        bary_last <= 0;
                     end
                 end
 
                 STATE_BARY_BOOT: begin
+                    if (bbx0 == bbx1 && bby0 == bby1) state <= STATE_DONE;
+                    else bary_run <= 1;
+
                     if (bary_init) begin
                         if (bary_discard) state <= STATE_DONE;
                         else state <= STATE_RUN_BARY;
+
+                        bary_run <= 0;
                     end
                 end
 
@@ -148,7 +158,7 @@ module rasterizer_m #(
                 STATE_WAIT_BARY: begin
                     state <= STATE_RUN_BARY;
 
-                    bary_last <= posx == (bbx1 - 1) && posy == bby1;
+                    bary_last <= ((posx == (bbx1 - 1)) && (posy == bby1)) || ((posx == bbx1) && (posy == (bby1 - 1)));
 
                     if (posx == bbx1) begin
                         posx <= bbx0;
@@ -183,7 +193,7 @@ module rasterizer_m #(
         .clk_i(clk_i),
         .nrst_i(nrst_i),
 
-        .run_i(run_i),
+        .run_i(bary_run),
         .init_o(bary_init),
         .discard_o(bary_discard),
         .busy_o(bary_busy),

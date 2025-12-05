@@ -84,7 +84,7 @@ module rasterizer_tb();
         .spi_dqsm_o(spi_dqsmo)
     );
 
-    spi_chip_m #(7, 1, 500000) spi_chip(
+    spi_chip_m #(5, 1, 500000) spi_chip(
         .clk_i(spi_clk),
         .cs_i(spi_cs),
         .mosi_i(spi_mosi),
@@ -240,63 +240,63 @@ module rasterizer_tb();
 
         run = 0;
 
-        color <= 8'b00000111;
+        // color <= 8'b00000111;
 
-        v0x = 20 << `DECIMAL_POS;
-        v0y = 20 << `DECIMAL_POS;
-        v0z = 2 * 64'h80000000 / 3;
-        t0x = 0;
-        t0y = 0;
+        // v0x = 20 << `DECIMAL_POS;
+        // v0y = 20 << `DECIMAL_POS;
+        // v0z = 2 * 64'h80000000 / 3;
+        // t0x = 0;
+        // t0y = 0;
 
-        v1x = 140 << `DECIMAL_POS;
-        v1y = 50 << `DECIMAL_POS;
-        v1z = 1 * 64'h80000000 / 3;
-        t1x = 10;
-        t1y = 0;
+        // v1x = 60 << `DECIMAL_POS;
+        // v1y = 30 << `DECIMAL_POS;
+        // v1z = 1 * 64'h80000000 / 3;
+        // t1x = 10;
+        // t1y = 0;
 
-        v2x = 50 << `DECIMAL_POS;
-        v2y = 140 << `DECIMAL_POS;
-        v2z = 1 * 64'h80000000 / 3;
-        t2x = 0;
-        t2y = 10;
+        // v2x = 30 << `DECIMAL_POS;
+        // v2y = 60 << `DECIMAL_POS;
+        // v2z = 1 * 64'h80000000 / 3;
+        // t2x = 0;
+        // t2y = 10;
 
-        wait(!clk);
-        run = 1;
+        // wait(!clk);
+        // run = 1;
 
-        wait(busy);
-        wait(!busy);
-        run = 0;
+        // wait(busy);
+        // wait(!busy);
+        // run = 0;
 
-        clk_rst.WAIT_CYCLES(10);
+        // clk_rst.WAIT_CYCLES(10);
 
         // `VGA_WRITE("depth1.bmp", spi_chip.mem, `ADDR_DEPTH_BUFFER, 320, 240, `COLOR_TYPE_GSW);
 
-        color <= 8'b00111000;
+        // color <= 8'b00111000;
 
-        v0x = 10 << `DECIMAL_POS;
-        v0y = 50 << `DECIMAL_POS;
-        v0z = 1 * 64'h80000000 / 3;
-        t0x = 0;
-        t0y = 0;
+        // v0x = 10 << `DECIMAL_POS;
+        // v0y = 50 << `DECIMAL_POS;
+        // v0z = 1 * 64'h80000000 / 3;
+        // t0x = 0;
+        // t0y = 0;
 
-        v1x = 50 << `DECIMAL_POS;
-        v1y = 10 << `DECIMAL_POS;
-        v1z = 1 * 64'h80000000 / 3;
-        t1x = 10;
-        t1y = 0;
+        // v1x = 50 << `DECIMAL_POS;
+        // v1y = 10 << `DECIMAL_POS;
+        // v1z = 1 * 64'h80000000 / 3;
+        // t1x = 10;
+        // t1y = 0;
 
-        v2x = 140 << `DECIMAL_POS;
-        v2y = 140 << `DECIMAL_POS;
-        v2z = 2 * 64'h80000000 / 3;
-        t2x = 0;
-        t2y = 10;
+        // v2x = 140 << `DECIMAL_POS;
+        // v2y = 140 << `DECIMAL_POS;
+        // v2z = 2 * 64'h80000000 / 3;
+        // t2x = 0;
+        // t2y = 10;
 
-        wait(!clk);
-        run = 1;
+        // wait(!clk);
+        // run = 1;
 
-        wait(busy);
-        wait(!busy);
-        run = 0;
+        // wait(busy);
+        // wait(!busy);
+        // run = 0;
 
         // for (i = 0; i < 10; i = i + 1) begin
         //     wait(clk);
@@ -469,6 +469,812 @@ module rasterizer_tb();
         // wait(!busy);
         // run = 0;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+color = 8'd54;
+v0x = 145366;
+v0y = 115838;
+v0z = 43155;
+t0x = 0;
+t0y = 0;
+v1x = 146545;
+v1y = 118328;
+v1z = 43083;
+t1x = 0;
+t1y = 0;
+v2x = 150033;
+v2y = 115746;
+v2z = 42647;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 0);
+
+color = 8'd238;
+v0x = 150033;
+v0y = 115746;
+v0z = 42647;
+t0x = 0;
+t0y = 0;
+v1x = 146545;
+v1y = 118328;
+v1z = 43083;
+t1x = 0;
+t1y = 0;
+v2x = 150110;
+v2y = 119447;
+v2z = 42866;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 1);
+
+color = 8'd124;
+v0x = 150110;
+v0y = 119447;
+v0z = 42866;
+t0x = 0;
+t0y = 0;
+v1x = 153427;
+v1y = 118286;
+v1z = 42720;
+t1x = 0;
+t1y = 0;
+v2x = 150033;
+v2y = 115746;
+v2z = 42647;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 2);
+
+color = 8'd184;
+v0x = 153427;
+v0y = 118286;
+v0z = 42720;
+t0x = 0;
+t0y = 0;
+v1x = 154958;
+v1y = 115759;
+v1z = 42720;
+t1x = 0;
+t1y = 0;
+v2x = 150033;
+v2y = 115746;
+v2z = 42647;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 3);
+
+color = 8'd5;
+v0x = 154958;
+v0y = 115759;
+v0z = 42720;
+t0x = 0;
+t0y = 0;
+v1x = 153427;
+v1y = 113003;
+v1z = 42720;
+t1x = 0;
+t1y = 0;
+v2x = 150033;
+v2y = 115746;
+v2z = 42647;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 4);
+
+color = 8'd104;
+v0x = 153427;
+v0y = 113003;
+v0z = 42720;
+t0x = 0;
+t0y = 0;
+v1x = 150110;
+v1y = 111896;
+v1z = 42866;
+t1x = 0;
+t1y = 0;
+v2x = 150033;
+v2y = 115746;
+v2z = 42647;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 5);
+
+color = 8'd194;
+v0x = 150110;
+v0y = 111896;
+v0z = 42866;
+t0x = 0;
+t0y = 0;
+v1x = 146545;
+v1y = 113095;
+v1z = 43083;
+t1x = 0;
+t1y = 0;
+v2x = 150033;
+v2y = 115746;
+v2z = 42647;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 6);
+
+color = 8'd159;
+v0x = 146545;
+v0y = 113095;
+v0z = 43083;
+t0x = 0;
+t0y = 0;
+v1x = 145366;
+v1y = 115838;
+v1z = 43155;
+t1x = 0;
+t1y = 0;
+v2x = 150033;
+v2y = 115746;
+v2z = 42647;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 7);
+
+color = 8'd7;
+v0x = 160316;
+v0y = 145782;
+v0z = 44336;
+t0x = 0;
+t0y = 0;
+v1x = 162081;
+v1y = 146840;
+v1z = 44403;
+t1x = 0;
+t1y = 0;
+v2x = 160297;
+v2y = 144134;
+v2z = 44133;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 8);
+
+color = 8'd191;
+v0x = 163840;
+v0y = 107059;
+v0z = 44933;
+t0x = 0;
+t0y = 0;
+v1x = 159758;
+v1y = 109979;
+v1z = 44604;
+t1x = 0;
+t1y = 0;
+v2x = 163840;
+v2y = 111530;
+v2z = 44670;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 9);
+
+color = 8'd212;
+v0x = 150120;
+v0y = 127233;
+v0z = 48149;
+t0x = 0;
+t0y = 0;
+v1x = 156693;
+v1y = 132805;
+v1z = 48040;
+t1x = 0;
+t1y = 0;
+v2x = 155998;
+v2y = 130441;
+v2z = 46071;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 10);
+
+color = 8'd98;
+v0x = 156212;
+v0y = 129023;
+v0z = 45762;
+t0x = 0;
+t0y = 0;
+v1x = 156444;
+v1y = 127573;
+v1z = 45511;
+t1x = 0;
+t1y = 0;
+v2x = 148020;
+v2y = 125422;
+v2z = 45762;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 11);
+
+color = 8'd99;
+v0x = 153672;
+v0y = 126172;
+v0z = 52340;
+t0x = 0;
+t0y = 0;
+v1x = 149532;
+v1y = 122360;
+v1z = 52382;
+t1x = 0;
+t1y = 0;
+v2x = 154122;
+v2y = 121693;
+v2z = 52993;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 12);
+
+color = 8'd167;
+v0x = 141139;
+v0y = 121954;
+v0z = 50336;
+t0x = 0;
+t0y = 0;
+v1x = 141070;
+v1y = 123436;
+v1z = 50240;
+t1x = 0;
+t1y = 0;
+v2x = 140362;
+v2y = 122880;
+v2z = 49606;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 13);
+
+color = 8'd65;
+v0x = 128364;
+v0y = 115178;
+v0z = 52046;
+t0x = 0;
+t0y = 0;
+v1x = 130834;
+v1y = 116646;
+v1z = 51526;
+t1x = 0;
+t1y = 0;
+v2x = 132395;
+v2y = 115432;
+v2z = 51658;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 14);
+
+color = 8'd63;
+v0x = 124962;
+v0y = 121665;
+v0z = 52299;
+t0x = 0;
+t0y = 0;
+v1x = 123112;
+v1y = 116247;
+v1z = 52130;
+t1x = 0;
+t1y = 0;
+v2x = 126918;
+v2y = 112495;
+v2z = 52382;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 15);
+
+color = 8'd84;
+v0x = 200761;
+v0y = 112495;
+v0z = 52382;
+t0x = 0;
+t0y = 0;
+v1x = 204567;
+v1y = 116247;
+v1z = 52130;
+t1x = 0;
+t1y = 0;
+v2x = 202717;
+v2y = 121665;
+v2z = 52299;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 16);
+
+color = 8'd157;
+v0x = 195284;
+v0y = 115432;
+v0z = 51658;
+t0x = 0;
+t0y = 0;
+v1x = 196845;
+v1y = 116646;
+v1z = 51526;
+t1x = 0;
+t1y = 0;
+v2x = 199315;
+v2y = 115178;
+v2z = 52046;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 17);
+
+color = 8'd136;
+v0x = 187317;
+v0y = 122880;
+v0z = 49606;
+t0x = 0;
+t0y = 0;
+v1x = 186609;
+v1y = 123436;
+v1z = 50240;
+t1x = 0;
+t1y = 0;
+v2x = 186540;
+v2y = 121954;
+v2z = 50336;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 18);
+
+color = 8'd226;
+v0x = 173557;
+v0y = 121693;
+v0z = 52993;
+t0x = 0;
+t0y = 0;
+v1x = 178147;
+v1y = 122360;
+v1z = 52382;
+t1x = 0;
+t1y = 0;
+v2x = 174007;
+v2y = 126172;
+v2z = 52340;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 19);
+
+color = 8'd229;
+v0x = 179659;
+v0y = 125422;
+v0z = 45762;
+t0x = 0;
+t0y = 0;
+v1x = 171235;
+v1y = 127573;
+v1z = 45511;
+t1x = 0;
+t1y = 0;
+v2x = 171467;
+v2y = 129023;
+v2z = 45762;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 20);
+
+color = 8'd104;
+v0x = 171681;
+v0y = 130441;
+v0z = 46071;
+t0x = 0;
+t0y = 0;
+v1x = 170986;
+v1y = 132805;
+v1z = 48040;
+t1x = 0;
+t1y = 0;
+v2x = 177559;
+v2y = 127233;
+v2z = 48149;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 21);
+
+color = 8'd245;
+v0x = 163840;
+v0y = 111530;
+v0z = 44670;
+t0x = 0;
+t0y = 0;
+v1x = 167921;
+v1y = 109979;
+v1z = 44604;
+t1x = 0;
+t1y = 0;
+v2x = 163840;
+v2y = 107059;
+v2z = 44933;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 22);
+
+color = 8'd104;
+v0x = 167382;
+v0y = 144134;
+v0z = 44133;
+t0x = 0;
+t0y = 0;
+v1x = 165598;
+v1y = 146840;
+v1z = 44403;
+t1x = 0;
+t1y = 0;
+v2x = 167363;
+v2y = 145782;
+v2z = 44336;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 23);
+
+color = 8'd222;
+v0x = 177646;
+v0y = 115746;
+v0z = 42647;
+t0x = 0;
+t0y = 0;
+v1x = 182313;
+v1y = 115838;
+v1z = 43155;
+t1x = 0;
+t1y = 0;
+v2x = 181134;
+v2y = 113095;
+v2z = 43083;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 24);
+
+color = 8'd183;
+v0x = 177646;
+v0y = 115746;
+v0z = 42647;
+t0x = 0;
+t0y = 0;
+v1x = 181134;
+v1y = 113095;
+v1z = 43083;
+t1x = 0;
+t1y = 0;
+v2x = 177569;
+v2y = 111896;
+v2z = 42866;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 25);
+
+color = 8'd234;
+v0x = 177646;
+v0y = 115746;
+v0z = 42647;
+t0x = 0;
+t0y = 0;
+v1x = 177569;
+v1y = 111896;
+v1z = 42866;
+t1x = 0;
+t1y = 0;
+v2x = 174252;
+v2y = 113003;
+v2z = 42720;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 26);
+
+color = 8'd54;
+v0x = 177646;
+v0y = 115746;
+v0z = 42647;
+t0x = 0;
+t0y = 0;
+v1x = 174252;
+v1y = 113003;
+v1z = 42720;
+t1x = 0;
+t1y = 0;
+v2x = 172721;
+v2y = 115759;
+v2z = 42720;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 27);
+
+color = 8'd186;
+v0x = 177646;
+v0y = 115746;
+v0z = 42647;
+t0x = 0;
+t0y = 0;
+v1x = 172721;
+v1y = 115759;
+v1z = 42720;
+t1x = 0;
+t1y = 0;
+v2x = 174252;
+v2y = 118286;
+v2z = 42720;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 28);
+
+color = 8'd140;
+v0x = 177646;
+v0y = 115746;
+v0z = 42647;
+t0x = 0;
+t0y = 0;
+v1x = 174252;
+v1y = 118286;
+v1z = 42720;
+t1x = 0;
+t1y = 0;
+v2x = 177569;
+v2y = 119447;
+v2z = 42866;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 29);
+
+color = 8'd28;
+v0x = 177569;
+v0y = 119447;
+v0z = 42866;
+t0x = 0;
+t0y = 0;
+v1x = 181134;
+v1y = 118328;
+v1z = 43083;
+t1x = 0;
+t1y = 0;
+v2x = 177646;
+v2y = 115746;
+v2z = 42647;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 30);
+
+color = 8'd138;
+v0x = 177646;
+v0y = 115746;
+v0z = 42647;
+t0x = 0;
+t0y = 0;
+v1x = 181134;
+v1y = 118328;
+v1z = 43083;
+t1x = 0;
+t1y = 0;
+v2x = 182313;
+v2y = 115838;
+v2z = 43155;
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", 31);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         clk_rst.WAIT_CYCLES(10);
     
         $display("Elapsed %d clock cycles", clk_rst.current_cycle);
@@ -506,7 +1312,7 @@ module rasterizer_tb();
     end
 
     initial begin
-        #1000000000;
+        #100000000000;
         $finish;
     end
 
