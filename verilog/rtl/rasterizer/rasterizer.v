@@ -158,7 +158,7 @@ module rasterizer_m #(
                 STATE_WAIT_BARY: begin
                     state <= STATE_RUN_BARY;
 
-                    bary_last <= ((posx == (bbx1 - 1)) && (posy == bby1)) || ((posx == bbx1) && (posy == (bby1 - 1)));
+                    bary_last <= ((posx == (bbx1 - 1)) && (posy == bby1)) || ((posx == bbx1) && (posy == bby1)) || ((bbx0 == bbx1) && (posy == (bby1 - 1)));
 
                     if (posx == bbx1) begin
                         posx <= bbx0;

@@ -69,7 +69,7 @@ module bary_pipe_m(
     wire [`STREAM_SOPORT(2 * DIV_WIDTH)] div_so;
     wire [`STREAM_MIPORT(DIV_WIDTH)] div_mi;
     wire [`STREAM_MOPORT(DIV_WIDTH)] div_mo;
-    div_pipe_m #(DIV_WIDTH, 42'b00_00001000_00000000_01000000_00010000_00010001) div_pipe(
+    div_pipe_m #(DIV_WIDTH, 42'b00_00001000_10010010_01010010_10010101_01010101) div_pipe(
         .clk_i(clk_i),
         .nrst_i(nrst_i),
 
@@ -120,7 +120,6 @@ module bary_pipe_m(
             discard_o <= 0;
 
             d1in_valid <= 0;
-            d1out_ready <= 0;
 
             posx <= 0;
             posy <= 0;

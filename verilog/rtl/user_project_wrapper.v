@@ -154,7 +154,7 @@ module user_project_wrapper #(
         .clk_i(clk),
         .nrst_i(nrst),
         .enable_i(enable),
-        .prescaler_i(4'b0001),
+        .prescaler_i(4'b0010),
         .resolution_i(`VGA_RES_320x240),
         .base_h_active_i(`VGA_BASE_H_ACTIVE),
         .base_h_fporch_i(`VGA_BASE_H_FPORCH),
@@ -356,7 +356,7 @@ module user_project_wrapper #(
                         addr <= 0;
                     end
 
-                    if (timer == 500) begin
+                    if (timer == 100000) begin
                         enable <= 1;
                     end
 

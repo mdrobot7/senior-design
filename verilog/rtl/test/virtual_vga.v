@@ -50,7 +50,7 @@
                 integer x, y; \
  \
                 for (y = 0; y < HEIGHT; y = y + 1) begin \
-                    for (x = 0; x < WIDTH; x = x + 1) begin : INNER \
+                    for (x = 0; x < WIDTH; x = x + 1) begin : INNER_2 \
                         integer i, j; \
                         reg [`VIRTUAL_VGA_MAX_COLOR_SIZE - 1:0] color; \
                         reg [7:0] r, g, b; \
