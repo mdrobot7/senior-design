@@ -2,7 +2,7 @@
 
 `ifdef SIM
 // enable this when you want any performance
-// `define SIM_DIV
+`define SIM_DIV
 `endif
 
 module div_pipe_m #(

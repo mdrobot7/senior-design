@@ -91,17 +91,17 @@ module busarb_m #(
 
                     STATE_ACK: begin
                         if (!sports_i[`BUS_SOPORT_SIZE * slave_sel[cb] + `BUS_SO_ACK]) begin
+                            if (!mports_i[`BUS_MOPORT_SIZE * master_sel[cb] + `BUS_MO_REQ]) begin
                                 state[cb] = STATE_DONE;
+                            end
                         end
                     end
 
                     STATE_DONE: begin
-                        if (!mports_i[`BUS_MOPORT_SIZE * master_sel[cb] + `BUS_MO_REQ]) begin
-                            slave_handled[slave_sel[cb]] = 0;
-                            master_handled[master_sel[cb]] = 0;
+                        slave_handled[slave_sel[cb]] = 0;
+                        master_handled[master_sel[cb]] = 0;
 
-                            state[cb] = STATE_READY;
-                        end
+                        state[cb] = STATE_READY;
                     end
                 endcase
             end

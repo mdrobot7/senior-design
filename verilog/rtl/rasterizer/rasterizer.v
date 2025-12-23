@@ -140,7 +140,11 @@ module rasterizer_m #(
                 end
 
                 STATE_BARY_BOOT: begin
-                    if (bbx0 == bbx1 && bby0 == bby1) state <= STATE_DONE;
+                    if (
+                        (bbx0 == bbx1 && bby0 == bby1) ||
+                        (bbx0 > bbx1 || bby0 > bby1) ||
+                        (bbx0 >= WIDTH || bby0 >= HEIGHT)
+                    ) state <= STATE_DONE;
                     else bary_run <= 1;
 
                     if (bary_init) begin

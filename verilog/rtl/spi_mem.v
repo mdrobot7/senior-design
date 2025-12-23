@@ -276,9 +276,9 @@ module spi_mem_m #(
 
                             `BUS_SIZE_STREAM: begin
                                 if (data_byte == 2) begin
-                                    if (!sport_i[`BUS_SI_SEQMST]) begin
+                                    // if (!sport_i[`BUS_SI_SEQMST]) begin
                                         seqslv <= 1;
-                                    end
+                                    // end
                                 end
                                 else if (data_byte == 3) begin
                                     if (sport_i[`BUS_SI_SEQMST]) state <= STATE_WRITE_DELAY;
