@@ -25,6 +25,7 @@
 -v $(USER_PROJECT_VERILOG)/rtl/test/stream_slave.v
 -v $(USER_PROJECT_VERILOG)/rtl/test/stream_stat.v
 -v $(USER_PROJECT_VERILOG)/rtl/test/clk_rst.v
+-v $(USER_PROJECT_VERILOG)/rtl/test/debug_log.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/bus/busarb.v
 -v $(USER_PROJECT_VERILOG)/rtl/bus/busslave.v
