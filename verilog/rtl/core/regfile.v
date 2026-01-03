@@ -39,7 +39,7 @@ module regfile_m #(
                 mem[i] <= 0;
             end
         end
-        else if (wr_en_i) begin : WRITE
+        else if (clk_i & wr_en_i) begin : WRITE
             if(!HAS_ZERO_REG) begin
                 mem[wr_addr_i] <= wr_data_i;
             end
@@ -53,8 +53,8 @@ module regfile_m #(
     always @(*) begin : READ
         //Forwards data if current write = current read address
 
-        r1_data_o = (r1_addr_i == wr_addr_i) ? wr_data_i : mem[r1_addr_i];
-        r2_data_o = (r2_addr_i == wr_addr_i) ? wr_data_i : mem[r2_addr_i];
+        r1_data_o = ((r1_addr_i == wr_addr_i) & wr_en_i) ? wr_data_i : mem[r1_addr_i];
+        r2_data_o = ((r2_addr_i == wr_addr_i) & wr_en_i) ? wr_data_i : mem[r2_addr_i];
     end
 
 endmodule

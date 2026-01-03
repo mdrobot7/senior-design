@@ -118,7 +118,22 @@ module regfile_m_unit_test;
     end
   `SVTEST_END
 
-
+  `SVTEST(forwarding)
+    integer i;
+    for(i = 0; i <  100; i = i + 1) begin
+      @(negedge clk);
+      wr_en = {$random};
+      wr_data <= {$random};
+      wr_addr = {$random};
+      r1_addr = wr_addr;
+      @(posedge clk);
+      if(wr_en == 1) begin
+        `FAIL_UNLESS_EQUAL(r1_data, wr_data);
+      end else begin
+        `FAIL_UNLESS_EQUAL(r1_data, core_regfile_m.mem[r1_addr]);
+      end
+    end
+  `SVTEST_END
 
   `SVUNIT_TESTS_END
 
