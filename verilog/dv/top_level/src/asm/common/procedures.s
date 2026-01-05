@@ -19,25 +19,30 @@
 
 ; r2 = r0 / r1
 #if DIV_UINT || DIV_FIXED || DIV_INT {
+; r4: ret
 __div_uint:
     clrp (111)
-    (000) addi $sp, $sp, -4
+    (000) addi $sp, $sp, -8
     (000) sw $r3, 0[$sp]
+    (000) sw $r4, 4[$sp]
 
     (000) speq $p0, $r0, $zero
     (000) speq $p0, $r1, $zero
     (000) splt $p0, $r0, $r1
-    (001) mov $r2, $zero        ; if (n == 0 || d == 0 || n < d) ret = 0;
-    (000) addi $r2, $zero, 1
-    (000) speq $p1, $r1, $r2
-    (010) mov $r2, $r0          ; else if (d == 1) ret = n;
-    (000) speq $p2, $r0, $r1    ; else if (n == d) ret = 1; // r2 already set to 1
+    (001) mov $r4, $zero        ; if (n == 0 || d == 0 || n < d) ret = 0;
+    (000) addi $r4, $zero, 1
+    (000) speq $p1, $r1, $r4
+    (010) mov $r4, $r0          ; else if (d == 1) ret = n;
+    (000) speq $p2, $r0, $r1    ; else if (n == d) ret = 1; // r4 already set to 1
     spr $r3
     (000) jal __div_loop        ; else ret = __div_loop(n, d)
+    (000) mov $r4, $r2
 
     clrp (111)
+    (000) mov $r2, $r4
     (000) lw $r3, 0[$sp]
-    (000) addi $sp, $sp, 4
+    (000) lw $r4, 4[$sp]
+    (000) addi $sp, $sp, 8
     (000) srp $r3
     jret
 }
@@ -99,23 +104,27 @@ __div_int:
 
 ; r2 = r0 % r1
 #if MOD_UINT || MOD_FIXED || MOD_INT {
+; r4: ret
 __mod_uint:
     clrp (111)
-    (000) addi $sp, $sp, -4
+    (000) addi $sp, $sp, -8
     (000) sw $r3,  0[$sp]
+    (000) sw $r4,  4[$sp]
 
     (000) speq $p0, $r0, $zero
     (000) speq $p0, $r1, $zero
-    (000) addi $r2, $zero, 1
+    (000) addi $r4, $zero, 1
     (000) speq $p0, $r1, $r2
-    (001) mov $r2, $zero      ; if (n == 0 || d == 0 || d == 1) ret = 0;
+    (001) mov $r4, $zero      ; if (n == 0 || d == 0 || d == 1) ret = 0;
     spr $r3
     (000) jal __div_loop      ; else ret = __div_loop(n, d)
-    (000) mov $r2, $r0
+    (000) mov $r4, $r0
 
     clrp (111)
+    (000) mov $r4, $r2
     (000) lw $r3,  0[$sp]
-    (000) addi $sp, $sp, 4
+    (000) lw $r4,  4[$sp]
+    (000) addi $sp, $sp, 8
     (000) srp $r3
     jret
 }
