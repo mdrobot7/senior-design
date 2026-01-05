@@ -111,7 +111,7 @@ clrp (111)
 (011) splt $p2, $r15, $zero  ; p2 -> 1
 (111) spltu $p2, $r15, $zero ; p2 -> 0
 clrp (000)
-(011) spr $r12
+spr $r12
 clrp (111)
 () srp $r12
 (011) addi $r12, $r12, 1
@@ -195,13 +195,13 @@ clrp (001)
 () andi $r14, $r14, 0 ; r14: Loop counter
 () andi $r15, $r15, 0
 () addi $r15, $r15, 10 ; r15: Loop end
-() splt $p0, $r15, $r15 ; Unconditional predicate set so compare runs
-(001) jump compare
+() splt $p0, $r15, $r15 ; Unconditional predicate set so cond runs
+(001) jump cond
 loop:
     (001) xor $r10, $r7, $r14 ; Do something productive
 
     (001) addi $r14, $r14, 1
-compare:
+cond:
     (001) splt $p0, $r14, $r15
     (001) jump loop
 exit:

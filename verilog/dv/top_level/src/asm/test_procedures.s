@@ -45,7 +45,7 @@ udiv_outer_loop:                      ; for (i = 0; i < NUM_TESTS; i++)
     udiv_inner_loop:                  ; for (j = 0; j < NUM_TESTS; j++)
         (011) addi $r8, $r6, U_TESTS_ADDR
         (011) lw $r1, 0[$r8]
-        (011) spr $r3
+              spr $r3
         (011) jal __div_uint
         (011) sw $r2, 0[$r7]
         (011) addi $r7, $r7, 4
@@ -72,7 +72,7 @@ idiv_outer_loop:                      ; for (i = 0; i < NUM_TESTS; i++)
     idiv_inner_loop:                  ; for (j = 0; j < NUM_TESTS; j++)
         (011) addi $r8, $r6, I_TESTS_ADDR
         (011) lw $r1, 0[$r8]
-        (011) spr $r3
+              spr $r3
         (011) jal __div_int
         (011) sw $r2, 0[$r7]
         (011) addi $r7, $r7, 4
@@ -99,7 +99,7 @@ fixeddiv_outer_loop:                      ; for (i = 0; i < NUM_TESTS; i++)
     fixeddiv_inner_loop:                  ; for (j = 0; j < NUM_TESTS; j++)
         (011) addi $r8, $r6, FIXED_TESTS_ADDR
         (011) lw $r1, 0[$r8]
-        (011) spr $r3
+              spr $r3
         (011) jal __div_fixed
         (011) sw $r2, 0[$r7]
         (011) addi $r7, $r7, 4
@@ -126,7 +126,7 @@ umod_outer_loop:                      ; for (i = 0; i < NUM_TESTS; i++)
     umod_inner_loop:                  ; for (j = 0; j < NUM_TESTS; j++)
         (011) addi $r8, $r6, U_TESTS_ADDR
         (011) lw $r1, 0[$r8]
-        (011) spr $r3
+              spr $r3
         (011) jal __mod_uint
         (011) sw $r2, 0[$r7]
         (011) addi $r7, $r7, 4
@@ -153,7 +153,7 @@ imod_outer_loop:                      ; for (i = 0; i < NUM_TESTS; i++)
     imod_inner_loop:                  ; for (j = 0; j < NUM_TESTS; j++)
         (011) addi $r8, $r6, I_TESTS_ADDR
         (011) lw $r1, 0[$r8]
-        (011) spr $r3
+              spr $r3
         (011) jal __mod_int
         (011) sw $r2, 0[$r7]
         (011) addi $r7, $r7, 4
@@ -180,7 +180,7 @@ fixedmod_outer_loop:                      ; for (i = 0; i < NUM_TESTS; i++)
     fixedmod_inner_loop:                  ; for (j = 0; j < NUM_TESTS; j++)
         (011) addi $r8, $r6, FIXED_TESTS_ADDR
         (011) lw $r1, 0[$r8]
-        (011) spr $r3
+              spr $r3
         (011) jal __mod_fixed
         (011) sw $r2, 0[$r7]
         (011) addi $r7, $r7, 4
