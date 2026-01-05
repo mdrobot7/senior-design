@@ -52,9 +52,14 @@ module regfile_m #(
 
     always @(*) begin : READ
         //Forwards data if current write = current read address
+        if(!HAS_ZERO_REG) begin
+            r1_data_o = ((r1_addr_i == wr_addr_i) && wr_en_i) ? wr_data_i : mem[r1_addr_i];
+            r2_data_o = ((r2_addr_i == wr_addr_i) && wr_en_i) ? wr_data_i : mem[r2_addr_i];
+        end else begin
+            r1_data_o = ((r1_addr_i == wr_addr_i) && wr_en_i && (wr_addr_i != REGFILE_HIGHEST_ADDR)) ? wr_data_i : mem[r1_addr_i];
+            r2_data_o = ((r2_addr_i == wr_addr_i) && wr_en_i && (wr_addr_i != REGFILE_HIGHEST_ADDR)) ? wr_data_i : mem[r2_addr_i];
 
-        r1_data_o = ((r1_addr_i == wr_addr_i) && wr_en_i) ? wr_data_i : mem[r1_addr_i];
-        r2_data_o = ((r2_addr_i == wr_addr_i) && wr_en_i) ? wr_data_i : mem[r2_addr_i];
+        end
     end
 
 endmodule

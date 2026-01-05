@@ -113,13 +113,34 @@ module regfile_m_unit_test;
       r2_addr <= i;
       
       @(posedge clk);
-      $display("r1_data:0x%h\nr2_data:0x%h\ntestreg_data:0x%h", r1_data, r2_data, test_regfile[i]);
       `FAIL_UNLESS_EQUAL(r1_data, r2_data);
       `FAIL_UNLESS_EQUAL(test_regfile[i], r1_data);
     end
   `SVTEST_END
 
+  `SVTEST(forwarding)
+    integer i;
+    integer tmp;
+    for (i = BASE_ADDR; i < CORE_HEIGHT + BASE_ADDR; i = i + 1) begin
+      test_regfile[i] = i;
+    end
 
+    for(i = BASE_ADDR; i < CORE_HEIGHT + BASE_ADDR; i = i + 1) begin
+      @(negedge clk);
+      tmp = $random;
+      wr_addr <= i;
+      r1_addr <= i;
+      wr_data <= tmp;
+      wr_en <= 1;
+
+      @(posedge clk);
+      if(i != (CORE_HEIGHT + BASE_ADDR - 1)) begin
+        `FAIL_UNLESS_EQUAL(r1_data, wr_data);
+      end else begin
+        `FAIL_UNLESS_EQUAL(r1_data, 32'h0);
+      end
+    end
+  `SVTEST_END
 
   `SVUNIT_TESTS_END
 
