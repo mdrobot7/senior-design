@@ -113,13 +113,13 @@ OPCODE_HALT     = 0x27`6
     ; Instead, just force the user to pad decimals to 6 places.
     {i: s3}.{f: u32} => {
         assert(f < 1000000)
-        frac = (f * (1 << 10)) / 1000000
+        frac = (f * (1 << DECIMAL_POS)) / 1000000
         i @ frac`DECIMAL_POS
     }
 
     {n: s32}/{d: s32} => {
         int = n / d
-        frac = ((n * (1 << 10)) / d) - (int * (1 << 10))
+        frac = ((n * (1 << DECIMAL_POS)) / d) - (int * (1 << DECIMAL_POS))
         int`3 @ frac`DECIMAL_POS
     }
 }
@@ -132,13 +132,13 @@ OPCODE_HALT     = 0x27`6
     ; Reminder: Pad decimals to 6 places.
     {i: s6}.{f: u32} => {
         assert(f < 1000000)
-        frac = (f * (1 << 10)) / 1000000
+        frac = (f * (1 << DECIMAL_POS)) / 1000000
         i @ frac`DECIMAL_POS
     }
 
     {n: s32}/{d: s32} => {
         int = n / d
-        frac = ((n * (1 << 10)) / d) - (int * (1 << 10))
+        frac = ((n * (1 << DECIMAL_POS)) / d) - (int * (1 << DECIMAL_POS))
         int`6 @ frac`DECIMAL_POS
     }
 }
@@ -150,14 +150,14 @@ OPCODE_HALT     = 0x27`6
 
     {i: s22}.{f: u32} => {
         assert(f < 1000000)
-        frac = (f * (1 << 10)) / 1000000
+        frac = (f * (1 << DECIMAL_POS)) / 1000000
         i @ frac`DECIMAL_POS
     }
 
     ; Reminder: Pad decimals to 6 places
     {n: s32}/{d: s32} => {
         int = n / d
-        frac = ((n * (1 << 10)) / d) - (int * (1 << 10))
+        frac = ((n * (1 << DECIMAL_POS)) / d) - (int * (1 << DECIMAL_POS))
         int`22 @ frac`DECIMAL_POS
     }
 }
@@ -300,8 +300,8 @@ OPCODE_HALT     = 0x27`6
         {pred} addi {rd}, {rs}, 0
     }
     {pred: predicate} trunc {rd: destreg}, {rs: srcreg} => asm {
-        {pred} srl {rd}, {rs}, 10
-        {pred} sll {rd}, {rd}, 10
+        {pred} srl {rd}, {rs}, DECIMAL_POS
+        {pred} sll {rd}, {rd}, DECIMAL_POS
     }
     {pred: predicate} nop => asm {
         {pred} addi $r0, $r0, 0
