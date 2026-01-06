@@ -20,7 +20,7 @@
 .SILENT: clean all
 
 
-PATTERNS = io_ports la_test1 la_test2 wb_port mprj_stimulus spi_mem bus vga rasterizer
+PATTERNS = io_ports la_test1 la_test2 wb_port mprj_stimulus spi_mem bus vga rasterizer wishbone_register top_level
 
 all:  ${PATTERNS}
 
@@ -29,7 +29,7 @@ all:  ${PATTERNS}
 	done
 
 DV_PATTERNS = $(foreach dv, $(PATTERNS), verify-$(dv))
-$(DV_PATTERNS): verify-% : 
+$(DV_PATTERNS): verify-% :
 	cd $* && make
 
 clean:  ${PATTERNS}
@@ -37,5 +37,5 @@ clean:  ${PATTERNS}
 		( cd $$i && \rm  -f *.elf *.hex *.bin *.vvp *.log *.vcd *.lst *.hexe ) ; \
 	done
 	rm -rf *.log
-	
+
 .PHONY: clean all

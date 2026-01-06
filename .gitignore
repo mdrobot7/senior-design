@@ -28,3 +28,4 @@
 **/transcript
 **/.nfs*
 **/fpga_config.ini
+**/reuse_csvs/

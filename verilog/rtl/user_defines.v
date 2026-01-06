@@ -194,3 +194,19 @@
 `define VGA_BASE_V_FPORCH (3)
 `define VGA_BASE_V_SYNC   (4)
 `define VGA_BASE_V_BPORCH (6)
+
+// ISA
+`define ALU_CTL_SIZE 4
+
+`define ALU_ADD_CTL     (`ALU_CTL_SIZE'b0000)
+`define ALU_SUB_CTL     (`ALU_CTL_SIZE'b0001)
+`define ALU_MULT_CTL    (`ALU_CTL_SIZE'b0010)
+`define ALU_AND_CTL     (`ALU_CTL_SIZE'b0011)
+`define ALU_OR_CTL      (`ALU_CTL_SIZE'b0100)
+`define ALU_XOR_CTL     (`ALU_CTL_SIZE'b0101)
+`define ALU_SEQ_CTL     (`ALU_CTL_SIZE'b0110)
+`define ALU_SLT_CTL     (`ALU_CTL_SIZE'b0111)
+`define ALU_SLL_CTL     (`ALU_CTL_SIZE'b1000)
+`define ALU_SRL_CTL     (`ALU_CTL_SIZE'b1001)
+`define ALU_SRA_CTL     (`ALU_CTL_SIZE'b1010)
+`define ALU_SLTU_CTL    (`ALU_CTL_SIZE'b1011)

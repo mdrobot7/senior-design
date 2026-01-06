@@ -61,7 +61,7 @@ module rasterizer_tb();
         .sports_i({ sportao }),
         .sports_o({ sportai })
     );
-    
+
     wire spi_clk;
     wire spi_cs;
     wire [3:0] spi_mosi;
@@ -148,35 +148,35 @@ module rasterizer_tb();
 
     stream_stat_m #(SC_WIDTH * 2) pos_stat(
         .clk_i(clk),
-        
+
         .mstreami_i(rasterizer.pos_streami),
         .mstreamo_i(rasterizer.pos_streamo)
     );
 
     stream_stat_m #(SC_WIDTH * 2 + WORD_WIDTH * 3) bary_stat(
         .clk_i(clk),
-        
+
         .mstreami_i(rasterizer.bary_streami),
         .mstreamo_i(rasterizer.bary_streamo)
     );
 
     stream_stat_m #(SC_WIDTH * 2 + WORD_WIDTH * 3) filt_bary_stat(
         .clk_i(clk),
-        
+
         .mstreami_i(rasterizer.filt_bary_streami),
         .mstreamo_i(rasterizer.filt_bary_streamo)
     );
 
     stream_stat_m #(SC_WIDTH * 2 + WORD_WIDTH * 3) wavg_stat(
         .clk_i(clk),
-        
+
         .mstreami_i(rasterizer.wavg_streami),
         .mstreamo_i(rasterizer.wavg_streamo)
     );
 
     stream_stat_m #(SC_WIDTH * 2 + WORD_WIDTH * 3) wavg_fifo_stat(
         .clk_i(clk),
-        
+
         .mstreami_i(rasterizer.wavg_fifo_streami),
         .mstreamo_i(rasterizer.wavg_fifo_streamo)
     );

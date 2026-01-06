@@ -117,7 +117,7 @@ simenv-cocotb:
 	docker pull efabless/dv:cocotb
 
 .PHONY: setup
-setup: check_dependencies install check-env install_mcw openlane pdk-with-volare setup-timing-scripts setup-cocotb precheck
+setup: check_dependencies install check-env install_mcw openlane pdk-with-volare setup-timing-scripts setup-cocotb precheck setup-customasm
 	mkdir -p ~/.ipm
 
 # Openlane
@@ -356,23 +356,23 @@ setup-cocotb-env:
 setup-cocotb: install-caravel-cocotb setup-cocotb-env simenv-cocotb
 
 .PHONY: cocotb-verify-all-rtl
-cocotb-verify-all-rtl: 
+cocotb-verify-all-rtl:
 	@(cd $(PROJECT_ROOT)/verilog/dv/cocotb && $(PROJECT_ROOT)/venv-cocotb/bin/caravel_cocotb -tl user_proj_tests/user_proj_tests.yaml )
-	
+
 .PHONY: cocotb-verify-all-gl
 cocotb-verify-all-gl:
 	@(cd $(PROJECT_ROOT)/verilog/dv/cocotb && $(PROJECT_ROOT)/venv-cocotb/bin/caravel_cocotb -tl user_proj_tests/user_proj_tests_gl.yaml -verbosity quiet)
 
-$(cocotb-dv-targets-rtl): cocotb-verify-%-rtl: 
+$(cocotb-dv-targets-rtl): cocotb-verify-%-rtl:
 	@(cd $(PROJECT_ROOT)/verilog/dv/cocotb && $(PROJECT_ROOT)/venv-cocotb/bin/caravel_cocotb -t $*  )
-	
+
 $(cocotb-dv-targets-gl): cocotb-verify-%-gl:
 	@(cd $(PROJECT_ROOT)/verilog/dv/cocotb && $(PROJECT_ROOT)/venv-cocotb/bin/caravel_cocotb -t $* -verbosity quiet)
 
 ./verilog/gl/user_project_wrapper.v:
 	$(error you don't have $@)
 
-./env/spef-mapping.tcl: 
+./env/spef-mapping.tcl:
 	@echo "run the following:"
 	@echo "make extract-parasitics"
 	@echo "make create-spef-mapping"
@@ -421,7 +421,7 @@ extract-parasitics: ./verilog/gl/user_project_wrapper.v
 	@$(MAKE) -C $(TIMING_ROOT) -f $(TIMING_ROOT)/timing.mk rcx-user_project_wrapper
 	@cat ./tmp-macros-list
 	@rm ./tmp-macros-list
-	
+
 .PHONY: caravel-sta
 caravel-sta: ./env/spef-mapping.tcl
 	@$(MAKE) -C $(TIMING_ROOT) -f $(TIMING_ROOT)/timing.mk caravel-timing-typ -j3
@@ -434,7 +434,8 @@ caravel-sta: ./env/spef-mapping.tcl
 		| xargs -I {} bash -c "head -n7 {} | tail -n1"
 	@echo =================================================================================================
 	@echo "You can find results for all corners in $(CUP_ROOT)/signoff/caravel/openlane-signoff/timing/"
-	@echo "Check summary.log of a specific corner to point to reports with reg2reg violations" 
+	@echo "Check summary.log of a specific corner to point to reports with reg2reg violations"
 	@echo "Cap and slew violations are inside summary.log file itself"
 
 include library/user_project_appends.mk
+include customasm/Makefile

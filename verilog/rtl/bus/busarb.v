@@ -28,14 +28,6 @@ module busarb_m #(
 
     reg [$clog2(CROSSBARS + 1) - 1:0] crossbar;
 
-    wire [1:0] yep_state;
-    assign yep_state = state[0];
-
-    wire [1:0] yep_master_sel;
-    assign yep_master_sel = master_sel[0];
-    wire [1:0] yep_slave_sel;
-    assign yep_slave_sel = slave_sel[0];
-
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin : RESET
             integer i;
