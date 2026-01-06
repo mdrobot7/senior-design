@@ -1,4 +1,4 @@
-#include "defs.s"
+#include "common/defs.s"
 
 ; Performs a path trace of a single ray in a scene.
 ; Assumes all models have been multiplied by their model

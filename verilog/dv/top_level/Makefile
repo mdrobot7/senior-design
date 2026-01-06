@@ -45,10 +45,12 @@ SOURCE_FILES += $(shell find $(SRC_DIR) -name "*.c")
 # ---- Include ASM Sources ----
 
 ASM_DIR = $(SRC_DIR)/asm
-CUSTOMASM_SOURCES = $(ASM_DIR)/coretest.s \
-					$(ASM_DIR)/edge_detect.s \
+CUSTOMASM_SOURCES = $(ASM_DIR)/edge_detect.s \
 					$(ASM_DIR)/fragment_shader.s \
 					$(ASM_DIR)/ray_tracer.s \
+					$(ASM_DIR)/test_core.s \
+					$(ASM_DIR)/test_procedures_data.s \
+					$(ASM_DIR)/test_procedures.s \
 					$(ASM_DIR)/vertex_shader_cached.s \
 					$(ASM_DIR)/vertex_shader.s
 

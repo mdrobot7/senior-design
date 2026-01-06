@@ -1,10 +1,11 @@
-#include "defs.s"
+#include "common/defs.s"
 
 ; Program to test the core. Runs every instruction,
 ; some loops, nested conditionals, and edge cases.
 
 ; Global registers should be preloaded with *something*
 
+clrp (111)
 
 ; Preload registers
 () andi $r0, $r0, 0
@@ -51,10 +52,24 @@
 () addi $r15, $r15, -10
 () sra $r15, $r15, 1
 () sra $r15, $r15, 10
+() sllv $r14, $r1, $r2
+() sllv $r14, $r14, $r2
+() sllv $r14, $r2, $r14
+() addi $r14, $zero, -4000
+() srlv $r14, $r14, $r2
+() addi $r14, $zero, -4000
+() srav $r14, $r2, $r14
+
+
+; Load immediate
+() lui $r15, 0x1234
+() lli $r15, 0x5678
+() lli $r15, 0x9090
+() lui $r15, 0x5555
 
 
 ; Outbox
-() out $r0
+() out
 
 
 ; MAC
@@ -81,12 +96,10 @@
 () sw $r10, 3[$r0]
 () lw $r12, 2[$r0]
 () lw $r13, 0[$r0]
-; () lwv ; TODO: Later, we need to think about these a little more
-; () swv
-; () sbv
 
 
 ; Predication
+clrp (111)
 () speq $p0, $r1, $r2
 () speq $p0, $r1, $r1    ; p0 -> 1
 (001) speq $p1, $r1, $r1 ; p1 -> 1
@@ -94,14 +107,24 @@
 (011) splt $p2, $r1, $r1 ; p2 -> 0
 (011) splt $p2, $r1, $r0 ; p2 -> 1
 (111) splt $p2, $r0, $r1 ; p2 -> 0
-(101) clrp (110)         ; Skipped
-(011) spr $r15
-(011) clrp (111)
+(011) addi $r15, $zero, -1
+(011) splt $p2, $r15, $zero  ; p2 -> 1
+(111) spltu $p2, $r15, $zero ; p2 -> 0
+clrp (000)
+spr $r12
+clrp (111)
+() srp $r12
+(011) addi $r12, $r12, 1
+clrp (101)
+clrp (111)
 () sreq $r14, $r0, $r0
 () sreq $r14, $r0, $r1
 () srlt $r13, $r0, $r0
 () srlt $r13, $r1, $r0
 () srlt $r13, $r0, $r1
+() srlt $r13, $r0, $r15
+() srltu $r13, $r0, $r15
+() srltu $r13, $r15, $r0
 
 
 ; Control flow
@@ -120,10 +143,31 @@ skip:
 
 skip2:
     (001) jump skip3 ; Not taken on any cores
+    () jal procedure
 
 () addi $r9, $r0, 0xC0F
 
 skip3:
+
+
+; Pseudoinstructions
+() dot4 $r8, $g0
+() dot3 $r7, $g4
+() cross3 $r12, $r7, $g8
+() addv4 $r12, $r7, $g8
+() subv4 $r12, $r7, $g8
+() addv3 $r12, $r7, $g8
+() subv3 $r12, $r7, $g8
+() scalev3 $r12, $r7, $g8
+() li $r15, 0x12345678
+() li $r15, 25.
+() li $r15, 67.124000
+() li $r15, -15/2
+() trunc $r15, $r15
+() mov $r10, $r9
+() nop
+() li $r14, 24
+() lb $r13, 5[$r14]
 
 
 ; Conditional: if (r8 == r9) {} else {}
@@ -133,7 +177,7 @@ skip3:
 () speq $p0, $r8, $r9
 (001) addi $r8, $r8, 10   ; if {}
 (000) addi $r8, $r8, -10  ; else {}
-(001) clrp (111)
+clrp (111)
 
 
 ; Conditional: if (r8 == r9 || r9 == r10) {}
@@ -144,22 +188,35 @@ skip3:
 () speq $p0, $r8, $r9
 (000) speq $p0, $r9, $r10
 (001) addi $r8, $r8, 10   ; if {}
-(001) clrp (001)
+clrp (001)
 
 
 ; Loop: for (i = 0; i < 10; i++)
 () andi $r14, $r14, 0 ; r14: Loop counter
 () andi $r15, $r15, 0
 () addi $r15, $r15, 10 ; r15: Loop end
-() splt $p0, $r15, $r15 ; Unconditional predicate set so compare runs
-(001) jump compare
+() splt $p0, $r15, $r15 ; Unconditional predicate set so cond runs
+(001) jump cond
 loop:
     (001) xor $r10, $r7, $r14 ; Do something productive
 
     (001) addi $r14, $r14, 1
-compare:
+cond:
     (001) splt $p0, $r14, $r15
     (001) jump loop
 exit:
     (000) addi $r10, $g32, -3000
     (000) jump die
+
+procedure:
+    () addi $r8, $r8, 3.
+    () mul $r8, $r8, $r8
+    (110) jal nested_procedure ; Skipped
+    () jal nested_procedure
+    jret
+
+nested_procedure:
+    () xori $r8, $r8, 0x1FFF
+    () ori $r8, $r9, 0x111
+    () mov $r8, $zero
+    jret
