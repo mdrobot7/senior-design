@@ -1,4 +1,4 @@
-`define DL_ENABLE
+// `define DL_ENABLE
 
 `define DL_NAME_MAX_LEN (256)
 
@@ -14,9 +14,15 @@
     localparam name``_color   = color; \
     localparam name``_enabled = enabled ? 1'b1 : 1'b0;
 
+`ifdef DL_ENABLE
 `define DL(name, msg) \
     begin \
         if (name``_enabled) begin \
             $display("%s[ %s ] %s\033[0m", name``_color, name``_label, $sformatf msg); \
         end \
     end
+`else
+`define DL(name, msg) \
+    begin end
+`endif
+

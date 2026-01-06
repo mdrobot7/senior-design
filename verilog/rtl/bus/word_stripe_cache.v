@@ -12,6 +12,8 @@ module word_stripe_cache_m #(
     output wire [`BUS_MOPORT] mport_o
 );
 
+    `DL_DEFINE(logger, "word_stripe_cache_m", `DL_CYAN, 1);
+
     wire [`BUS_MOPORT] cached_mporti;
     reg [`BUS_MIPORT] cached_mporto;
 
@@ -151,7 +153,7 @@ module word_stripe_cache_m #(
                                 else begin
                                     write_stripe_state <= 2;
 
-                                    $display("Attempt write 0x%h", write_stripe[write_stripe_index]);
+                                    `DL(logger, ("Attempt write 0x%h", write_stripe[write_stripe_index]));
                                     mporto[`BUS_MO_DATA] <= write_stripe[write_stripe_index];
                                 end
                             end

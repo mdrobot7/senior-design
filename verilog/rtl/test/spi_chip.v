@@ -12,6 +12,8 @@ module spi_chip_m #(
     input  wire       dqsm_i
 );
 
+    `DL_DEFINE(logger, "spi_chip_m", `DL_BLUE, 1);
+
     localparam CMD_READ  = 8'h0A;
     localparam CMD_WRITE = 8'h02;
 
@@ -50,7 +52,7 @@ module spi_chip_m #(
 
             wait(!cs_i);
 
-            $display("START!");
+            `DL(logger, ("START!"));
 
             wait(clk_i);
             command[3:0] = mosi_i;
@@ -132,7 +134,7 @@ module spi_chip_m #(
                     #delay;
                     dqsm_o = 1;
 
-                    $display("Read 0x%h from 0x%h", mem[addr], addr);
+                    `DL(logger, ("Read 0x%h from 0x%h", mem[addr], addr));
 
                     addr = addr + 1;
 
@@ -163,14 +165,14 @@ module spi_chip_m #(
                             write_data[3:0] = mosi_i;
                         end
 
-                        $display("Write 0x%h to 0x%h", write_data, addr);
+                        `DL(logger, ("Write 0x%h to 0x%h", write_data, addr));
 
                         addr = addr + 1;
                     end
                 end
             end
 
-            $display("DONE!");
+            `DL(logger, ("DONE!"));
         end
     end
 
