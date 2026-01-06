@@ -43,6 +43,7 @@
 -v $(USER_PROJECT_VERILOG)/rtl/math/div.v
 -v $(USER_PROJECT_VERILOG)/rtl/math/inv.v
 -v $(USER_PROJECT_VERILOG)/rtl/math/div_pipe.v
+-v $(USER_PROJECT_VERILOG)/rtl/math/div_pipe_rasterizer.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/rasterizer.v
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/bary_pipe.v

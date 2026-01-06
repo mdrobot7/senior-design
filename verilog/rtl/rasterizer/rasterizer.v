@@ -11,7 +11,6 @@ module rasterizer_m #(
 
     input  wire run_i,
     output wire busy_o,
-    output wire output_ready_o,
 
     input wire [7:0] color_i,
 
@@ -32,7 +31,6 @@ module rasterizer_m #(
     input wire signed [WORD_WIDTH - 1:0] v2y,
     input wire signed [WORD_WIDTH - 1:0] v2z
 );
-    assign output_ready_o = 0;
 
     localparam WORD_SMAX = 64'd1 << (WORD_WIDTH - 2);
 

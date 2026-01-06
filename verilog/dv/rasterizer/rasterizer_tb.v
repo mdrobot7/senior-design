@@ -121,7 +121,6 @@ module rasterizer_tb();
 
         .run_i(run),
         .busy_o(busy),
-        .output_ready_o(output_ready),
 
         .color_i(color),
 
@@ -213,7 +212,7 @@ module rasterizer_tb();
             end
         end
 
-`include "cow_rotate.v"
+`include "triangles.v"
 
         clk_rst.WAIT_CYCLES(10);
     

@@ -69,7 +69,7 @@ module bary_pipe_m(
     wire [`STREAM_SOPORT(2 * DIV_WIDTH)] div_so;
     wire [`STREAM_MIPORT(DIV_WIDTH)] div_mi;
     wire [`STREAM_MOPORT(DIV_WIDTH)] div_mo;
-    div_pipe_m #(DIV_WIDTH, 42'b00_00001000_10010010_01010010_10010101_01010101) div_pipe(
+    div_pipe_rasterizer_m div_pipe(
         .clk_i(clk_i),
         .nrst_i(nrst_i),
 
