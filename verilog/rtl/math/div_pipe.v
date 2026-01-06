@@ -2,7 +2,7 @@
 
 `ifdef SIM
 // enable this when you want any performance
-// `define SIM_DIV
+`define SIM_DIV
 `endif
 
 module div_pipe_m #(
@@ -38,12 +38,6 @@ module div_pipe_m #(
     wire signed [WIDTH - 1:0] y;
 
     assign y = in_data[1 * WIDTH+:WIDTH] / in_data[0 * WIDTH+:WIDTH];
-
-    // div_m #(2 * WIDTH) div (
-    //     .a_i(in_data[1 * WIDTH+:WIDTH]),
-    //     .b_i(in_data[0 * WIDTH+:WIDTH]),
-    //     .y_o(y)
-    // );
 
     always @(*) begin
         sstream_o[`STREAM_SO_READY(IN_SIZE)]  <= temp_streami[`STREAM_MI_READY(OUT_SIZE)];

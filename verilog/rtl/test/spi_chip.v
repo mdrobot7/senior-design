@@ -92,20 +92,6 @@ module spi_chip_m #(
                         wait(!clk_i);
                         wait(clk_i);
                     end
-
-                    // if (command == CMD_READ) begin
-                    //     if (!collision) begin
-                    //         latency = 0;
-                    //     end
-                    //     else begin
-                    //         // $display("Refresh collision");
-                    //         latency = LATENCY_COUNT;
-                    //         collision = 0;
-                    //     end
-                    // end
-                    // else begin
-                    //     latency = 0;
-                    // end
                     latency = 0;
                 end
             end
