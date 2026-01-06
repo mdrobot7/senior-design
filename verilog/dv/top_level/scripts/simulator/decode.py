@@ -50,17 +50,18 @@ class Instruction:
         SPLTU   = 0x19
         CLRP    = 0x1A
         SPR     = 0x1B
-        SREQ    = 0x1C
-        SRLT    = 0x1D
-        SRLTU   = 0x1E
-        LW      = 0x1F
-        LB      = 0x20
-        SW      = 0x21
-        SB      = 0x22
-        JUMP    = 0x23
-        JAL     = 0x24
-        JRET    = 0x25
-        HALT    = 0x26
+        SRP     = 0x1C
+        SREQ    = 0x1D
+        SRLT    = 0x1E
+        SRLTU   = 0x1F
+        LW      = 0x20
+        LB      = 0x21
+        SW      = 0x22
+        SB      = 0x23
+        JUMP    = 0x24
+        JAL     = 0x25
+        JRET    = 0x26
+        HALT    = 0x27
 
         OPCODE_TO_STRING = {
             ADD:     "add",
@@ -91,6 +92,7 @@ class Instruction:
             SPLTU:   "spltu",
             CLRP:    "clrp",
             SPR:     "spr",
+            SRP:     "srp",
             SREQ:    "sreq",
             SRLT:    "srlt",
             SRLTU:   "srltu",
@@ -133,6 +135,7 @@ class Instruction:
             SPLTU:  "P",
             CLRP:   "I",
             SPR:    "R",
+            SRP:    "R",
             SREQ:   "R",
             SRLT:   "R",
             SRLTU:  "R",
@@ -201,7 +204,8 @@ class Instruction:
         new_pc = pc + 4
 
         if self.pred != predicate[0] and self.opcode not \
-            in (self.Opcode.CLRP, self.Opcode.JRET, self.Opcode.HALT):
+            in (self.Opcode.CLRP, self.Opcode.SPR, self.Opcode.JRET, self.Opcode.HALT):
+            # Predicate doesn't match, skip
             return (True, new_pc)
         elif self.opcode == self.Opcode.ADD:
             regs[self.rd] = regs[self.rs1] + regs[self.rs2]
@@ -263,14 +267,8 @@ class Instruction:
             regs[self.rd] = (regs[self.rd] & 0xFFFF0000) | self.imm16
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == self.Opcode.OUT:
-            outbox[0] = regs[(self.rs1 + 0) % NUM_LOCAL_REGS]
-            outbox[1] = regs[(self.rs1 + 1) % NUM_LOCAL_REGS]
-            outbox[2] = regs[(self.rs1 + 2) % NUM_LOCAL_REGS]
-            outbox[3] = regs[(self.rs1 + 3) % NUM_LOCAL_REGS]
-            outbox[4] = regs[(self.rs1 + 4) % NUM_LOCAL_REGS]
-            outbox[5] = regs[(self.rs1 + 5) % NUM_LOCAL_REGS]
-            outbox[6] = regs[(self.rs1 + 6) % NUM_LOCAL_REGS]
-            outbox[7] = regs[(self.rs1 + 7) % NUM_LOCAL_REGS]
+            for i, r in enumerate(regs[0:8]):
+                outbox[i] = r
         elif self.opcode == self.Opcode.MAC:
             mult = (regs[self.rs1] * regs[self.rs2]) >> DECIMAL_POS
             mac[0] += mult & 0xFFFFFFFF
@@ -294,6 +292,8 @@ class Instruction:
             predicate[0] &= ~self.zero_ext_imm13
         elif self.opcode == self.Opcode.SPR:
             regs[self.rd] = predicate[0]
+        elif self.opcode == self.Opcode.SRP:
+            predicate[0] = regs[self.rd] & 0b111;
         elif self.opcode == self.Opcode.SREQ:
             regs[self.rd] = bool(self.rs1 == self.rs2)
         elif self.opcode == self.Opcode.SRLT:
