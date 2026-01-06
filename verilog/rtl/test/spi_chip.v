@@ -62,7 +62,7 @@ module spi_chip_m #(
             command[7:4] = mosi_i;
             wait(!clk_i);
 
-            // $display("Got command 0x%h", command);
+            `DL(logger, ("Got command 0x%h", command));
 
             for (i = 0; i < 4; i = i + 1) begin
                 wait(clk_i);
@@ -72,7 +72,7 @@ module spi_chip_m #(
             end
             #1;
 
-            // $display("Got address 0x%h", address);
+            `DL(logger, ("Got address 0x%h", address));
 
             begin : LATENCY
                 integer latency;
@@ -103,7 +103,7 @@ module spi_chip_m #(
                 integer delay;
                 delay = {$random} % 6 + 1;
 
-                // $display("Offset delay: %d ns", delay);
+                `DL(logger, ("Offset delay: %d ns", delay));
 
                 for (i = 0; i < PRE_CYCLES; i = i + 1) begin
                     wait(clk_i);
