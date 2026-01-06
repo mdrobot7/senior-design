@@ -12,7 +12,6 @@ module word_stripe_cache_m #(
     output wire [`BUS_MOPORT] mport_o
 );
 
-
     wire [`BUS_MOPORT] cached_mporti;
     reg [`BUS_MIPORT] cached_mporto;
 
