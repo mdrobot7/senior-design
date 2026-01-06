@@ -192,7 +192,7 @@ OPCODE_HALT     = 0x27`6
     {pred: predicate} sllv    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_SLLV  @ pred @ rd @ rs1 @ rs2 @ 0`7
     {pred: predicate} srlv    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_SRLV  @ pred @ rd @ rs1 @ rs2 @ 0`7
     {pred: predicate} srav    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_SRAV  @ pred @ rd @ rs1 @ rs2 @ 0`7
-    {pred: predicate} out     {rs: srcreg}                                      => OPCODE_OUT   @ pred @ 0`4 @ rs @ 0`13
+    {pred: predicate} out                                                       => OPCODE_OUT   @ pred @ 0`23
 
     ; Load immediate
     {pred: predicate} lui     {rd: destreg}, {imm: immediate16} => OPCODE_LUI @ pred @ rd @ 0`3 @ imm

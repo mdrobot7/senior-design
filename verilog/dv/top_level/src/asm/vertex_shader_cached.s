@@ -35,6 +35,6 @@ clrp (111)
 () macrd $r8
 
 ; Ship to rasterizer
-() out $r5
+() out
 
 halt

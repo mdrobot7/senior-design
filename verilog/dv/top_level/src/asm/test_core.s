@@ -69,7 +69,7 @@ clrp (111)
 
 
 ; Outbox
-() out $r0
+() out
 
 
 ; MAC

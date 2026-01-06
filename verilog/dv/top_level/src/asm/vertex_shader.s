@@ -50,7 +50,7 @@ clrp (111)
 () macrd $r11
 
 ; Ship to rasterizer
-() out $r8
+() out
 
 ; Load vertex 2
 () lw $r4, 0[$r2]
@@ -70,7 +70,7 @@ clrp (111)
 () macrd $r11
 
 ; Ship to rasterizer
-() out $r8
+() out
 
 ; Load vertex 3
 () lw $r4, 0[$r3]
@@ -90,6 +90,6 @@ clrp (111)
 () macrd $r11
 
 ; Ship to rasterizer
-() out $r8
+() out
 
 halt
