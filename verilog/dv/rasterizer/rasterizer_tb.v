@@ -23,19 +23,16 @@ module rasterizer_tb();
     wire [`BUS_SIPORT] sportai;
     wire [`BUS_SOPORT] sportao;
 
-    assign mportbo = mportao;
-    assign mportai = mportbi;
+    word_stripe_cache_m #(8, 2) word_cache(
+        .clk_i(clk),
+        .nrst_i(nrst),
 
-    // word_stripe_cache_m #(20, 20) word_cache(
-    //     .clk_i(clk),
-    //     .nrst_i(nrst),
+        .cached_mport_i(mportao), 
+        .cached_mport_o(mportai),
 
-    //     .cached_mport_i(mportao),
-    //     .cached_mport_o(mportai),
-
-    //     .mport_i(mportbi),
-    //     .mport_o(mportbo)
-    // );
+        .mport_i(mportbi),
+        .mport_o(mportbo)
+    );
 
     assign mportco = mportbo;
     assign mportbi = mportci;
@@ -84,7 +81,7 @@ module rasterizer_tb();
         .spi_dqsm_o(spi_dqsmo)
     );
 
-    spi_chip_m #(7, 1, 500000) spi_chip(
+    spi_chip_m #(5, 1, 500000) spi_chip(
         .clk_i(spi_clk),
         .cs_i(spi_cs),
         .mosi_i(spi_mosi),
@@ -124,7 +121,6 @@ module rasterizer_tb();
 
         .run_i(run),
         .busy_o(busy),
-        .output_ready_o(output_ready),
 
         .color_i(color),
 
@@ -198,10 +194,28 @@ module rasterizer_tb();
         wavg_stat.RESET();
         wavg_fifo_stat.RESET();
 
-        `include "model.v"
+        for (x = 0; x < 320; x = x + 1) begin
+            for (y = 0; y < 240; y = y + 1) begin : DB_FILL
+                reg [31:0] value;
+                value = 32'hFFFFFFFF;
+
+                spi_chip.mem[`ADDR_DEPTH_BUFFER + (y * 320 + x) * 4 + 0] = value[7:0];
+                spi_chip.mem[`ADDR_DEPTH_BUFFER + (y * 320 + x) * 4 + 1] = value[15:8];
+                spi_chip.mem[`ADDR_DEPTH_BUFFER + (y * 320 + x) * 4 + 2] = value[23:16];
+                spi_chip.mem[`ADDR_DEPTH_BUFFER + (y * 320 + x) * 4 + 3] = value[31:24];
+            end
+        end
+
+        for (x = 0; x < 320; x = x + 1) begin
+            for (y = 0; y < 240; y = y + 1) begin
+                spi_chip.mem[y * 320 + x] = 0;
+            end
+        end
+
+`include "triangles.v"
 
         clk_rst.WAIT_CYCLES(10);
-
+    
         $display("Elapsed %d clock cycles", clk_rst.current_cycle);
         $display("%d FPS at 10 MHz", 10000000.0 / clk_rst.current_cycle);
         $display("%d FPS at 20 MHz", 20000000.0 / clk_rst.current_cycle);
@@ -237,7 +251,7 @@ module rasterizer_tb();
     end
 
     initial begin
-        #1000000000;
+        #100000000000;
         $finish;
     end
 

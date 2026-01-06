@@ -24,21 +24,31 @@ module stream_fifo_m #(
     assign mstream_o[`STREAM_MO_DATA(SIZE)] = buffer[head];
 
     always @(posedge clk_i, negedge nrst_i) begin
-        if (!nrst_i) begin
+        if (!nrst_i) begin : RESET
+            integer i;
+
             head <= 0;
             size <= 0;
+
+            for (i = 0; i < SIZE; i = i + 1) buffer[i] <= 0;
         end
-        else if (clk_i) begin
-            if (sstream_i[`STREAM_SI_VALID(SIZE)] && size != DEPTH) begin
+        else if (clk_i) begin : CLOCK
+            reg [DEPTH_LOG - 1:0] new_size;
+
+            new_size = size;
+
+            if (sstream_i[`STREAM_SI_VALID(SIZE)] && sstream_o[`STREAM_SO_READY(SIZE)]) begin
                 buffer[(head + size) % DEPTH] <= sstream_i[`STREAM_SI_DATA(SIZE)];
 
-                size <= size + 1;
+                new_size = new_size + 1;
             end
 
-            if (mstream_i[`STREAM_MI_READY(SIZE)] && size != 0) begin
+            if (mstream_i[`STREAM_MI_READY(SIZE)] && mstream_o[`STREAM_MO_VALID(SIZE)]) begin
                 head <= (head + 1) % DEPTH;
-                size <= size - 1;
+                new_size = new_size - 1;
             end
+
+            size = new_size;
         end
     end
 

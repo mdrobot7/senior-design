@@ -1,5 +1,10 @@
 // adapted from https://github.com/risclite/verilog-divider/blob/master/divfunc.v
 
+`ifdef SIM
+// enable this when you want any performance
+`define SIM_DIV
+`endif
+
 module div_pipe_m #(
     parameter WIDTH = 32,
     parameter [WIDTH - 1:0] STAGE_LOCS = 0,
@@ -13,9 +18,46 @@ module div_pipe_m #(
     input  wire [`STREAM_SIPORT(IN_SIZE)] sstream_i,
     output reg  [`STREAM_SOPORT(IN_SIZE)] sstream_o,
 
+`ifdef SIM_DIV
+    input  wire [`STREAM_MIPORT(OUT_SIZE)] mstream_i,
+    output wire [`STREAM_MOPORT(OUT_SIZE)] mstream_o
+`else
     input  wire [`STREAM_MIPORT(OUT_SIZE)] mstream_i,
     output reg  [`STREAM_MOPORT(OUT_SIZE)] mstream_o
+`endif
 );
+
+`ifdef SIM_DIV
+
+    wire [`STREAM_MIPORT(OUT_SIZE)] temp_streami;
+    reg  [`STREAM_MOPORT(OUT_SIZE)] temp_streamo;
+
+    wire [WIDTH * 2 - 1:0] in_data;
+    assign in_data = sstream_i[`STREAM_SI_DATA(IN_SIZE)];
+    
+    wire signed [WIDTH - 1:0] y;
+
+    assign y = in_data[1 * WIDTH+:WIDTH] / in_data[0 * WIDTH+:WIDTH];
+
+    always @(*) begin
+        sstream_o[`STREAM_SO_READY(IN_SIZE)]  <= temp_streami[`STREAM_MI_READY(OUT_SIZE)];
+        temp_streamo[`STREAM_MO_LAST(OUT_SIZE)]  <= sstream_i[`STREAM_SI_LAST(IN_SIZE)];
+        temp_streamo[`STREAM_MO_VALID(OUT_SIZE)] <= sstream_i[`STREAM_SI_VALID(IN_SIZE)];
+        temp_streamo[`STREAM_MO_DATA(OUT_SIZE)]  <= y;
+    end
+
+    stream_fifo_m #(OUT_SIZE, 4) fifo(
+        .clk_i(clk_i),
+        .nrst_i(nrst_i),
+
+        .sstream_i(temp_streamo),
+        .sstream_o(temp_streami),
+        
+        .mstream_i(mstream_i),
+        .mstream_o(mstream_o)
+    );
+
+`else
 
     wire [WIDTH * 2 - 1:0] in_data;
     assign in_data = sstream_i[`STREAM_SI_DATA(IN_SIZE)];
@@ -112,5 +154,7 @@ module div_pipe_m #(
             end
         end
     endgenerate
+
+`endif
 
 endmodule

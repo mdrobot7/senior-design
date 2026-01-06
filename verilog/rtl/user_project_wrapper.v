@@ -356,7 +356,7 @@ module user_project_wrapper #(
                         addr <= 0;
                     end
 
-                    if (timer == 500) begin
+                    if (timer == 100000) begin
                         enable <= 1;
                     end
 

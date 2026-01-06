@@ -43,8 +43,9 @@ module bary_pipe_m(
     localparam STATE_RUN7      = 5'b10000;
     localparam STATE_RUN8      = 5'b10001;
     localparam STATE_RUN9      = 5'b10010;
-    localparam STATE_COMPLETE  = 5'b10011;
-    localparam STATE_DONE      = 5'b10100;
+    localparam STATE_RUN10     = 5'b10011;
+    localparam STATE_COMPLETE  = 5'b10100;
+    localparam STATE_DONE      = 5'b10101;
 
     reg [4:0] state;
 
@@ -62,9 +63,39 @@ module bary_pipe_m(
     wire signed [`WORD_WIDTH - 1:0] m1y;
     mul_m #(`WORD_WIDTH) mul1( .a_i(m1a), .b_i(m1b), .y_o(m1y) );
 
-    reg  signed [`WORD_WIDTH - 1:0] d1a, d1b;
+    localparam DIV_WIDTH = `DECIMAL_POS + `WORD_WIDTH;
+
+    wire [`STREAM_SIPORT(2 * DIV_WIDTH)] div_si;
+    wire [`STREAM_SOPORT(2 * DIV_WIDTH)] div_so;
+    wire [`STREAM_MIPORT(DIV_WIDTH)] div_mi;
+    wire [`STREAM_MOPORT(DIV_WIDTH)] div_mo;
+    div_pipe_rasterizer_m div_pipe(
+        .clk_i(clk_i),
+        .nrst_i(nrst_i),
+
+        .sstream_i(div_si),
+        .sstream_o(div_so),
+        .mstream_i(div_mi),
+        .mstream_o(div_mo)
+    );
+
+    reg  d1in_valid;
+    wire d1out_valid;
+    reg  d1out_ready;
+    reg signed [`WORD_WIDTH - 1:0] d1a, d1b;
     wire signed [`WORD_WIDTH - 1:0] d1y;
-    div_m #(`WORD_WIDTH) div1( .a_i(d1a), .b_i(d1b), .y_o(d1y) );
+
+    wire signed [DIV_WIDTH - 1:0] d1ae, d1be;
+    assign d1ae = d1a;
+    assign d1be = d1b;
+
+    assign div_si[`STREAM_SI_DATA(2 * DIV_WIDTH)] = { d1ae << `DECIMAL_POS, d1be };
+    assign div_si[`STREAM_SI_LAST(2 * DIV_WIDTH)] = 0;
+    assign div_si[`STREAM_SI_VALID(2 * DIV_WIDTH)] = d1in_valid;
+
+    assign div_mi[`STREAM_MI_READY(DIV_WIDTH)] = d1out_ready;
+    assign d1y = div_mo[`STREAM_MO_DATA(DIV_WIDTH)];
+    assign d1out_valid = div_mo[`STREAM_MO_VALID(DIV_WIDTH)];
 
     reg [`SC_WIDTH - 1:0] posx, posy;
 
@@ -88,6 +119,8 @@ module bary_pipe_m(
             init_o <= 0;
             discard_o <= 0;
 
+            d1in_valid <= 0;
+
             posx <= 0;
             posy <= 0;
 
@@ -105,6 +138,8 @@ module bary_pipe_m(
             l2 <= `WORD_SMAX;
         end
         else if (clk_i) begin
+            d1in_valid <= 0;
+
             case (state)
                 STATE_READY: begin
                     if (run_i) begin
@@ -275,14 +310,13 @@ module bary_pipe_m(
 
                     a1a <= m1y;
 
+                    d1in_valid <= 1;
                     d1a <= a1y;
                     d1b <= det_t;
                 end
 
                 STATE_RUN5: begin
                     state <= STATE_RUN6;
-                    
-                    l0 <= d1y;
 
                     m1a <= x0mx2;
                     m1b <= s1y;
@@ -291,29 +325,40 @@ module bary_pipe_m(
                 STATE_RUN6: begin
                     state <= STATE_RUN7;
 
-                    s1a <= 1 << `DECIMAL_POS;
-                    s1b <= l0;
-
                     a1b <= m1y;
                 end
 
                 STATE_RUN7: begin
                     state <= STATE_RUN8;
 
+                    d1in_valid <= 1;
                     d1a <= a1y;
                     d1b <= det_t;
                 end
 
                 STATE_RUN8: begin
-                    state <= STATE_RUN9;
+                    if (d1out_valid) begin
+                        state <= STATE_RUN9;
 
-                    l1 <= d1y;
+                        l0 <= d1y;
 
-                    s1a <= s1y;
-                    s1b <= d1y;
+                        s1a <= 1 << `DECIMAL_POS;
+                        s1b <= d1y;
+                    end
                 end
 
                 STATE_RUN9: begin
+                    if (d1out_valid) begin
+                        state <= STATE_RUN10;
+
+                        l1 <= d1y;
+                        
+                        s1a <= s1y;
+                        s1b <= d1y;
+                    end
+                end
+
+                STATE_RUN10: begin
                     state <= STATE_COMPLETE;
 
                     mstream_o[`STREAM_MO_VALID(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] <= 1;
@@ -341,5 +386,13 @@ module bary_pipe_m(
     end
 
     assign sstream_o[`STREAM_SO_READY(`SC_WIDTH * 2)] = state == STATE_AWAIT_POS;
+
+    always @(*) begin
+        case (state)
+            STATE_RUN8, STATE_RUN9: d1out_ready <= 1;
+
+            default: d1out_ready <= 0;
+        endcase
+    end
 
 endmodule
