@@ -21,7 +21,7 @@
 clrp (111)
 
 ; Get pixel memory address
-() li $r9, 320.000000 ; r9: Scratch
+() li $r9, 320.000000 ; r9: Scratch, must use fixed point for multiplication
 () mul $r3, $r3, $r9
 () add $r3, $r3, $r2
 () add $r3, $r3, $g44
