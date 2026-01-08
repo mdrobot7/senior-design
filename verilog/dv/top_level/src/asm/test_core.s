@@ -33,13 +33,18 @@ clrp (111)
 () sub $r10, $r9, $r0
 () sub $r10, $r0, $r9
 () mul $r11, $r9, $r4
-() muli $r11, $r11, -10
+() lli $r9, 4.
+() lli $r11, 1234
+() mul $r11, $r9, $r0
+() lui $r10, 0xFFFF
+() lli $r10, -3.140000
+() mul $r11, $r9, $r10
 () muli $r11, $r11, -3.
-() muli $r11, $r11, -1.513
+() muli $r11, $r11, -1.513000
 () muli $r11, $r11, 1/2
 () and $r12, $r6, $r11
 () andi $r12, $r7, 0b101
-() or $r13, $r1, $r6
+() or $r13, $r6, $r9
 () ori $r13, $r13, 0xF00
 () xor $r13, $r12, $r13
 () xori $r13, $r11, 0x555
@@ -58,7 +63,7 @@ clrp (111)
 () addi $r14, $zero, -4000
 () srlv $r14, $r14, $r2
 () addi $r14, $zero, -4000
-() srav $r14, $r2, $r14
+() srav $r14, $r14, $r2
 
 
 ; Load immediate
@@ -73,9 +78,14 @@ clrp (111)
 
 
 ; MAC
-() mac $r1, $r1
-() mac $r3, $r4
-() mac $r5, $r6
+() li $r9, 4.123000
+() li $r10, 100.
+() li $r11, 20.195345
+() mac $r9, $r10
+() maccl
+() mac $r9, $r10
+() mac $r10, $r11
+() mac $r11, $r11
 () macrd $r15
 () mac $r5, $r6
 () macrd $r15
@@ -85,17 +95,18 @@ clrp (111)
 
 ; Memory
 () lw $r8, 0[$r0]
-() lw $r8, 4[$r8]
-() lw $r8, 4[$r2]
+() lw $r8, 4[$r4]
+() lw $r8, 6[$r6]
 () sw $r8, 0[$r0]
 () sb $r8, 5[$r0]
 () addi $r10, $r10, 1000
 () sw $r11, 0[$r0]
+() addi $r11, $zero, 0x1EED
 () lw $r11, 0[$r0]
-() sw $r10, 1[$r0]
-() sw $r10, 3[$r0]
-() lw $r12, 2[$r0]
-() lw $r13, 0[$r0]
+() sw $r10, 0[$r0]
+() sw $r10, 4[$r0]
+() lb $r12, 2[$r0]
+() lb $r13, 5[$r0]
 
 
 ; Predication
@@ -122,7 +133,6 @@ clrp (111)
 () srlt $r13, $r0, $r0
 () srlt $r13, $r1, $r0
 () srlt $r13, $r0, $r1
-() srlt $r13, $r0, $r15
 () srltu $r13, $r0, $r15
 () srltu $r13, $r15, $r0
 
@@ -130,6 +140,7 @@ clrp (111)
 ; Control flow
 () jump skip
 die:
+    () mov $r12, $zero
     halt
 skip:
     () jump skip2
@@ -181,7 +192,7 @@ clrp (111)
 
 
 ; Conditional: if (r8 == r9 || r9 == r10) {}
-() addi $r8, $r0, 2.5
+() addi $r8, $r0, 2.500000
 () addi $r9, $r0, 7
 () addi $r10, $r10, 7
 
@@ -195,7 +206,7 @@ clrp (001)
 () andi $r14, $r14, 0 ; r14: Loop counter
 () andi $r15, $r15, 0
 () addi $r15, $r15, 10 ; r15: Loop end
-() splt $p0, $r15, $r15 ; Unconditional predicate set so cond runs
+() speq $p0, $r15, $r15 ; Unconditional predicate set so cond runs
 (001) jump cond
 loop:
     (001) xor $r10, $r7, $r14 ; Do something productive
