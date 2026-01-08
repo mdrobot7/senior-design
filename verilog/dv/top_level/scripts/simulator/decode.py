@@ -133,7 +133,7 @@ class Instruction:
             SPEQ:   "P",
             SPLT:   "P",
             SPLTU:  "P",
-            CLRP:   "I",
+            CLRP:   "P",
             SPR:    "R",
             SRP:    "R",
             SREQ:   "R",
@@ -203,6 +203,8 @@ class Instruction:
         regs = local_regs + global_regs
         new_pc = pc + 4
 
+        regs = [signed(r, REGISTER_SIZE_BITS) for r in regs] # Make sure everything is sign extended
+
         if self.pred != predicate[0] and self.opcode not \
             in (self.Opcode.CLRP, self.Opcode.SPR, self.Opcode.JRET, self.Opcode.HALT):
             # Predicate doesn't match, skip
@@ -251,55 +253,59 @@ class Instruction:
             regs[self.rd] = regs[self.rs1] >> self.shift
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == self.Opcode.SLLV:
-            regs[self.rd] = regs[self.rs1] << regs[self.rs2]
+            regs[self.rd] = regs[self.rs1] << (regs[self.rs2] & 0b11111)
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == self.Opcode.SRLV:
             regs[self.rs1] &= 0xFFFFFFFF
-            regs[self.rd] = regs[self.rs1] >> regs[self.rs2]
+            regs[self.rd] = regs[self.rs1] >> (regs[self.rs2] & 0b11111)
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == self.Opcode.SRAV:
-            regs[self.rd] = regs[self.rs1] >> regs[self.rs2]
+            regs[self.rd] = regs[self.rs1] >> (regs[self.rs2] & 0b11111)
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == self.Opcode.LUI:
-            regs[self.rd] = (regs[self.rd] & 0x0000FFFF) | (self.imm16 << 16)
+            regs[self.rd] = self.imm16 << 16
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == self.Opcode.LLI:
-            regs[self.rd] = (regs[self.rd] & 0xFFFF0000) | self.imm16
+            regs[self.rd] = (regs[self.rd] & 0xFFFF0000) | (self.imm16 & 0x0000FFFF)
             regs[self.rd] &= 0xFFFFFFFF
         elif self.opcode == self.Opcode.OUT:
-            for i, r in enumerate(regs[0:8]):
-                outbox[i] = r
+            for i, r in enumerate(regs[1:9]): # r0 is $tid, trust me this is right
+                outbox[i] = r & 0xFFFFFFFF
         elif self.opcode == self.Opcode.MAC:
             mult = (regs[self.rs1] * regs[self.rs2]) >> DECIMAL_POS
             mac[0] += mult & 0xFFFFFFFF
+            mac[0] &= 0xFFFFFFFF
         elif self.opcode == self.Opcode.MACCL:
             mac[0] = 0
         elif self.opcode == self.Opcode.MACRD:
             regs[self.rd] = mac[0]
         elif self.opcode == self.Opcode.SPEQ:
             cond = bool(regs[self.rs1] == regs[self.rs2])
-            predicate[0] &= (1 << self.pred_data)
-            predicate[0] |= (cond << self.pred_data)
+            predicate[0] &= ~self.pred_data
+            if cond:
+                predicate[0] |= self.pred_data
         elif self.opcode == self.Opcode.SPLT:
             cond = bool(regs[self.rs1] < regs[self.rs2])
-            predicate[0] &= (1 << self.pred_data)
-            predicate[0] |= (cond << self.pred_data)
+            predicate[0] &= ~self.pred_data
+            if cond:
+                predicate[0] |= self.pred_data
         elif self.opcode == self.Opcode.SPLTU:
             cond = bool(unsigned(regs[self.rs1], REGISTER_SIZE_BITS) < unsigned(regs[self.rs2], REGISTER_SIZE_BITS))
-            predicate[0] &= (1 << self.pred_data)
-            predicate[0] |= (cond << self.pred_data)
+            predicate[0] &= ~self.pred_data
+            if cond:
+                predicate[0] |= self.pred_data
         elif self.opcode == self.Opcode.CLRP:
-            predicate[0] &= ~self.zero_ext_imm13
+            predicate[0] &= ~self.pred_data
         elif self.opcode == self.Opcode.SPR:
             regs[self.rd] = predicate[0]
         elif self.opcode == self.Opcode.SRP:
             predicate[0] = regs[self.rd] & 0b111;
         elif self.opcode == self.Opcode.SREQ:
-            regs[self.rd] = bool(self.rs1 == self.rs2)
+            regs[self.rd] = bool(regs[self.rs1] == regs[self.rs2])
         elif self.opcode == self.Opcode.SRLT:
-            regs[self.rd] = bool(self.rs1 < self.rs2)
+            regs[self.rd] = bool(regs[self.rs1] < regs[self.rs2])
         elif self.opcode == self.Opcode.SRLTU:
-            regs[self.rd] = bool(unsigned(self.rs1, REGISTER_SIZE_BITS) < unsigned(self.rs2, REGISTER_SIZE_BITS))
+            regs[self.rd] = bool(unsigned(regs[self.rs1], REGISTER_SIZE_BITS) < unsigned(regs[self.rs2], REGISTER_SIZE_BITS))
         elif self.opcode == self.Opcode.LW:
             offset = regs[self.rs1] + self.mem_offset
             if (offset % 4) != 0:
@@ -344,6 +350,8 @@ class Instruction:
         else:
             raise self.OpcodeError()
 
+        regs = [unsigned(r, REGISTER_SIZE_BITS) for r in regs]
+
         # Copy back *without destroying the reference*
         for i, r in enumerate(regs[0:NUM_LOCAL_REGS]):
             local_regs[i] = r
@@ -354,11 +362,13 @@ class Instruction:
         rs2 = f"$r{self.rs2}"
         rd = f"$r{self.rd}"
         pred = f"{self.pred:03b}"
-        if self.opcode in (self.Opcode.MACCL, self.Opcode.JRET, self.Opcode.HALT): # 0 operands
+        if self.opcode in (self.Opcode.JRET, self.Opcode.HALT): # 0 operands, no predicate
+            return f"{self.Opcode.to_string(self.opcode)}"
+        if self.opcode in (self.Opcode.OUT, self.Opcode.MACCL, self.Opcode.JRET, self.Opcode.HALT): # 0 operands
             return f"({pred}) {self.Opcode.to_string(self.opcode)}"
-        if self.opcode in (self.Opcode.OUT, self.Opcode.MACRD, self.Opcode.SPR): # 1 operand
+        if self.opcode in (self.Opcode.MACRD, self.Opcode.SPR, self.Opcode.SRP): # 1 operand
             return f"({pred}) {self.Opcode.to_string(self.opcode)} {rd}"
-        if self.opcode == self.Opcode.MAC:
+        if self.opcode == self.Opcode.MAC: # 2 operands
             return f"({pred}) {self.Opcode.to_string(self.opcode)} {rs1}, {rs2}"
         return f"({pred}) {self.Opcode.to_string(self.opcode)} {rd}, {rs1}, {rs2}"
 
@@ -369,32 +379,32 @@ class Instruction:
         if self.opcode in (self.Opcode.ANDI, self.Opcode.ORI, self.Opcode.XORI):
             imm = f"0x{self.zero_ext_imm13:X}"
         else:
-            imm = f"0x{self.sign_ext_imm13:X}"
+            imm = f"0x{unsigned(self.sign_ext_imm13, 13):X}"
         return f"({pred}) {self.Opcode.to_string(self.opcode)} {rd}, {rs1}, {imm}"
 
     def _str_dtype(self):
-        imm = f"0x{self.imm16:X}"
+        imm = f"0x{unsigned(self.imm16, 16):X}"
         rd = f"$r{self.rd}"
         pred = f"{self.pred:03b}"
         return f"({pred}) {self.Opcode.to_string(self.opcode)} {rd}, {imm}"
 
     def _str_jtype(self):
-        offset = f"0x{self.jump_offset:X}"
+        offset = f"0x{unsigned(self.jump_offset, 23):X}"
         pred = f"{self.pred:03b}"
         return f"({pred}) {self.Opcode.to_string(self.opcode)} {offset}"
 
     def _str_ptype(self):
         rs1 = f"$r{self.rs1}"
         rs2 = f"$r{self.rs2}"
-        pred_dest = f"$p{int(math.log2(self.pred_data))}"
-        pred = f"{self.pred:03b}"
         if self.opcode == self.Opcode.CLRP:
-            return f"({pred}) {self.Opcode.to_string(self.opcode)} {self.pred_data:03b}"
+            return f"{self.Opcode.to_string(self.opcode)} {self.pred_data:03b}"
+        pred = f"{self.pred:03b}"
+        pred_dest = f"$p{int(math.log2(self.pred_data))}"
         return f"({pred}) {self.Opcode.to_string(self.opcode)} {pred_dest}, {rs1}, {rs2}"
 
     def _str_mtype(self):
         reg_offset = f"$r{self.rs1}"
-        mem_offset = f"{self.mem_offset}"
+        mem_offset = f"{unsigned(self.mem_offset, 13)}"
         rds = f"$r{self.rd}"
         pred = f"{self.pred:03b}"
         return f"({pred}) {self.Opcode.to_string(self.opcode)} {rds}, {mem_offset}[{reg_offset}]"

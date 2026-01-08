@@ -27,9 +27,8 @@ class CoreController:
     def __init__(self, program_path: str, memory_path: Union[str, None],
                  global_registers_path: Union[str, None], tid: int, max_call_stack_depth: int) -> None:
         self.pc = 0
-        self.next_pc = 4
         self.inst = None
-        self.next_inst = None
+        self.expected_next_inst = None
 
         with open(program_path, "rb") as f:
             self.prog = f.read()
@@ -54,18 +53,17 @@ class CoreController:
             self.global_regs = [int.from_bytes(global_regs_bytes[i:i+4], byteorder="big") for i in range(0, NUM_GLOBAL_REGS*4, 4)]
         else:
             self.global_regs = [random.randrange(0, 0xFFFFFFFF, 1) for _ in range(NUM_GLOBAL_REGS)]
+            self.global_regs[NUM_GLOBAL_REGS-1] = 0 # Zero register
 
         self.call_stack: List[int] = []
         self.max_call_stack_depth = max_call_stack_depth
 
         self.core = Core(tid, self.global_regs, self.memory, self.call_stack, self.max_call_stack_depth)
 
-        self.next_inst = Instruction(self.prog[0:4])
+        self.expected_next_inst = Instruction(self.prog[0:4]) # Always PC+4, may not always be the real next inst
 
     """
     Run the program from the current PC to the end.
-    If step() is never called, it runs from the beginning to
-    the end.
     """
     def run(self) -> None:
         try:
@@ -88,15 +86,16 @@ class CoreController:
     Read an instruction from IMEM.
     """
     def _read_inst(self) -> None:
-        self.pc = self.next_pc
-        if self.pc > len(self.prog):
+        if self.pc >= len(self.prog):
             raise self.ProgramError(f"Fatal error: PC reached instruction address outside of program memory. PC: 0x{self.pc:08X}")
-        self.inst = copy.deepcopy(self.next_inst)
-        if self.pc + 4 > len(self.prog):
-            self.next_inst = None
+        inst_bytes = self.prog[self.pc:self.pc+4]
+        self.inst = Instruction(inst_bytes)
+
+        if self.pc + 8 <= len(self.prog):
+            inst_bytes = self.prog[self.pc+4:self.pc+8]
+            self.expected_next_inst = Instruction(inst_bytes)
         else:
-            inst_bytes = self.prog[self.pc:self.pc+4]
-            self.next_inst = Instruction(inst_bytes)
+            self.expected_next_inst = None
 
     """
     Run an instruction.
@@ -110,7 +109,7 @@ class CoreController:
         if not should_continue:
             return True
         else:
-            self.next_pc = next_pc
+            self.pc = next_pc
             return False
 
     def dump_memory(self, path: str) -> None:
@@ -121,8 +120,15 @@ class CoreController:
         return self.core.__str__()
 
     def __str__(self) -> str:
-        return \
+        if self.pc == 0:
+            return \
+f"""\
+Next Instruction: {self.expected_next_inst}\
+"""
+        else:
+            return \
 f"""\
 PC: {self.pc:08X}
-Next Instruction: {self.next_inst}\
+Current Instruction: {self.inst}
+Next Instruction in IMEM: {self.expected_next_inst}\
 """
