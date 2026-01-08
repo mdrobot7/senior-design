@@ -69,7 +69,7 @@ class CoreController:
         try:
             self._read_inst()
             while not self._run_inst():
-                pass
+                self._read_inst()
         except:
             raise
 
