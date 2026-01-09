@@ -23,27 +23,32 @@ UMOD_RESULTS_ADDR     = 0x00001000
 IMOD_RESULTS_ADDR     = 0x00001400
 FIXEDMOD_RESULTS_ADDR = 0x00001800
 
+clrp (111)
+
 ; Test udiv
-; r0-r3: Reserved for calling convention
+; r0-r3: Reserved for calling convention, r0-r2 will be clobbered
 ; r4: loop end (same for outer/inner)
 ; r5: outer loop counter
 ; r6: inner loop counter
 ; r7: dest counter
 ; r8: scratch
+; r9: outer loop test value (tests[i])
 () addi $r4, $zero, NUM_TESTS
 () sll $r4, $r4, 2
+() mov $r7, $zero
+() lli $r7, UDIV_RESULTS_ADDR
 () mov $r5, $zero
-() mov $r6, $zero
-() addi $r7, $zero, UDIV_RESULTS_ADDR
-() splt $p0, $zero, $zero
+() speq $p0, $zero, $zero
 (001) jump udiv_outer_cond
 udiv_outer_loop:                      ; for (i = 0; i < NUM_TESTS; i++)
     (001) addi $r8, $r5, U_TESTS_ADDR
-    (001) lw $r0, 0[$r8]
-    (001) splt $p1, $zero, $zero
+    (001) lw $r9, 0[$r8]
+    (001) mov $r6, $zero
+    (001) speq $p1, $zero, $zero
     (011) jump udiv_inner_cond
     udiv_inner_loop:                  ; for (j = 0; j < NUM_TESTS; j++)
         (011) addi $r8, $r6, U_TESTS_ADDR
+        (011) mov $r0, $r9
         (011) lw $r1, 0[$r8]
               spr $r3
         (011) jal __div_uint
@@ -59,18 +64,19 @@ udiv_outer_cond:
     (001) jump udiv_outer_loop
 
 ; Test idiv
+() lli $r7, IDIV_RESULTS_ADDR
 () mov $r5, $zero
-() mov $r6, $zero
-() addi $r7, $zero, IDIV_RESULTS_ADDR
-() splt $p0, $zero, $zero
+() speq $p0, $zero, $zero
 (001) jump idiv_outer_cond
 idiv_outer_loop:                      ; for (i = 0; i < NUM_TESTS; i++)
     (001) addi $r8, $r5, I_TESTS_ADDR
-    (001) lw $r0, 0[$r8]
-    (001) splt $p1, $zero, $zero
+    (001) lw $r9, 0[$r8]
+    (001) mov $r6, $zero
+    (001) speq $p1, $zero, $zero
     (011) jump idiv_inner_cond
     idiv_inner_loop:                  ; for (j = 0; j < NUM_TESTS; j++)
         (011) addi $r8, $r6, I_TESTS_ADDR
+        (011) mov $r0, $r9
         (011) lw $r1, 0[$r8]
               spr $r3
         (011) jal __div_int
@@ -86,18 +92,19 @@ idiv_outer_cond:
     (001) jump idiv_outer_loop
 
 ; Test fixeddiv
+() lli $r7, FIXEDDIV_RESULTS_ADDR
 () mov $r5, $zero
-() mov $r6, $zero
-() addi $r7, $zero, FIXEDDIV_RESULTS_ADDR
-() splt $p0, $zero, $zero
+() speq $p0, $zero, $zero
 (001) jump fixeddiv_outer_cond
 fixeddiv_outer_loop:                      ; for (i = 0; i < NUM_TESTS; i++)
     (001) addi $r8, $r5, FIXED_TESTS_ADDR
-    (001) lw $r0, 0[$r8]
-    (001) splt $p1, $zero, $zero
+    (001) lw $r9, 0[$r8]
+    (001) mov $r6, $zero
+    (001) speq $p1, $zero, $zero
     (011) jump fixeddiv_inner_cond
     fixeddiv_inner_loop:                  ; for (j = 0; j < NUM_TESTS; j++)
         (011) addi $r8, $r6, FIXED_TESTS_ADDR
+        (011) mov $r0, $r9
         (011) lw $r1, 0[$r8]
               spr $r3
         (011) jal __div_fixed
@@ -113,18 +120,19 @@ fixeddiv_outer_cond:
     (001) jump fixeddiv_outer_loop
 
 ; Test umod
+() lli $r7, UMOD_RESULTS_ADDR
 () mov $r5, $zero
-() mov $r6, $zero
-() addi $r7, $zero, UMOD_RESULTS_ADDR
-() splt $p0, $zero, $zero
+() speq $p0, $zero, $zero
 (001) jump umod_outer_cond
 umod_outer_loop:                      ; for (i = 0; i < NUM_TESTS; i++)
     (001) addi $r8, $r5, U_TESTS_ADDR
-    (001) lw $r0, 0[$r8]
-    (001) splt $p1, $zero, $zero
+    (001) lw $r9, 0[$r8]
+    (001) mov $r6, $zero
+    (001) speq $p1, $zero, $zero
     (011) jump umod_inner_cond
     umod_inner_loop:                  ; for (j = 0; j < NUM_TESTS; j++)
         (011) addi $r8, $r6, U_TESTS_ADDR
+        (011) mov $r0, $r9
         (011) lw $r1, 0[$r8]
               spr $r3
         (011) jal __mod_uint
@@ -140,18 +148,19 @@ umod_outer_cond:
     (001) jump umod_outer_loop
 
 ; Test imod
+() lli $r7, IMOD_RESULTS_ADDR
 () mov $r5, $zero
-() mov $r6, $zero
-() addi $r7, $zero, IMOD_RESULTS_ADDR
-() splt $p0, $zero, $zero
+() speq $p0, $zero, $zero
 (001) jump imod_outer_cond
 imod_outer_loop:                      ; for (i = 0; i < NUM_TESTS; i++)
     (001) addi $r8, $r5, I_TESTS_ADDR
-    (001) lw $r0, 0[$r8]
-    (001) splt $p1, $zero, $zero
+    (001) lw $r9, 0[$r8]
+    (001) mov $r6, $zero
+    (001) speq $p1, $zero, $zero
     (011) jump imod_inner_cond
     imod_inner_loop:                  ; for (j = 0; j < NUM_TESTS; j++)
         (011) addi $r8, $r6, I_TESTS_ADDR
+        (011) mov $r0, $r9
         (011) lw $r1, 0[$r8]
               spr $r3
         (011) jal __mod_int
@@ -167,18 +176,19 @@ imod_outer_cond:
     (001) jump imod_outer_loop
 
 ; Test fixedmod
+() lli $r7, FIXEDMOD_RESULTS_ADDR
 () mov $r5, $zero
-() mov $r6, $zero
-() addi $r7, $zero, FIXEDMOD_RESULTS_ADDR
-() splt $p0, $zero, $zero
+() speq $p0, $zero, $zero
 (001) jump fixedmod_outer_cond
 fixedmod_outer_loop:                      ; for (i = 0; i < NUM_TESTS; i++)
     (001) addi $r8, $r5, FIXED_TESTS_ADDR
-    (001) lw $r0, 0[$r8]
-    (001) splt $p1, $zero, $zero
+    (001) lw $r9, 0[$r8]
+    (001) mov $r6, $zero
+    (001) speq $p1, $zero, $zero
     (011) jump fixedmod_inner_cond
     fixedmod_inner_loop:                  ; for (j = 0; j < NUM_TESTS; j++)
         (011) addi $r8, $r6, FIXED_TESTS_ADDR
+        (011) mov $r0, $r9
         (011) lw $r1, 0[$r8]
               spr $r3
         (011) jal __mod_fixed
