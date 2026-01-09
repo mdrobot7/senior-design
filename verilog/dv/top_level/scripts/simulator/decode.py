@@ -309,46 +309,46 @@ class Instruction:
         elif self.opcode == self.Opcode.LW:
             offset = regs[self.rs1] + self.mem_offset
             if (offset % 4) != 0:
-                raise self.MemoryAlignError()
-            if offset > len(memory):
-                raise self.MemoryAddressError()
+                raise self.MemoryAlignError(f"0x{new_pc-4:08X}: Unaligned lw from address 0x{offset:08X}")
+            if offset > len(memory) or offset < 0:
+                raise self.MemoryAddressError(f"0x{new_pc-4:08X}: Attempted lw from address 0x{offset:08X} out of bounds for memory size 0x{len(memory):08X}")
             regs[self.rd] = int.from_bytes(memory[offset:offset+4], byteorder="little", signed=False)
         elif self.opcode == self.Opcode.LB:
             offset = regs[self.rs1] + self.mem_offset
-            if offset > len(memory):
-                raise self.MemoryAddressError()
+            if offset > len(memory) or offset < 0:
+                raise self.MemoryAddressError(f"0x{new_pc-4:08X}: Attempted lb from address 0x{offset:08X} out of bounds for memory size 0x{len(memory):08X}")
             regs[self.rd] = signed(int(memory[offset]), 8)
         elif self.opcode == self.Opcode.SW:
             offset = regs[self.rs1] + self.mem_offset
             if (offset % 4) != 0:
-                raise self.MemoryAlignError()
-            if offset > len(memory):
-                raise self.MemoryAddressError()
+                raise self.MemoryAlignError(f"0x{new_pc-4:08X}: Unaligned sw to address 0x{offset:08X}")
+            if offset > len(memory) or offset < 0:
+                raise self.MemoryAddressError(f"0x{new_pc-4:08X}: Attempted sw to address 0x{offset:08X} out of bounds for memory size 0x{len(memory):08X}")
             memory[offset + 0] = bits(regs[self.rd],  7, 0)
             memory[offset + 1] = bits(regs[self.rd], 15, 8)
             memory[offset + 2] = bits(regs[self.rd], 23, 16)
             memory[offset + 3] = bits(regs[self.rd], 31, 24)
         elif self.opcode == self.Opcode.SB:
             offset = regs[self.rs1] + self.mem_offset
-            if offset > len(memory):
-                raise self.MemoryAddressError()
+            if offset > len(memory) or offset < 0:
+                raise self.MemoryAddressError(f"0x{new_pc-4:08X}: Attempted sb to address 0x{offset:08X} out of bounds for memory size 0x{len(memory):08X}")
             memory[offset] = bits(regs[self.rd], 7, 0)
         elif self.opcode == self.Opcode.JUMP:
             new_pc += self.jump_offset
         elif self.opcode == self.Opcode.JAL:
             if len(call_stack) == max_call_stack_depth:
-                raise self.CallStackError()
+                raise self.CallStackError("0x{new_pc-4:08X}: Max call stack depth exceeded")
             call_stack.append(new_pc)
             new_pc += self.jump_offset
         elif self.opcode == self.Opcode.JRET:
             if len(call_stack) > 0:
                 new_pc = call_stack.pop()
             else:
-                print("WARNING: jret from empty call stack!")
+                print("0x{new_pc-4:08X}: WARNING: jret from empty call stack!")
         elif self.opcode == self.Opcode.HALT:
             return (False, new_pc)
         else:
-            raise self.OpcodeError()
+            raise self.OpcodeError(f"0x{new_pc-4:08X}: Unknown opcode 0x{self.opcode:08X}")
 
         regs = [unsigned(r, REGISTER_SIZE_BITS) for r in regs]
 
@@ -366,6 +366,8 @@ class Instruction:
             return f"{self.Opcode.to_string(self.opcode)}"
         if self.opcode in (self.Opcode.OUT, self.Opcode.MACCL, self.Opcode.JRET, self.Opcode.HALT): # 0 operands
             return f"({pred}) {self.Opcode.to_string(self.opcode)}"
+        if self.opcode == self.Opcode.SPR: # 1 operand, no predicate
+            return f"{self.Opcode.to_string(self.opcode)} {rd}"
         if self.opcode in (self.Opcode.MACRD, self.Opcode.SPR, self.Opcode.SRP): # 1 operand
             return f"({pred}) {self.Opcode.to_string(self.opcode)} {rd}"
         if self.opcode == self.Opcode.MAC: # 2 operands

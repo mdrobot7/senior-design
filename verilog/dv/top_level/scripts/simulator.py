@@ -15,6 +15,7 @@ argparser.add_argument("-g", type=str, default=None, help="Path to global regist
 argparser.add_argument("-tid", type=int, default=0, help="Core thread ID (default: 0)")
 argparser.add_argument("-i", action="store_true", help="Interactive step-through mode")
 argparser.add_argument("-n", type=int, default=1, help="Number of jobs to run (default: 1)")
+argparser.add_argument("-s", type=int, help="Initial stack pointer (default: end of memory)")
 
 args = argparser.parse_args()
 
@@ -44,5 +45,6 @@ if __name__ == "__main__":
         print()
         pass
     # except Exception as e:
+    #     print("Program execution failed with error:")
     #     print(e)
     #     exit(1)

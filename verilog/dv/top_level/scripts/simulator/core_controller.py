@@ -8,6 +8,8 @@ from .core import Core
 from .decode import Instruction
 
 class CoreController:
+    DEFAULT_MEM_SIZE = 1024
+
     class ProgramError(Exception):
         def __init__(self, *args: object) -> None:
             super().__init__(*args)
@@ -27,6 +29,7 @@ class CoreController:
     def __init__(self, program_path: str, memory_path: Union[str, None],
                  global_registers_path: Union[str, None], tid: int, max_call_stack_depth: int) -> None:
         self.pc = 0
+        self.previous_pc = 0
         self.inst = None
         self.expected_next_inst = None
 
@@ -40,10 +43,9 @@ class CoreController:
                 self.memory = bytearray(f.read())
         else:
             # 1024 bytes of random nonsense (random.randbytes() doesn't exist in 3.6)
-            self.memory = bytearray(os.urandom(1024))
+            self.memory = bytearray(os.urandom(self.DEFAULT_MEM_SIZE))
         if len(self.memory) % 4 != 0:
             raise self.MemError("Memory length is not a multiple of words.")
-        self.memory_size = len(self.memory)
 
         if global_registers_path:
             with open(global_registers_path, "rb") as f:
@@ -59,6 +61,7 @@ class CoreController:
         self.max_call_stack_depth = max_call_stack_depth
 
         self.core = Core(tid, self.global_regs, self.memory, self.call_stack, self.max_call_stack_depth)
+        self.core.set_sp(len(self.memory))
 
         self.expected_next_inst = Instruction(self.prog[0:4]) # Always PC+4, may not always be the real next inst
 
@@ -109,6 +112,7 @@ class CoreController:
         if not should_continue:
             return True
         else:
+            self.previous_pc = self.pc
             self.pc = next_pc
             return False
 
@@ -128,7 +132,7 @@ Next Instruction: {self.expected_next_inst}\
         else:
             return \
 f"""\
-PC: {self.pc:08X}
+PC: {self.previous_pc:08X}
 Current Instruction: {self.inst}
 Next Instruction in IMEM: {self.expected_next_inst}\
 """

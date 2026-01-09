@@ -21,6 +21,9 @@ class Core:
         self.call_stack = call_stack
         self.max_call_stack_depth = max_call_stack_depth
 
+    def set_sp(self, sp: int):
+        self.local_regs[15] = sp
+
     def run(self, inst: Instruction, pc: int) -> Tuple[bool, int]:
         return inst.run(self.local_regs, self.global_regs, self.predicate, self.mac,\
                         self.outbox, self.memory, self.call_stack, self.max_call_stack_depth, pc)
