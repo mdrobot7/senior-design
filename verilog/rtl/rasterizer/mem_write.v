@@ -11,6 +11,8 @@ module mem_write_m(
     input wire [7:0] color_i
 );
 
+    `DL_DEFINE(logger, "mem_write_m", `DL_MAGENTA, 1);
+
     reg [`SC_WIDTH - 1:0] posx, posy;
     reg [`WORD_WIDTH - 1:0] tx, ty;
     reg [`WORD_WIDTH - 1:0] depth;
@@ -37,7 +39,7 @@ module mem_write_m(
                     if (mport_i[`BUS_MI_ACK]) begin
                         state <= 2;
 
-                        $display("(%d, %d): 0x%h", posx, posy, `ADDR_DEPTH_BUFFER + 4 * (posy * `WIDTH + posx));
+                        `DL(logger, ("(%d, %d): 0x%h", posx, posy, `ADDR_DEPTH_BUFFER + 4 * (posy * `WIDTH + posx)));
                     end
 
                     mport_o[`BUS_MO_ADDR] <= `ADDR_DEPTH_BUFFER + 4 * (posy * `WIDTH + posx);
@@ -63,7 +65,7 @@ module mem_write_m(
                     if (mport_i[`BUS_MI_ACK]) begin
                         state <= 4;
 
-                        $display("(%d, %d): 0x%h", posx, posy, `ADDR_DEPTH_BUFFER + 4 * (posy * `WIDTH + posx));
+                        `DL(logger, ("(%d, %d): 0x%h", posx, posy, `ADDR_DEPTH_BUFFER + 4 * (posy * `WIDTH + posx)));
                     end
 
                     mport_o[`BUS_MO_ADDR] <= `ADDR_DEPTH_BUFFER + 4 * (posy * `WIDTH + posx);

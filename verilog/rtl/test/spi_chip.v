@@ -12,6 +12,8 @@ module spi_chip_m #(
     input  wire       dqsm_i
 );
 
+    `DL_DEFINE(logger, "spi_chip_m", `DL_BLUE, 1);
+
     localparam CMD_READ  = 8'h0A;
     localparam CMD_WRITE = 8'h02;
 
@@ -50,7 +52,7 @@ module spi_chip_m #(
 
             wait(!cs_i);
 
-            $display("START!");
+            `DL(logger, ("START!"));
 
             wait(clk_i);
             command[3:0] = mosi_i;
@@ -60,7 +62,7 @@ module spi_chip_m #(
             command[7:4] = mosi_i;
             wait(!clk_i);
 
-            // $display("Got command 0x%h", command);
+            `DL(logger, ("Got command 0x%h", command));
 
             for (i = 0; i < 4; i = i + 1) begin
                 wait(clk_i);
@@ -70,7 +72,7 @@ module spi_chip_m #(
             end
             #1;
 
-            // $display("Got address 0x%h", address);
+            `DL(logger, ("Got address 0x%h", address));
 
             begin : LATENCY
                 integer latency;
@@ -101,7 +103,7 @@ module spi_chip_m #(
                 integer delay;
                 delay = {$random} % 6 + 1;
 
-                // $display("Offset delay: %d ns", delay);
+                `DL(logger, ("Offset delay: %d ns", delay));
 
                 for (i = 0; i < PRE_CYCLES; i = i + 1) begin
                     wait(clk_i);
@@ -132,7 +134,7 @@ module spi_chip_m #(
                     #delay;
                     dqsm_o = 1;
 
-                    $display("Read 0x%h from 0x%h", mem[addr], addr);
+                    `DL(logger, ("Read 0x%h from 0x%h", mem[addr], addr));
 
                     addr = addr + 1;
 
@@ -163,14 +165,14 @@ module spi_chip_m #(
                             write_data[3:0] = mosi_i;
                         end
 
-                        $display("Write 0x%h to 0x%h", write_data, addr);
+                        `DL(logger, ("Write 0x%h to 0x%h", write_data, addr));
 
                         addr = addr + 1;
                     end
                 end
             end
 
-            $display("DONE!");
+            `DL(logger, ("DONE!"));
         end
     end
 
