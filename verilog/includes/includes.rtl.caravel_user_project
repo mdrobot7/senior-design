@@ -53,5 +53,6 @@
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/mem_write.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/spi_mem.v
+-v $(USER_PROJECT_VERILOG)/rtl/vertex_order_buffer.v
 -v $(USER_PROJECT_VERILOG)/rtl/vga.v
 -v $(USER_PROJECT_VERILOG)/rtl/wishbone_register.v
