@@ -210,3 +210,18 @@
 `define ALU_SRL_CTL     (`ALU_CTL_SIZE'b1001)
 `define ALU_SRA_CTL     (`ALU_CTL_SIZE'b1010)
 `define ALU_SLTU_CTL    (`ALU_CTL_SIZE'b1011)
+
+//SIGN EXT
+`define IMM_CTL_SIZE 2
+`define IMM_13_BIT 0
+`define IMM_16_BIT 1
+`define IMM_23_BIT 2
+`define IMM_13_WIDTH 13
+`define IMM_16_WIDTH 16
+`define IMM_23_WIDTH 23
+`define PAD_19_BITS 19
+`define PAD_16_BITS 16
+`define PAD_9_BITS 9
+`define MSB_13_IMM 12
+`define MSB_16_IMM 15
+`define MSB_23_IMM 22
