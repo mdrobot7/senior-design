@@ -18,76 +18,76 @@ clrp (111)
 
 ; Thread ID (tid) is the triangle, loaded into r0 by the
 ; core controller. Calculate the memory address of our triangle.
-() li $r1, 6.000000
-() mul $tid, $tid, $r1
+() lli $r9, 6.000000
+() mul $tid, $tid, $r9
 () add $tid, $tid, $g45
 
 ; Load triangle indices
-() lw $r1, 0[$tid]
-() lw $r2, 4[$tid]
-() lw $r3, 8[$tid]
-() li $r4, 20.000000
-() mul $r1, $r1, $r4
-() mul $r2, $r2, $r4
-() mul $r3, $r3, $r4
+() lw $r9,  0[$tid]
+() lw $r10, 4[$tid]
+() lw $r11, 8[$tid]
+() lli $r12, 20.000000
+() mul  $r9,  $r9, $r12
+() mul $r10, $r10, $r12
+() mul $r11, $r11, $r12
 
 ; Load vertex 1
-() lw $r4, 0[$r1] ; vx
-() lw $r5, 4[$r1] ; vy
-() lw $r6, 8[$r1] ; vz
-() lli $r4, 1.000000 ; Homogeneous term
-() lw $r12, 12[$r1] ; tx
-() lw $r13, 16[$r1] ; ty
+() lw $r12, 0[$r9] ; vx
+() lw $r13, 4[$r9] ; vy
+() lw $r14, 8[$r9] ; vz
+() lli $r15, 1.000000 ; Homogeneous term
+() lw $r5, 12[$r9] ; tx
+() lw $r6, 16[$r9] ; ty
 
 ; Vertex shade 1
-() dot4 $g0, $r4
-() macrd $r8
-() dot4 $g4, $r4
-() macrd $r9
-() dot4 $g8, $r4
-() macrd $r10
-() dot4 $g12, $r4
-() macrd $r11
+() dot4 $g0, $r12
+() macrd $r1
+() dot4 $g4, $r12
+() macrd $r2
+() dot4 $g8, $r12
+() macrd $r3
+() dot4 $g12, $r12
+() macrd $r4
 
 ; Ship to rasterizer
 () out
 
 ; Load vertex 2
-() lw $r4, 0[$r2]
-() lw $r5, 4[$r2]
-() lw $r6, 8[$r2]
-() lw $r12, 12[$r2]
-() lw $r13, 16[$r2]
+() lw $r12, 0[$r10]
+() lw $r13, 4[$r10]
+() lw $r14, 8[$r10]
+() lw $r5, 12[$r10]
+() lw $r6, 16[$r10]
 
 ; Vertex shade 2
-() dot4 $g0, $r4
-() macrd $r8
-() dot4 $g4, $r4
-() macrd $r9
-() dot4 $g8, $r4
-() macrd $r10
-() dot4 $g12, $r4
-() macrd $r11
+() dot4 $g0, $r12
+() macrd $r1
+() dot4 $g4, $r12
+() macrd $r2
+() dot4 $g8, $r12
+() macrd $r3
+() dot4 $g12, $r12
+() macrd $r4
 
 ; Ship to rasterizer
 () out
 
 ; Load vertex 3
-() lw $r4, 0[$r3]
-() lw $r5, 4[$r3]
-() lw $r6, 8[$r3]
-() lw $r12, 12[$r3]
-() lw $r13, 16[$r3]
+() lw $r12, 0[$r11]
+() lw $r13, 4[$r11]
+() lw $r14, 8[$r11]
+() lw $r5, 12[$r11]
+() lw $r6, 16[$r11]
 
 ; Vertex shade 3
-() dot4 $g0, $r4
-() macrd $r8
-() dot4 $g4, $r4
-() macrd $r9
-() dot4 $g8, $r4
-() macrd $r10
-() dot4 $g12, $r4
-() macrd $r11
+() dot4 $g0, $r12
+() macrd $r1
+() dot4 $g4, $r12
+() macrd $r2
+() dot4 $g8, $r12
+() macrd $r3
+() dot4 $g12, $r12
+() macrd $r4
 
 ; Ship to rasterizer
 () out

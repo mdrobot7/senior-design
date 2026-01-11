@@ -14,25 +14,25 @@ clrp (111)
 
 ; Thread ID (tid) is the index, loaded into r0 by the core
 ; controller. Grab our vertex.
-() li $r1, 20.000000
-() mul $tid, $tid, $r1
+() li $r9, 20.000000
+() mul $tid, $tid, $r9
 () add $tid, $tid, $g46
-() lw $r1, 0[$tid]; vx
-() lw $r2, 4[$tid]; vy
-() lw $r3, 8[$tid]; vz
-() lli $r4, 1.000000 ; Homogeneous term
-() lw $r9, 12[$tid] ; tx
-() lw $r10, 16[$tid] ; ty
+() lw $r10, 0[$tid]; vx
+() lw $r11, 4[$tid]; vy
+() lw $r12, 8[$tid]; vz
+() lli $r13, 1.000000 ; Homogeneous term
+() lw $r5, 12[$tid] ; tx
+() lw $r6, 16[$tid] ; ty
 
 ; Vertex shade
-() dot4 $g0, $r1
-() macrd $r5
-() dot4 $g4, $r2
-() macrd $r6
-() dot4 $g8, $r3
-() macrd $r7
-() dot4 $g12, $r4
-() macrd $r8
+() dot4 $g0, $r10
+() macrd $r1
+() dot4 $g4, $r10
+() macrd $r2
+() dot4 $g8, $r10
+() macrd $r3
+() dot4 $g12, $r10
+() macrd $r4
 
 ; Ship to rasterizer
 () out
