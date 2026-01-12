@@ -34,7 +34,11 @@
 -v $(USER_PROJECT_VERILOG)/rtl/bus/byte_stripe_cache.v
 -v $(USER_PROJECT_VERILOG)/rtl/bus/virtual_master.v
 
+-v $(USER_PROJECT_VERILOG)/rtl/core/alu.v
 -v $(USER_PROJECT_VERILOG)/rtl/core/core.v
+-v $(USER_PROJECT_VERILOG)/rtl/core/decoder.v
+-v $(USER_PROJECT_VERILOG)/rtl/core/regfile.v
+-v $(USER_PROJECT_VERILOG)/rtl/core/signext.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/stream/stream_fifo.v
 
