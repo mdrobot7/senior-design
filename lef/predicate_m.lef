@@ -1,0 +1,228 @@
+VERSION 5.7 ;
+  NOWIREEXTENSIONATPIN ON ;
+  DIVIDERCHAR "/" ;
+  BUSBITCHARS "[]" ;
+MACRO predicate_m
+  CLASS BLOCK ;
+  FOREIGN predicate_m ;
+  ORIGIN 0.000 0.000 ;
+  SIZE 250.000 BY 250.000 ;
+  PIN clk_i
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.852000 ;
+    PORT
+      LAYER met2 ;
+        RECT 62.190 0.000 62.470 4.000 ;
+    END
+  END clk_i
+  PIN equal_o
+    DIRECTION OUTPUT TRISTATE ;
+    USE SIGNAL ;
+    ANTENNADIFFAREA 2.673000 ;
+    PORT
+      LAYER met3 ;
+        RECT 246.000 217.640 250.000 218.240 ;
+    END
+  END equal_o
+  PIN instruction_predicate_i[0]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 167.320 4.000 167.920 ;
+    END
+  END instruction_predicate_i[0]
+  PIN instruction_predicate_i[1]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 189.080 4.000 189.680 ;
+    END
+  END instruction_predicate_i[1]
+  PIN instruction_predicate_i[2]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 210.840 4.000 211.440 ;
+    END
+  END instruction_predicate_i[2]
+  PIN is_predicable_i
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 232.600 4.000 233.200 ;
+    END
+  END is_predicable_i
+  PIN nrst_i
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.159000 ;
+    PORT
+      LAYER met2 ;
+        RECT 186.850 0.000 187.130 4.000 ;
+    END
+  END nrst_i
+  PIN status_o[0]
+    DIRECTION OUTPUT TRISTATE ;
+    USE SIGNAL ;
+    ANTENNADIFFAREA 2.673000 ;
+    PORT
+      LAYER met3 ;
+        RECT 246.000 29.960 250.000 30.560 ;
+    END
+  END status_o[0]
+  PIN status_o[1]
+    DIRECTION OUTPUT TRISTATE ;
+    USE SIGNAL ;
+    ANTENNADIFFAREA 2.673000 ;
+    PORT
+      LAYER met3 ;
+        RECT 246.000 92.520 250.000 93.120 ;
+    END
+  END status_o[1]
+  PIN status_o[2]
+    DIRECTION OUTPUT TRISTATE ;
+    USE SIGNAL ;
+    ANTENNADIFFAREA 2.673000 ;
+    PORT
+      LAYER met3 ;
+        RECT 246.000 155.080 250.000 155.680 ;
+    END
+  END status_o[2]
+  PIN vccd1
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER met4 ;
+        RECT 21.040 10.640 22.640 236.880 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 174.640 10.640 176.240 236.880 ;
+    END
+  END vccd1
+  PIN vssd1
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER met4 ;
+        RECT 97.840 10.640 99.440 236.880 ;
+    END
+  END vssd1
+  PIN wr_data_i[0]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 102.040 4.000 102.640 ;
+    END
+  END wr_data_i[0]
+  PIN wr_data_i[1]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 123.800 4.000 124.400 ;
+    END
+  END wr_data_i[1]
+  PIN wr_data_i[2]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 145.560 4.000 146.160 ;
+    END
+  END wr_data_i[2]
+  PIN wr_en_i
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 15.000 4.000 15.600 ;
+    END
+  END wr_en_i
+  PIN wr_mask_i[0]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 36.760 4.000 37.360 ;
+    END
+  END wr_mask_i[0]
+  PIN wr_mask_i[1]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 58.520 4.000 59.120 ;
+    END
+  END wr_mask_i[1]
+  PIN wr_mask_i[2]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 80.280 4.000 80.880 ;
+    END
+  END wr_mask_i[2]
+  OBS
+      LAYER li1 ;
+        RECT 5.520 10.795 244.260 236.725 ;
+      LAYER met1 ;
+        RECT 4.670 10.640 244.260 236.880 ;
+      LAYER met2 ;
+        RECT 4.690 4.280 241.870 236.825 ;
+        RECT 4.690 4.000 61.910 4.280 ;
+        RECT 62.750 4.000 186.570 4.280 ;
+        RECT 187.410 4.000 241.870 4.280 ;
+      LAYER met3 ;
+        RECT 3.990 233.600 246.000 236.805 ;
+        RECT 4.400 232.200 246.000 233.600 ;
+        RECT 3.990 218.640 246.000 232.200 ;
+        RECT 3.990 217.240 245.600 218.640 ;
+        RECT 3.990 211.840 246.000 217.240 ;
+        RECT 4.400 210.440 246.000 211.840 ;
+        RECT 3.990 190.080 246.000 210.440 ;
+        RECT 4.400 188.680 246.000 190.080 ;
+        RECT 3.990 168.320 246.000 188.680 ;
+        RECT 4.400 166.920 246.000 168.320 ;
+        RECT 3.990 156.080 246.000 166.920 ;
+        RECT 3.990 154.680 245.600 156.080 ;
+        RECT 3.990 146.560 246.000 154.680 ;
+        RECT 4.400 145.160 246.000 146.560 ;
+        RECT 3.990 124.800 246.000 145.160 ;
+        RECT 4.400 123.400 246.000 124.800 ;
+        RECT 3.990 103.040 246.000 123.400 ;
+        RECT 4.400 101.640 246.000 103.040 ;
+        RECT 3.990 93.520 246.000 101.640 ;
+        RECT 3.990 92.120 245.600 93.520 ;
+        RECT 3.990 81.280 246.000 92.120 ;
+        RECT 4.400 79.880 246.000 81.280 ;
+        RECT 3.990 59.520 246.000 79.880 ;
+        RECT 4.400 58.120 246.000 59.520 ;
+        RECT 3.990 37.760 246.000 58.120 ;
+        RECT 4.400 36.360 246.000 37.760 ;
+        RECT 3.990 30.960 246.000 36.360 ;
+        RECT 3.990 29.560 245.600 30.960 ;
+        RECT 3.990 16.000 246.000 29.560 ;
+        RECT 4.400 14.600 246.000 16.000 ;
+        RECT 3.990 10.715 246.000 14.600 ;
+  END
+END predicate_m
+END LIBRARY
+
