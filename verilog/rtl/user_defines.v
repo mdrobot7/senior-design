@@ -236,7 +236,9 @@
 `define REG_DEST_IDX            22:19
 `define REG_SOURCE_WIDTH        6
 `define R1_IDX                  18:13
+`define R1_LOCAL_IDX            16:13
 `define R2_IDX                  12:7
+`define R2_LOCAL_IDX            10:7
 `define SHIFT_WIDTH             5
 `define SHIFT_IDX               4:0
 
@@ -311,3 +313,8 @@
 `define WB_SIG_IDX          (`REGFILE_WRITE_IDX + `WB_SIG_WIDTH):(`REGFILE_WRITE_IDX + 1)
 
 `define CTL_SIGS_WIDTH      (`REGFILE_WRITE_IDX + `WB_SIG_WIDTH+ 1)
+
+//Core defs
+
+`define CORE_REGFILE_HEIGHT (16)
+`define STAGE_SLICE(stage, size) (((stage+1)*(size))-1):((stage)*(size))

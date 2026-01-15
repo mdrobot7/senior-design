@@ -114,6 +114,12 @@ module decoder_m (
 
         //PREDICATE_WRITE_BITS
         ctl_sigs_reg[`PREDICATE_WRITE_BITS_IDX] = instruction_i[`PREDICATE_IDX];
+        /*
+        TODO: Change this to no longer be from the instruction
+        instead have a signal to know if we are using an ALU or instruction mask
+        also ensure that srp sets the mask bits for you
+        */
+
 
         //IS_LOAD
 		case(opcode)
