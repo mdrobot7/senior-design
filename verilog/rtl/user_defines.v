@@ -234,6 +234,7 @@
 `define PREDICATE_IDX           25:23
 `define REG_DEST_WIDTH          4
 `define REG_DEST_IDX            22:19
+`define PREDICATE_DATA_IDX      21:19
 `define REG_SOURCE_WIDTH        6
 `define R1_IDX                  18:13
 `define R1_LOCAL_IDX            16:13
@@ -295,26 +296,27 @@
 `define SIGN_EXT_IDX            (`R2_USE_GLOBAL_VAL_IDX + `IMM_CTL_SIZE + 1)
 `define OUT_IDX                 (`SIGN_EXT_IDX + 1)
 //ex ctl sigs
-`define USE_IMM_IDX         (`OUT_IDX + 1)
-`define USE_PC_IDX          (`USE_IMM_IDX + 1)
-`define USE_ALU_RESULT_IDX  (`USE_PC_IDX + 1)
-`define ALU_CTL_IDX         (`USE_IMM_IDX + `ALU_CTL_SIZE):(`USE_ALU_RESULT_IDX + 1)
-`define IS_PREDICABLE_IDX   (`USE_IMM_IDX + `ALU_CTL_SIZE + 1)
-`define PREDICATE_WRITE_IDX (`IS_PREDICABLE_IDX + 1)
-
-`define PREDICATE_WRITE_BITS_IDX    (`PREDICATE_WRITE_IDX + `PREDICATE_BITS_WIDTH):(`PREDICATE_WRITE_IDX + 1)
+`define USE_IMM_IDX             (`OUT_IDX + 1)
+`define USE_PC_IDX              (`USE_IMM_IDX + 1)
+`define USE_ALU_RESULT_IDX      (`USE_PC_IDX + 1)
+`define ALU_CTL_IDX             (`USE_ALU_RESULT_IDX + `ALU_CTL_SIZE):(`USE_ALU_RESULT_IDX + 1)
+`define IS_PREDICABLE_IDX       (`USE_ALU_RESULT_IDX + `ALU_CTL_SIZE + 1)
+`define PREDICATE_WRITE_IDX     (`IS_PREDICABLE_IDX + 1)
+`define PREDICATE_ALU_OP_IDX    (`PREDICATE_WRITE_IDX + 1)
+`define IS_CLRP_IDX             (`PREDICATE_ALU_OP_IDX + 1)
 //mem-acc ctl sigs
-`define IS_LOAD_IDX         (`PREDICATE_WRITE_IDX + `PREDICATE_BITS_WIDTH + 1)
+`define IS_LOAD_IDX         (`IS_CLRP_IDX + 1)
 `define IS_STORE_IDX        (`IS_LOAD_IDX + 1)
 `define ACCUM_CLR_IDX       (`IS_STORE_IDX + 1)
 `define IS_ACCUMULATE_IDX   (`ACCUM_CLR_IDX + 1)
 //wb ctl sigs
-`define REGFILE_WRITE_IDX	(`IS_ACCUMULATE_IDX + 1)
-`define WB_SIG_IDX          (`REGFILE_WRITE_IDX + `WB_SIG_WIDTH):(`REGFILE_WRITE_IDX + 1)
+`define WB_SIG_IDX          (`IS_ACCUMULATE_IDX + `WB_SIG_WIDTH):(`IS_ACCUMULATE_IDX + 1)
+`define REGFILE_WRITE_IDX	(`IS_ACCUMULATE_IDX + `WB_SIG_WIDTH + 1)
 
-`define CTL_SIGS_WIDTH      (`REGFILE_WRITE_IDX + `WB_SIG_WIDTH+ 1)
+`define CTL_SIGS_WIDTH      (`REGFILE_WRITE_IDX + 1)
 
 //Core defs
 
 `define CORE_REGFILE_HEIGHT (16)
+`define CORE_OUTBOX_HEIGHT (8)
 `define STAGE_SLICE(stage, size) (((stage+1)*(size))-1):((stage)*(size))

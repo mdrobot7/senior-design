@@ -112,14 +112,16 @@ module decoder_m (
                 ctl_sigs_reg[`PREDICATE_WRITE_IDX] = 0; //cannot update predicate status
         endcase
 
-        //PREDICATE_WRITE_BITS
-        ctl_sigs_reg[`PREDICATE_WRITE_BITS_IDX] = instruction_i[`PREDICATE_IDX];
-        /*
-        TODO: Change this to no longer be from the instruction
-        instead have a signal to know if we are using an ALU or instruction mask
-        also ensure that srp sets the mask bits for you
-        */
+        //PREDICATE_ALU_OP
+        case(opcode)
+            `SPEQ_OPCODE, `SPLT_OPCODE, `SPLTU_OPCODE:
+                ctl_sigs_reg[`PREDICATE_ALU_OP_IDX] = 1; //ALU providing predicate data
+            default:
+                ctl_sigs_reg[`PREDICATE_ALU_OP_IDX] = 0; // data is written thru alu with ALU_NOP_CTL
+        endcase
 
+        //IS_CLRP
+        ctl_sigs_reg[`IS_CLRP_IDX] = (opcode == `CLRP_OPCODE) ? 1 : 0;
 
         //IS_LOAD
 		case(opcode)
@@ -143,15 +145,6 @@ module decoder_m (
 		//IS_ACCUMULATE
 		ctl_sigs_reg[`IS_ACCUMULATE_IDX] = (opcode == `MAC_OPCODE) ? 1 : 0;
 
-		//REGFILE_WRITE
-		case(opcode)
-			`OUT_OPCODE, `MAC_OPCODE, `MACCL_OPCODE, `SPEQ_OPCODE, `SPLT_OPCODE, `SPLTU_OPCODE, 
-			`CLRP_OPCODE, `SRP_OPCODE, `SB_OPCODE, `SW_OPCODE, `JUMP_OPCODE, `JRET_OPCODE, `HALT_OPCODE:
-				ctl_sigs_reg[`REGFILE_WRITE_IDX] = 0; //no regfile change
-			default:
-				ctl_sigs_reg[`REGFILE_WRITE_IDX] = 1;
-		endcase
-
         //WB_SIG
         case(opcode)
             `MACRD_OPCODE:
@@ -161,5 +154,14 @@ module decoder_m (
             default:
                 ctl_sigs_reg[`WB_SIG_IDX] = `WB_EX_RESULT;
         endcase
+
+        //REGFILE_WRITE
+		case(opcode)
+			`OUT_OPCODE, `MAC_OPCODE, `MACCL_OPCODE, `SPEQ_OPCODE, `SPLT_OPCODE, `SPLTU_OPCODE, 
+			`CLRP_OPCODE, `SRP_OPCODE, `SB_OPCODE, `SW_OPCODE, `JUMP_OPCODE, `JRET_OPCODE, `HALT_OPCODE:
+				ctl_sigs_reg[`REGFILE_WRITE_IDX] = 0; //no regfile change
+			default:
+				ctl_sigs_reg[`REGFILE_WRITE_IDX] = 1;
+		endcase
     end
 endmodule
