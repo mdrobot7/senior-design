@@ -288,6 +288,19 @@
 `define WB_EX_RESULT   (`WB_SIG_WIDTH'h0)
 `define WB_MEM_RESULT   (`WB_SIG_WIDTH'h1)
 `define WB_MAC_RESULT   (`WB_SIG_WIDTH'h2)
+
+`define ALU_SRC_A_WIDTH 2
+`define PC_SRC_A    (`ALU_SRC_A_WIDTH'h0)
+`define LLI_SRC_A   (`ALU_SRC_A_WIDTH'h1)
+`define LUI_SRC_A   (`ALU_SRC_A_WIDTH'h2)
+`define REG_SRC_A   (`ALU_SRC_A_WIDTH'h3)
+
+`define ALU_SRC_B_WIDTH 2
+`define IMM_SRC_B   (`ALU_SRC_B_WIDTH'h0)
+`define LLI_SRC_B   (`ALU_SRC_B_WIDTH'h1)
+`define LUI_SRC_B   (`ALU_SRC_B_WIDTH'h2)
+`define REG_SRC_B   (`ALU_SRC_B_WIDTH'h3)
+
 //decoder 
 //decode ctl sigs
 `define R1_USE_GLOBAL_VAL_IDX   (0)
@@ -296,9 +309,9 @@
 `define SIGN_EXT_IDX            (`R2_USE_GLOBAL_VAL_IDX + `IMM_CTL_SIZE + 1)
 `define OUT_IDX                 (`SIGN_EXT_IDX + 1)
 //ex ctl sigs
-`define USE_IMM_IDX             (`OUT_IDX + 1)
-`define USE_PC_IDX              (`USE_IMM_IDX + 1)
-`define USE_ALU_RESULT_IDX      (`USE_PC_IDX + 1)
+`define ALU_SRC_A_IDX           (`OUT_IDX + `ALU_SRC_A_WIDTH):(`OUT_IDX + 1)
+`define ALU_SRC_B_IDX           (`OUT_IDX + `ALU_SRC_A_WIDTH + `ALU_SRC_B_WIDTH):(`OUT_IDX + `ALU_SRC_A_WIDTH + 1)
+`define USE_ALU_RESULT_IDX      (`OUT_IDX + `ALU_SRC_A_WIDTH + `ALU_SRC_B_WIDTH + 1)
 `define ALU_CTL_IDX             (`USE_ALU_RESULT_IDX + `ALU_CTL_SIZE):(`USE_ALU_RESULT_IDX + 1)
 `define IS_PREDICABLE_IDX       (`USE_ALU_RESULT_IDX + `ALU_CTL_SIZE + 1)
 `define PREDICATE_WRITE_IDX     (`IS_PREDICABLE_IDX + 1)

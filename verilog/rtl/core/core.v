@@ -41,7 +41,7 @@ module core_m(
     reg[NUM_STAGES*`WORD_WIDTH-1 : 0] piped_mem_result;
 
     //decode wires
-    wire [`CTL_SIGS_WIDTH-1:0] dec_ctl_sigs;
+    wire[`CTL_SIGS_WIDTH-1:0] dec_ctl_sigs;
     wire[`WORD_WIDTH-1:0] dec_inst;
     wire[`WORD_WIDTH-1:0] dec_global_r1_data;
     wire[`WORD_WIDTH-1:0] dec_global_r2_data;
@@ -51,9 +51,15 @@ module core_m(
     wire[`WORD_WIDTH-1:0] dec_r2_data;
     wire[`WORD_WIDTH-1:0] dec_imm;
 
+    reg [`WORD_WIDTH-1:0] outbox [`CORE_OUTBOX_HEIGHT-1:0];
+
     //execute wires
     wire[`WORD_WIDTH-1:0] ex_inst;
-    wire[`WORD_WIDTH-1:0] ex_alu_a, ex_alu_b;
+    wire[`WORD_WIDTH-1:0] ex_r1_data;
+    wire[`WORD_WIDTH-1:0] ex_r2_data;
+    wire[`WORD_WIDTH-1:0] ex_imm;
+    reg[`WORD_WIDTH-1:0]  ex_alu_a; 
+    reg[`WORD_WIDTH-1:0]  ex_alu_b;
     wire[`CTL_SIGS_WIDTH-1:0] ex_ctl_sigs;
     reg[`CTL_SIGS_WIDTH-1:0] ex_predicated_ctl_sigs;
     wire[`WORD_WIDTH-1:0] ex_alu_result;
@@ -67,6 +73,7 @@ module core_m(
 
     //mem wires
     wire[`CTL_SIGS_WIDTH-1:0] mem_ctl_sigs;
+    wire [`WORD_WIDTH-1:0] mem_inst;
     wire[`WORD_WIDTH-1:0] mem_alu_result;
     wire[`WORD_WIDTH-1:0] mem_accum_result;
 
@@ -75,6 +82,12 @@ module core_m(
     wire[`WORD_WIDTH-1:0] wb_ctl_sigs;
     reg[`WORD_WIDTH-1:0]  wb_data;
     wire[`REG_DEST_WIDTH-1:0] wb_addr;
+
+    //forwarding wires
+    wire fwd_a;
+    wire fwd_b;
+    wire[`WORD_WIDTH-1:0] fwd_a_data;
+    wire[`WORD_WIDTH-1:0] fwd_b_data;
 
     //decode modules
     decoder_m decoder (
@@ -135,6 +148,26 @@ module core_m(
         .acc_o(mem_accum_result)
     );
 
+    //forwarding module
+    forward_m forward(
+        .ex_r1_addr(ex_inst[`R1_IDX]),
+        .ex_r2_addr(ex_inst[`R2_IDX]),
+
+        .wb_dest_addr({2'b0, wb_inst[`REG_DEST_IDX]}),
+        .wb_data(wb_data),
+        .wb_reg_wr(wb_ctl_sigs[`REGFILE_WRITE_IDX]),
+
+        .mem_dest_addr({2'b0, mem_inst[`REG_DEST_IDX]}),
+        .mem_data(piped_alu_result[`STAGE_SLICE(WB_STAGE, `WORD_WIDTH)]),
+        .mem_reg_wr(mem_ctl_sigs[`REGFILE_WRITE_IDX]),
+        .mem_wb_sig(mem_ctl_sigs[`WB_SIG_IDX]),
+
+        .fwd_a_en_o(fwd_a),
+        .fwd_a_data_o(fwd_a_data),
+        .fwd_b_en_o(fwd_b),
+        .fwd_b_data_o(fwd_b_data)
+    );
+
     //decode assignments
     assign dec_inst = piped_inst[`STAGE_SLICE(DEC_STAGE, `WORD_WIDTH)];
     assign dec_global_r1_data = piped_r1_data[`STAGE_SLICE(DEC_STAGE, `WORD_WIDTH)];
@@ -144,9 +177,10 @@ module core_m(
     
     //execute assignments
     assign ex_inst = piped_inst[`STAGE_SLICE(EX_STAGE, `WORD_WIDTH)];
-    assign ex_alu_a = (ex_ctl_sigs[`USE_PC_IDX] == 1)       ? piped_pc[`STAGE_SLICE(EX_STAGE, `WORD_WIDTH)]  : piped_r1_data[`STAGE_SLICE(EX_STAGE, `WORD_WIDTH)];
-    assign ex_alu_b = (ex_ctl_sigs[`USE_IMM_IDX] == 1)  ? piped_imm[`STAGE_SLICE(EX_STAGE, `WORD_WIDTH)] : piped_r2_data[`STAGE_SLICE(EX_STAGE, `WORD_WIDTH)];
-    assign ex_ctl_sigs = piped_ctl_sigs[MEM_STAGE*`CTL_SIGS_WIDTH-1:EX_STAGE*`CTL_SIGS_WIDTH];
+    assign ex_r1_data = (fwd_a)? fwd_a_data : piped_r1_data[`STAGE_SLICE(EX_STAGE, `WORD_WIDTH)];
+    assign ex_r2_data = (fwd_b)? fwd_b_data : piped_r2_data[`STAGE_SLICE(EX_STAGE, `WORD_WIDTH)];
+    assign ex_imm = piped_imm[`STAGE_SLICE(EX_STAGE, `WORD_WIDTH)];
+    assign ex_ctl_sigs = piped_ctl_sigs[`STAGE_SLICE(EX_STAGE, `CTL_SIGS_WIDTH)];
 
     assign ex_predicate_wr   = (ex_ctl_sigs[`PREDICATE_WRITE_IDX] & ex_predicate_equal);
     assign ex_predicate_mask = ex_inst[`PREDICATE_DATA_IDX];
@@ -157,6 +191,7 @@ module core_m(
 
     //mem assignments
     assign mem_ctl_sigs = piped_ctl_sigs[`STAGE_SLICE(MEM_STAGE, `CTL_SIGS_WIDTH)];
+    assign mem_inst = piped_inst[`STAGE_SLICE(MEM_STAGE, `WORD_WIDTH)];
     assign mem_alu_result = piped_alu_result[`STAGE_SLICE(MEM_STAGE, `WORD_WIDTH)];
     assign mem_addr_o = piped_alu_result[`STAGE_SLICE(MEM_STAGE, `WORD_WIDTH)];
     assign mem_data_o = piped_r2_data[`STAGE_SLICE(MEM_STAGE, `WORD_WIDTH)];
@@ -174,6 +209,21 @@ module core_m(
         integer i;
 
         //ex
+        case(ex_ctl_sigs[`ALU_SRC_A_IDX])
+            `PC_SRC_A:  ex_alu_a = piped_pc[`STAGE_SLICE(EX_STAGE, `WORD_WIDTH)];
+            `LUI_SRC_A: ex_alu_a = {16'h0, ex_r1_data[15:0]};
+            `LLI_SRC_A: ex_alu_a = {ex_r1_data[`WORD_WIDTH-1:16], 16'h0};
+            default:    ex_alu_a = ex_r1_data;
+        endcase
+
+        case(ex_ctl_sigs[`ALU_SRC_B_IDX])
+            `IMM_SRC_B: ex_alu_b = piped_imm[`STAGE_SLICE(EX_STAGE, `WORD_WIDTH)];
+            `LLI_SRC_B: ex_alu_b = {16'h0, ex_imm[15:0]};
+            `LUI_SRC_B: ex_alu_b = {ex_imm[15:0], 16'h0};
+            default:    ex_alu_b = ex_r2_data;
+
+        endcase
+
         //fill predicated values (I hope this synthesized nicely)
         for(i = 0; i < `CTL_SIGS_WIDTH; i = i + 1) begin
             case(i)
@@ -193,6 +243,7 @@ module core_m(
     end
 
     always @ (posedge clk_i, negedge nrst_i) begin
+        integer i;
         if(!nrst_i) begin : RESET
             piped_inst <= 0;
             piped_r1_data <= 0;
@@ -202,6 +253,10 @@ module core_m(
             piped_alu_result <= 0;
             piped_pc <= 0;
             stall <= 0;
+
+            for(i = 0; i < `CORE_OUTBOX_HEIGHT; i = i + 1) begin
+                outbox[i] <= 0;
+            end
         end
         else if (~stall) begin : PIPELINE
             //fetch signal pipelines
@@ -230,6 +285,14 @@ module core_m(
             piped_ctl_sigs[`STAGE_SLICE(WB_STAGE, `CTL_SIGS_WIDTH)] <= piped_ctl_sigs[`STAGE_SLICE(MEM_STAGE, `CTL_SIGS_WIDTH)];
 
             piped_imm[`STAGE_SLICE(EX_STAGE, `WORD_WIDTH)] <= dec_imm;
+
+            //outbox
+            if(dec_ctl_sigs[`OUT_IDX] == 1) begin
+                for(i = 0; i < `CORE_OUTBOX_HEIGHT; i = i + 1) begin
+                    outbox[i] <= regfile.mem[i + 1];
+                end
+            end
+
 
             //ex signal pipelines
             if(ex_ctl_sigs[`USE_ALU_RESULT_IDX] == 1) begin

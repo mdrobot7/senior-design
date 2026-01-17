@@ -43,22 +43,30 @@ module decoder_m (
         //OUT
         ctl_sigs_reg[`OUT_IDX] = (opcode == `OUT_OPCODE) ? 1 : 0;
 
-        //USE_IMM
-        case(opcode)
-            `ADDI_OPCODE, `MULI_OPCODE, `ANDI_OPCODE, `ORI_OPCODE, `XORI_OPCODE, `SLL_OPCODE, 
-            `SRL_OPCODE, `SRA_OPCODE, `LUI_OPCODE, `LLI_OPCODE, `LW_OPCODE, `LB_OPCODE, `SW_OPCODE,
-            `SB_OPCODE, `JUMP_OPCODE, `JAL_OPCODE:
-                ctl_sigs_reg[`USE_IMM_IDX] = 1; //use imm
-            default:
-                ctl_sigs_reg[`USE_IMM_IDX] = 0; //dont use imm
-        endcase
-
-        //USE_PC
+        //ALU_SRC_A
         case(opcode)
             `JUMP_OPCODE, `JAL_OPCODE:
-                ctl_sigs_reg[`USE_PC_IDX] = 1; //PC into alu input a
+                ctl_sigs_reg[`ALU_SRC_A_IDX] = `PC_SRC_A;
+            `LLI_OPCODE:
+                ctl_sigs_reg[`ALU_SRC_A_IDX] = `LLI_SRC_A;
+            `LUI_OPCODE:
+                ctl_sigs_reg[`ALU_SRC_A_IDX] = `LUI_SRC_A;
             default:
-                ctl_sigs_reg[`USE_PC_IDX] = 0; //regfile value into a
+                ctl_sigs_reg[`ALU_SRC_A_IDX] = `REG_SRC_A;
+        endcase
+
+        //ALU_SRC_B
+        case(opcode)
+            `ADDI_OPCODE, `MULI_OPCODE, `ANDI_OPCODE, `ORI_OPCODE, `XORI_OPCODE, `SLL_OPCODE, 
+            `SRL_OPCODE, `SRA_OPCODE, `LW_OPCODE, `LB_OPCODE, `SW_OPCODE,
+            `SB_OPCODE, `JUMP_OPCODE, `JAL_OPCODE:
+                ctl_sigs_reg[`ALU_SRC_B_IDX] = `IMM_SRC_B; //use imm
+            `LLI_OPCODE:
+                ctl_sigs_reg[`ALU_SRC_B_IDX] = `LLI_SRC_B;
+            `LUI_OPCODE:
+                ctl_sigs_reg[`ALU_SRC_B_IDX] = `LUI_SRC_B;
+            default:
+                ctl_sigs_reg[`ALU_SRC_B_IDX] = `REG_SRC_B; //dont use imm
         endcase
 
         //USE_ALU
