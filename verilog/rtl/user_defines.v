@@ -317,8 +317,9 @@
 `define PREDICATE_WRITE_IDX     (`IS_PREDICABLE_IDX + 1)
 `define PREDICATE_ALU_OP_IDX    (`PREDICATE_WRITE_IDX + 1)
 `define IS_CLRP_IDX             (`PREDICATE_ALU_OP_IDX + 1)
+`define IS_SRP_IDX              (`IS_CLRP_IDX + 1)
 //mem-acc ctl sigs
-`define IS_LOAD_IDX         (`IS_CLRP_IDX + 1)
+`define IS_LOAD_IDX         (`IS_SRP_IDX + 1)
 `define IS_STORE_IDX        (`IS_LOAD_IDX + 1)
 `define ACCUM_CLR_IDX       (`IS_STORE_IDX + 1)
 `define IS_ACCUMULATE_IDX   (`ACCUM_CLR_IDX + 1)

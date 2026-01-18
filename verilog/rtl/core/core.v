@@ -88,6 +88,7 @@ module core_m(
     wire fwd_b;
     wire[`WORD_WIDTH-1:0] fwd_a_data;
     wire[`WORD_WIDTH-1:0] fwd_b_data;
+    reg[`REG_SOURCE_WIDTH-1:0] fwd_r1_addr;
 
     //decode modules
     decoder_m decoder (
@@ -150,7 +151,7 @@ module core_m(
 
     //forwarding module
     forward_m forward(
-        .ex_r1_addr(ex_inst[`R1_IDX]),
+        .ex_r1_addr(fwd_r1_addr),
         .ex_r2_addr(ex_inst[`R2_IDX]),
 
         .wb_dest_addr({2'b0, wb_inst[`REG_DEST_IDX]}),
@@ -158,7 +159,7 @@ module core_m(
         .wb_reg_wr(wb_ctl_sigs[`REGFILE_WRITE_IDX]),
 
         .mem_dest_addr({2'b0, mem_inst[`REG_DEST_IDX]}),
-        .mem_data(piped_alu_result[`STAGE_SLICE(WB_STAGE, `WORD_WIDTH)]),
+        .mem_data(piped_alu_result[`STAGE_SLICE(MEM_STAGE, `WORD_WIDTH)]),
         .mem_reg_wr(mem_ctl_sigs[`REGFILE_WRITE_IDX]),
         .mem_wb_sig(mem_ctl_sigs[`WB_SIG_IDX]),
 
@@ -183,7 +184,7 @@ module core_m(
     assign ex_ctl_sigs = piped_ctl_sigs[`STAGE_SLICE(EX_STAGE, `CTL_SIGS_WIDTH)];
 
     assign ex_predicate_wr   = (ex_ctl_sigs[`PREDICATE_WRITE_IDX] & ex_predicate_equal);
-    assign ex_predicate_mask = ex_inst[`PREDICATE_DATA_IDX];
+    assign ex_predicate_mask = (ex_ctl_sigs[`IS_SRP_IDX] == 1) ? `PREDICATE_BITS_WIDTH'b111 :  ex_inst[`PREDICATE_DATA_IDX];
 
     assign ex_predicate_data =  (ex_ctl_sigs[`PREDICATE_ALU_OP_IDX] == 1)   ? {`PREDICATE_BITS_WIDTH{ex_alu_result[0]}} : //copy lsb 3 times for the write
                                 (ex_ctl_sigs[`IS_CLRP_IDX] == 1)            ? (~ex_inst[`PREDICATE_DATA_IDX]) : // invert the mask to set the 0s
@@ -204,6 +205,7 @@ module core_m(
     assign wb_inst = piped_inst[`STAGE_SLICE(WB_STAGE, `WORD_WIDTH)];
     assign wb_addr = wb_inst[`REG_DEST_IDX];
 
+    //fwd assignments
     always @ (*) begin
         //continuous assignments
         integer i;
@@ -218,8 +220,8 @@ module core_m(
 
         case(ex_ctl_sigs[`ALU_SRC_B_IDX])
             `IMM_SRC_B: ex_alu_b = piped_imm[`STAGE_SLICE(EX_STAGE, `WORD_WIDTH)];
-            `LLI_SRC_B: ex_alu_b = {16'h0, ex_imm[15:0]};
             `LUI_SRC_B: ex_alu_b = {ex_imm[15:0], 16'h0};
+            `LLI_SRC_B: ex_alu_b = {16'h0, ex_imm[15:0]};
             default:    ex_alu_b = ex_r2_data;
 
         endcase
@@ -239,6 +241,14 @@ module core_m(
             `WB_EX_RESULT:  wb_data = piped_alu_result[`STAGE_SLICE(WB_STAGE, `WORD_WIDTH)];
             `WB_MEM_RESULT: wb_data = piped_mem_result[`STAGE_SLICE(WB_STAGE, `WORD_WIDTH)];
             default:        wb_data = piped_accum_result[`STAGE_SLICE(WB_STAGE, `WORD_WIDTH)];
+        endcase
+
+        //fwd
+        case(ex_ctl_sigs[`ALU_SRC_A_IDX])
+            `LLI_SRC_A, `LUI_SRC_A:
+                fwd_r1_addr = {2'b0, ex_inst[`REG_DEST_IDX]};
+            default:
+                fwd_r1_addr = ex_inst[`R1_IDX];
         endcase
     end
 

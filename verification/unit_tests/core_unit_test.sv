@@ -25,7 +25,7 @@ module core_m_unit_test;
   wire clk, nrst;
   clk_rst_m clk_rst(.clk_o(clk), .nrst_o(nrst));
   reg[`WORD_WIDTH-1:0] inst, pc, global_r1_data, global_r2_data, mem_data_in;
-  reg[`WORD_WIDTH-1:0] i_mem [0:63];
+  reg[`WORD_WIDTH-1:0] i_mem [0:127];
 
 
   wire is_load, is_store;
@@ -104,8 +104,8 @@ module core_m_unit_test;
     integer i;
     //values from test_core.s
     $readmemh("test_cores.mem", i_mem);
+    @(negedge clk);
     for(i = 0; i < 17; i = i + 1) begin
-      @(negedge clk);
       pc = pc + 1;
       inst = i_mem[i];
       clk_rst.WAIT_CYCLES(1);
@@ -128,9 +128,9 @@ module core_m_unit_test;
     $readmemh("test_cores.mem", i_mem);
     clk_rst.RESET();
     clk_rst.WAIT_CYCLES(3);
+    @(negedge clk);
 
     for(i = 0; i < 55; i = i + 1) begin
-      @(negedge clk);
       pc = pc + 1;
       inst = i_mem[i];
       clk_rst.WAIT_CYCLES(1);
@@ -163,6 +163,131 @@ module core_m_unit_test;
     `FAIL_UNLESS_EQUAL(my_core_m.outbox[6], -32'h7);
     `FAIL_UNLESS_EQUAL(my_core_m.outbox[7], 32'h5);
 
+  `SVTEST_END
+
+  `SVTEST(test_lui_lli)
+    integer i;
+    $readmemh("test_cores.mem", i_mem);
+    clk_rst.RESET();
+    clk_rst.WAIT_CYCLES(3);
+
+    for(i = 0; i < 59; i = i + 1) begin
+      @(negedge clk);
+      pc = pc + 1;
+      inst = i_mem[i];
+    end
+    clk_rst.WAIT_CYCLES(5);
+
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[0], 32'd0);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[1], -32'd1);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[2], 32'd2);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[3], -32'd3);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[4], 32'd4);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[5], -32'd5);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[6], 32'd6);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[7], 32'hFFFFFFF9)
+    
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[8], 32'h5);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[9], 32'h00001000);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[10], 32'hFFFFF371);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[11], 32'hFFFF8E04);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[12], 32'h00000001);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[13], 32'hFFFF8B51);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[14], 32'hFFFFFC18);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[15], 32'h55559090);
+
+    `FAIL_UNLESS_EQUAL(my_core_m.outbox[0], -32'd1);
+    `FAIL_UNLESS_EQUAL(my_core_m.outbox[1], 32'd2);
+    `FAIL_UNLESS_EQUAL(my_core_m.outbox[2], -32'h3);
+    `FAIL_UNLESS_EQUAL(my_core_m.outbox[3], 32'h4);
+    `FAIL_UNLESS_EQUAL(my_core_m.outbox[4], -32'h5);
+    `FAIL_UNLESS_EQUAL(my_core_m.outbox[5], 32'h6);
+    `FAIL_UNLESS_EQUAL(my_core_m.outbox[6], -32'h7);
+    `FAIL_UNLESS_EQUAL(my_core_m.outbox[7], 32'h5);
+  `SVTEST_END
+
+    `SVTEST(test_macops)
+    integer i;
+    $readmemh("test_cores.mem", i_mem);
+    clk_rst.RESET();
+    clk_rst.WAIT_CYCLES(3);
+
+    for(i = 0; i < 78; i = i + 1) begin
+      @(negedge clk);
+      pc = pc + 1;
+      inst = i_mem[i];
+    end
+    clk_rst.WAIT_CYCLES(5);
+
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[0], 32'd0);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[1], -32'd1);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[2], 32'd2);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[3], -32'd3);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[4], 32'd4);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[5], -32'd5);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[6], 32'd6);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[7], 32'hFFFFFFF9)
+    
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[8], 32'h5);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[9], 32'h0000107D);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[10], 32'h00019000);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[11], 32'h000050C8);
+
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[12], 32'h000670D4);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[13], 32'h002C5E5B);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[14], 32'h002C5E5A);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[15], 32'h00000000);
+
+    `FAIL_UNLESS_EQUAL(my_core_m.outbox[0], -32'd1);
+    `FAIL_UNLESS_EQUAL(my_core_m.outbox[1], 32'd2);
+    `FAIL_UNLESS_EQUAL(my_core_m.outbox[2], -32'h3);
+    `FAIL_UNLESS_EQUAL(my_core_m.outbox[3], 32'h4);
+    `FAIL_UNLESS_EQUAL(my_core_m.outbox[4], -32'h5);
+    `FAIL_UNLESS_EQUAL(my_core_m.outbox[5], 32'h6);
+    `FAIL_UNLESS_EQUAL(my_core_m.outbox[6], -32'h7);
+    `FAIL_UNLESS_EQUAL(my_core_m.outbox[7], 32'h5);
+  `SVTEST_END
+
+  `SVTEST(test_predication)
+    integer i;
+    $readmemh("test_cores.mem", i_mem);
+    clk_rst.RESET();
+    clk_rst.WAIT_CYCLES(3);
+
+    for(i = 0; i < 103; i = i + 1) begin
+      @(negedge clk);
+      pc = pc + 1;
+      inst = i_mem[i];
+    end
+    clk_rst.WAIT_CYCLES(5);
+
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[0], 32'd0);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[1], -32'd1);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[2], 32'd2);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[3], -32'd3);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[4], 32'd4);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[5], -32'd5);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[6], 32'd6);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[7], 32'h00000000)
+    
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[8], 32'h1);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[9], 32'h0);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[10], 32'h1);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[11], 32'h0);
+
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[12], 32'h4);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[13], 32'h0);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[14], 32'h1);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[15], 32'hFFFFFFFF);
+
+    `FAIL_UNLESS_EQUAL(my_core_m.outbox[0], -32'd1);
+    `FAIL_UNLESS_EQUAL(my_core_m.outbox[1], 32'd2);
+    `FAIL_UNLESS_EQUAL(my_core_m.outbox[2], -32'h3);
+    `FAIL_UNLESS_EQUAL(my_core_m.outbox[3], 32'h4);
+    `FAIL_UNLESS_EQUAL(my_core_m.outbox[4], -32'h5);
+    `FAIL_UNLESS_EQUAL(my_core_m.outbox[5], 32'h6);
+    `FAIL_UNLESS_EQUAL(my_core_m.outbox[6], -32'h7);
+    `FAIL_UNLESS_EQUAL(my_core_m.outbox[7], 32'h5);
   `SVTEST_END
 
   `SVUNIT_TESTS_END

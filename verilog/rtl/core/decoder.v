@@ -131,6 +131,8 @@ module decoder_m (
         //IS_CLRP
         ctl_sigs_reg[`IS_CLRP_IDX] = (opcode == `CLRP_OPCODE) ? 1 : 0;
 
+        ctl_sigs_reg[`IS_SRP_IDX] = (opcode == `SRP_OPCODE) ? 1 : 0;
+
         //IS_LOAD
 		case(opcode)
 			`LB_OPCODE, `LW_OPCODE:
