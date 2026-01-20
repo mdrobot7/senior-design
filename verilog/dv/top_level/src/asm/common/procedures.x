@@ -408,5 +408,71 @@ int main()
     return 1;
   }
 
+
+  // Hacky thing to generate a binary results file to compare against the core sim
+  FILE * f = fopen("./test_procedure_results.bin", "wb");
+  uint32_t zero = 0;
+
+  fwrite(utests, NUM_TESTS, 4, f); // 0x00
+  fwrite(&zero, 1, 4, f);// Pad
+  fwrite(&zero, 1, 4, f);// Pad
+  fwrite(&zero, 1, 4, f);// Pad
+  fwrite(itests, NUM_TESTS, 4, f); // 0x40
+  fwrite(&zero, 1, 4, f);// Pad
+  fwrite(&zero, 1, 4, f);// Pad
+  fwrite(&zero, 1, 4, f);// Pad
+  fwrite(fixedtests, NUM_TESTS, 4, f); // 0x80
+  fwrite(&zero, 1, 4, f);// Pad
+  fwrite(&zero, 1, 4, f);// Pad
+  fwrite(&zero, 1, 4, f);// Pad
+
+  for (int i = 0; i < (0x2404 - 0xC0) / 4; i++) {
+    fwrite(&zero, 1, 4, f);// Result space, stack space
+  }
+
+  fseek(f, 0x400, SEEK_SET);
+  for(int i = 0; i < NUM_TESTS; i++) {
+      for(int j = 0; j < NUM_TESTS; j++) {
+        uint32_t val = div_uint(utests[i], utests[j]);
+        fwrite(&val, 1, 4, f);
+      }
+  }
+  fseek(f, 0x800, SEEK_SET);
+  for(int i = 0; i < NUM_TESTS; i++) {
+      for(int j = 0; j < NUM_TESTS; j++) {
+        int32_t val = div_int(itests[i], itests[j]);
+        fwrite(&val, 1, 4, f);
+      }
+  }
+  fseek(f, 0xC00, SEEK_SET);
+  for(int i = 0; i < NUM_TESTS; i++) {
+      for(int j = 0; j < NUM_TESTS; j++) {
+        int32_t val = div_fixed((int32_t)fixedtests[i], (int32_t)fixedtests[j]);
+        fwrite(&val, 1, 4, f);
+      }
+  }
+  fseek(f, 0x1000, SEEK_SET);
+  for(int i = 0; i < NUM_TESTS; i++) {
+      for(int j = 0; j < NUM_TESTS; j++) {
+        uint32_t val = mod_uint(utests[i], utests[j]);
+        fwrite(&val, 1, 4, f);
+      }
+  }
+  fseek(f, 0x1400, SEEK_SET);
+  for(int i = 0; i < NUM_TESTS; i++) {
+      for(int j = 0; j < NUM_TESTS; j++) {
+        int32_t val = mod_int(itests[i], itests[j]);
+        fwrite(&val, 1, 4, f);
+      }
+  }
+  fseek(f, 0x1800, SEEK_SET);
+  for(int i = 0; i < NUM_TESTS; i++) {
+      for(int j = 0; j < NUM_TESTS; j++) {
+        int32_t val = mod_fixed(fixedtests[i], fixedtests[j]);
+        fwrite(&val, 1, 4, f);
+      }
+  }
+  fclose(f);
+
   return 0;
 }

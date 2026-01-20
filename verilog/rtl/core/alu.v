@@ -49,19 +49,20 @@ module alu_m (
     assign result_o = result;
     always @(*) begin
         case(alu_ctl_i)
-            `ALU_ADD_CTL:      result <= sum;
-            `ALU_SUB_CTL:      result <= sum;
-            `ALU_MULT_CTL:     result <= product;
-            `ALU_AND_CTL:      result <= (a_i & b_i);
-            `ALU_OR_CTL:       result <= (a_i | b_i);
-            `ALU_XOR_CTL:      result <= (a_i ^ b_i);
-            `ALU_SEQ_CTL:      result <= seq;
-            `ALU_SLT_CTL:      result <= slt;
-            `ALU_SLTU_CTL:     result <= sltu;
-            `ALU_SLL_CTL:      result <= (a_i << b_i);
-            `ALU_SRL_CTL:      result <= (a_i >> b_i);
-            `ALU_SRA_CTL:      result <= (a_i >>> b_i);
-            default:           result <= sum;
+            `ALU_ADD_CTL:       result <= sum;
+            `ALU_SUB_CTL:       result <= sum;
+            `ALU_MULT_CTL:      result <= product;
+            `ALU_AND_CTL:       result <= (a_i & b_i);
+            `ALU_OR_CTL:        result <= (a_i | b_i);
+            `ALU_XOR_CTL:       result <= (a_i ^ b_i);
+            `ALU_SEQ_CTL:       result <= seq;
+            `ALU_SLT_CTL:       result <= slt;
+            `ALU_SLTU_CTL:      result <= sltu;
+            `ALU_SLL_CTL:       result <= (a_i << b_i);
+            `ALU_SRL_CTL:       result <= (a_i >> b_i);
+            `ALU_SRA_CTL:       result <= (a_i >>> b_i);
+            `ALU_NOP_CTL:       result <= a_i;
+            default:            result <= a_i;
         endcase
     end
 endmodule

@@ -28,7 +28,7 @@ __div_uint:
 
     (000) speq $p0, $r0, $zero
     (000) speq $p0, $r1, $zero
-    (000) splt $p0, $r0, $r1
+    (000) spltu $p0, $r0, $r1
     (001) mov $r4, $zero        ; if (n == 0 || d == 0 || n < d) ret = 0;
     (000) addi $r4, $zero, 1
     (000) speq $p1, $r1, $r4
@@ -114,14 +114,14 @@ __mod_uint:
     (000) speq $p0, $r0, $zero
     (000) speq $p0, $r1, $zero
     (000) addi $r4, $zero, 1
-    (000) speq $p0, $r1, $r2
+    (000) speq $p0, $r1, $r4
     (001) mov $r4, $zero      ; if (n == 0 || d == 0 || d == 1) ret = 0;
     spr $r3
     (000) jal __div_loop      ; else ret = __div_loop(n, d)
     (000) mov $r4, $r0
 
     clrp (111)
-    (000) mov $r4, $r2
+    (000) mov $r2, $r4
     (000) lw $r3,  0[$sp]
     (000) lw $r4,  4[$sp]
     (000) addi $sp, $sp, 8
@@ -156,12 +156,11 @@ __mod_int:
     clrp (111)
 
     spr $r3
-    (000) jal __div_uint       ; ret = __div_uint(abs_n, abs_d)
-    (000) mov $r2, $r0
+    (000) jal __mod_uint       ; ret = __mod_uint(abs_n, abs_d)
 
-    (000) speq $p0, $r4, $zero ; if (n < 0)
-    (000) not $r2, $r2
-    (000) addi $r2, $r2, 1     ; ret = -ret
+    (000) splt $p0, $r4, $zero ; if (n < 0)
+    (001) not $r2, $r2
+    (001) addi $r2, $r2, 1     ; ret = -ret
 
     clrp (111)
     (000) lw $r3,  0[$sp]
@@ -194,7 +193,7 @@ __div_loop:
 __div_loop_start:
     (000) sllv $r5, $r1, $r4
     (000) sub $r6, $r0, $r5
-    (000) srlt $r6, $r0, $r6
+    (000) srltu $r6, $r0, $r6
     (000) speq $p2, $r6, $zero ; (n - (d << shift) <= n)
     (100) srlv $r6, $r5, $r4
     (100) speq $p2, $r6, $r1   ; ((d << shift) >> shift == d)

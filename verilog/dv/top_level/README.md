@@ -27,15 +27,22 @@ All scripts should be run using the Caravel Python venv: `source [path_to_projec
 
 Pip packages can be installed normally using `pip` after the venv has been activated: `(venv) user@pc $ pip install my_dependency`. Install the dependencies for the script you're trying to run, otherwise it won't work.
 
-- `obj_to_rasterizer.py`: Convert an OBJ 3D model file to verilog code for the rasterizer testbench.
-  - Usage: `obj_to_rasterizer.py [model.obj] [output.v]`
-  - Dependencies: `open3d, numpy`
-- `ply_to_obj.py`: Convert a PLY polygon file model to OBJ format.
-  - Usage: `ply_to_obj.py [infile.ply] [outfile.obj]
-  - Dependencies: `open3d`
+- `fixed_point.py`: Signed fixed point number converter.
+  - Usage: `fixed_point.py [0x00HEXVAL|3.141592]`
 - `obj_locality-analyzer.py`: Counts distance between vertex reuse, saves CSVs to ./reuse_csvs/*.reuse_count.csv
   - Usage: `ply_to_obj.py [model1.obj model2.obj ...]
+  - Dependencies: `open3d, numpy`
+- `obj_to_memory.py`: Convert an OBJ 3D model file to binary data in the correct format for the vertex shader. Also outputs a binary dump of the global register file containing the model-view-perspective matrix. Can be used with the core simulator or for on-chip firmware.
+  - Usage: `obj_to_bins.py [model.obj] [memory.bin] [globals.bin]`
+  - Dependencies: `open3d, numpy`
+- `obj_to_rasterizer.py`: Convert an OBJ 3D model file to verilog code for the rasterizer testbench.
+  - Usage: `obj_to_rasterizer.py [model.obj] [output.v]`
   - Dependencies: `open3d, numpy`
 - `plot_locality.py`: Plots the output CSVs from locality analyzer to visualize reuse patterns. Optionally comment out plt.xscale or plot.yscale.
   - Usage: `plot_locality.py [input.csv]`
   - Dependencies: `pandas, matplotlib`
+- `ply_to_obj.py`: Convert a PLY polygon file model to OBJ format.
+  - Usage: `ply_to_obj.py [infile.ply] [outfile.obj]
+  - Dependencies: `open3d`
+- `simulator.py`: Shader core simulator. Intended to be used for shader software development and core verification. Outputs a binary dump of system memory at the end of execution in `./memory.bin`.
+  - Usage: `simulator.py --help`

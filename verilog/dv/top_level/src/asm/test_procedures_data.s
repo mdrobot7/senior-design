@@ -23,4 +23,10 @@
 #d32 le(0x0`32), le(0x400`32), le(0x800`32), le(0x2400`32), le(0x2800`32), le(0xFA000`32), le(0x3D090000`32), le(0x7FFFFC00`32), le(0x80000000`32), le(0xF2741380`32), le(0xF876FC00`32), le(0xFFFFF800`32), le(0xFFFFFC00`32)
 
 ; Results go between 0x400 and 0x1C00
-#addr 0x1C00
+#addr 0x400
+#res 6144
+
+; Stack area, we're using procedure calls and they need stack space
+#addr 0x2000
+#res 0x400
+#d 0x00000000 ; Trick customasm into adding blocks of 0s
