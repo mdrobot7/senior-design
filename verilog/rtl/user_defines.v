@@ -212,3 +212,7 @@
 `define ALU_SRL_CTL     (`ALU_CTL_SIZE'b1001)
 `define ALU_SRA_CTL     (`ALU_CTL_SIZE'b1010)
 `define ALU_SLTU_CTL    (`ALU_CTL_SIZE'b1011)
+
+// Shaded vertices (temporary)
+`define SHADED_VERTEX_WIDTH (32)
+`define SHADED_VERTEX (`SHADED_VERTEX_WIDTH-1):0
