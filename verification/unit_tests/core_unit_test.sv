@@ -24,11 +24,12 @@ module core_m_unit_test;
 
   wire clk, nrst;
   clk_rst_m clk_rst(.clk_o(clk), .nrst_o(nrst));
-  reg[`WORD_WIDTH-1:0] inst, pc, global_r1_data, global_r2_data, mem_data_in;
+  reg stall, flush_dec_stage;
+  reg[`WORD_WIDTH-1:0] inst, global_r1_data, global_r2_data, mem_data_in;
   reg[`WORD_WIDTH-1:0] i_mem [0:127];
 
 
-  wire is_load, is_store;
+  wire is_load, is_store, jump_request;
   wire[`WORD_WIDTH-1:0] mem_addr, mem_data_out;
 
   //===================================
@@ -39,7 +40,6 @@ module core_m_unit_test;
     .clk_i(clk),
     .nrst_i(nrst),
     .inst_i(inst),
-    .pc_i(pc),
     .global_r1_data_i(global_r1_data),
     .global_r2_data_i(global_r2_data),
 
@@ -47,7 +47,11 @@ module core_m_unit_test;
     .mem_data_o(mem_data_out),
     .is_load_o(is_load),
     .is_store_o(is_store),
-    .mem_data_i(mem_data_in)
+    .mem_data_i(mem_data_in),
+
+    .jump_request_o(jump_request),
+    .flush_dec_stage_i(flush_dec_stage),
+    .stall_i(stall)
   );
 
 
@@ -68,7 +72,8 @@ module core_m_unit_test;
     global_r1_data = 0;
     global_r2_data = 0;
     mem_data_in = 0;
-    pc = 0;
+    stall = 0;
+    flush_dec_stage = 0;
     clk_rst.RESET();
     clk_rst.WAIT_CYCLES(3);
   endtask
@@ -106,7 +111,6 @@ module core_m_unit_test;
     $readmemh("test_cores.mem", i_mem);
     @(negedge clk);
     for(i = 0; i < 17; i = i + 1) begin
-      pc = pc + 1;
       inst = i_mem[i];
       clk_rst.WAIT_CYCLES(1);
     end
@@ -131,7 +135,6 @@ module core_m_unit_test;
     @(negedge clk);
 
     for(i = 0; i < 55; i = i + 1) begin
-      pc = pc + 1;
       inst = i_mem[i];
       clk_rst.WAIT_CYCLES(1);
     end
@@ -173,7 +176,6 @@ module core_m_unit_test;
 
     for(i = 0; i < 59; i = i + 1) begin
       @(negedge clk);
-      pc = pc + 1;
       inst = i_mem[i];
     end
     clk_rst.WAIT_CYCLES(5);
@@ -214,7 +216,6 @@ module core_m_unit_test;
 
     for(i = 0; i < 78; i = i + 1) begin
       @(negedge clk);
-      pc = pc + 1;
       inst = i_mem[i];
     end
     clk_rst.WAIT_CYCLES(5);
@@ -256,7 +257,6 @@ module core_m_unit_test;
 
     for(i = 0; i < 103; i = i + 1) begin
       @(negedge clk);
-      pc = pc + 1;
       inst = i_mem[i];
     end
     clk_rst.WAIT_CYCLES(5);
@@ -288,6 +288,87 @@ module core_m_unit_test;
     `FAIL_UNLESS_EQUAL(my_core_m.outbox[5], 32'h6);
     `FAIL_UNLESS_EQUAL(my_core_m.outbox[6], -32'h7);
     `FAIL_UNLESS_EQUAL(my_core_m.outbox[7], 32'h5);
+  `SVTEST_END
+
+  `SVTEST(jumping)
+    integer i;
+    $readmemh("test_jumping.mem", i_mem);
+    clk_rst.RESET();
+    clk_rst.WAIT_CYCLES(3);
+    //clear all regs and seed some values
+    for(i = 0; i < 25; i = i + 1) begin
+      @(negedge clk);
+      inst = i_mem[i];
+    end
+
+    //due to wonderful jumping stuff, we are gonna take this slow and explicitly run each instruction
+    @(negedge clk);
+    inst = i_mem[i]; //jump 0x8
+
+    @(negedge clk);
+    `FAIL_IF(jump_request);
+    i = i + 1;
+    inst = i_mem[i]; // speq $p0, $r1, $r1, should be flushed 
+
+    //jump is now in ex, speq in decode, we should be jumping
+    @(negedge clk);
+    `FAIL_UNLESS(jump_request);
+    flush_dec_stage = 1;
+    i = i + 2;
+    inst = i_mem[i]; // speq $p1, $r1, $r1
+
+    @(negedge clk);
+    flush_dec_stage = 0;
+    i = i + 1;
+    inst = i_mem[i]; // jump -8 (annulled)
+
+    @(negedge clk);
+    i = i + 1;
+    inst = i_mem[i]; // jal -12 (annulled)
+
+    @(negedge clk);
+    `FAIL_IF(jump_request); // jump -8 should be annulled
+    i = i + 1;
+    inst = i_mem[i]; // jump 4 
+
+    @(negedge clk);
+    `FAIL_IF(jump_request); //jal -12 should be annulled
+    i = i + 1;
+    inst = i_mem[i]; // addi $r1, $r1, 16
+
+    @(negedge clk);
+    `FAIL_UNLESS(jump_request);
+    i = i + 1;
+    inst = i_mem[i]; // (010) addi $r9, $r9, 100
+
+    @(negedge clk);
+    i = i + 1;
+    inst = i_mem[i]; // addi $r10, $r9, 101
+
+    @(negedge clk);
+    i = i + 1;
+    inst = i_mem[i]; // halt
+    clk_rst.WAIT_CYCLES(5);
+
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[0], 32'd0);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[1], -32'd1);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[2], 32'd2);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[3], -32'd3);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[4], 32'd4);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[5], -32'd5);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[6], 32'd6);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[7], -32'h7)
+    
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[8], 32'h0);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[9], 32'h64);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[10], 32'hC9);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[11], 32'h0);
+
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[12], 32'h0);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[13], 32'h0);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[14], 32'h0);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[15], 32'h0);
+
   `SVTEST_END
 
   `SVUNIT_TESTS_END
