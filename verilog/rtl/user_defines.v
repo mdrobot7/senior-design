@@ -97,6 +97,8 @@
 `define SC_WIDTH ($clog2((`WIDTH) > (`HEIGHT) ? (`WIDTH) : (`HEIGHT)))
 
 `define WORD_WIDTH (32)
+`define WORD `WORD_WIDTH - 1:0
+
 `define DECIMAL_POS (10)
 
 `define WORD_SMAX (1 << (`WORD_WIDTH - 2))
@@ -311,3 +313,7 @@
 `define WB_SIG_IDX          (`REGFILE_WRITE_IDX + `WB_SIG_WIDTH):(`REGFILE_WRITE_IDX + 1)
 
 `define CTL_SIGS_WIDTH      (`REGFILE_WRITE_IDX + `WB_SIG_WIDTH+ 1)
+
+// Shaded vertices (sizes are temporary)
+`define SHADED_VERTEX_WIDTH (32)
+`define SHADED_VERTEX (`SHADED_VERTEX_WIDTH-1):0
