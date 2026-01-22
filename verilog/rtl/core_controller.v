@@ -31,7 +31,7 @@ endmodule
 module core_controller_m #() (
 `ifdef USE_POWER_PINS
   inout vpwrac,
-  input vpwrpc,
+  inout vpwrpc,
 `endif
 
   input wire clk_i,
@@ -92,7 +92,7 @@ module core_controller_m #() (
   // IMEM
   wire [`WORD_WIDTH-1:0] imem_do;
   assign imem_do_o = (state == STATE_STOPPED) ? imem_do : 0;
-  wire imem_addr   = (state == STATE_STOPPED) ? imem_addr_i : pc_list[pc_list_idx]; // In *words*
+  wire imem_addr   = (state == STATE_STOPPED) ? imem_addr_i : pc; // In *words*
   wire imem_rw     = (state == STATE_STOPPED) ? imem_rw_i : 1;
   sram_ip_wrapper imem(`WORD_WIDTH, IMEM_ADDR_WIDTH) (
     .CLKin(clk_i),
@@ -130,8 +130,8 @@ module core_controller_m #() (
   assign inst_o = (halt_counter != 0) ? INST_NOP : imem_do; // Feed the core NOPs after a halt
   reg [`JUMP_WIDTH-1:0] jump_offsets [JUMP_STAGE];
   reg [JUMP_STAGE-1:0] jump_type;
-  wire [`IMEM_ADDR_WIDTH-1:0] jump_jal_offset = imem_addr + jump_offsets[1][22:2]; // Add word offset, not byte offset
-  wire [`IMEM_ADDR_WIDTH-1:0] jret_offset     = imem_addr + call_stack[call_stack_idx][22:2];
+  wire [`IMEM_ADDR_WIDTH-1:0] jump_jal_offset = pc + jump_offsets[1][22:2]; // Add word offset, not byte offset
+  wire [`IMEM_ADDR_WIDTH-1:0] jret_offset     = pc + call_stack[call_stack_idx][22:2];
 
   // Core control signals
   reg core_stall;
@@ -143,6 +143,7 @@ module core_controller_m #() (
   // PC, in *words*
   reg [PC_LIST_LEN-1:0] pc_list[`IMEM_ADDR_WIDTH-1:0];
   reg [PC_LIST_BITS-1:0] pc_list_idx;
+  wire pc = pc_list[pc_list_idx];
 
   // Call stack
   reg [CALL_STACK_LEN-1:0] call_stack[`IMEM_ADDR_WIDTH-1:0];
@@ -172,16 +173,25 @@ module core_controller_m #() (
 
   always @(posedge clk_i, negedge nrst_i) begin
     if (!nrst_i) begin
-      imem_addr <= 0;
-      imem_rw <= 1;
+      halt_reached_o <= 0;
+      error_o <= 0;
+
+      halt_counter <= 0;
+      for (i = 0; i < JUMP_IDX; i++)
+        jump_offsets[i] <= 0;
+      jump_type <= 0;
+
+      core_stall <= 0;
+      core_flush <= 1;
+
       for (i = 0; i < PC_LIST_LEN; i++)
         pc_list[i] <= 0;
+      pc_list_idx <= 0;
+
       for (i = 0; i < CALL_STACK_LEN; i++)
         call_stack[i] <= 0;
-      halt_counter <= 0;
-      jump_present <= 0;
-      for (i = 0; i < JUMP_IDX + 1; i++)
-        jump_offsets[i] <= 0;
+      call_stack_idx <= 0;
+
       state <= 0;
     end
     else if (clk_i) begin
@@ -195,10 +205,11 @@ module core_controller_m #() (
       else begin
         case (state) begin
           STATE_STOPPED: begin
-            if (run_i)
+            if (run_i) begin
+              core_stall <= 0;
+              core_flush <= 0;
               state <= STATE_RUNNING;
-            if (halt_reached_clr_i)
-              halt_reached_o <= 0;
+            end
           end
           STATE_RUNNING: begin
             if (!run_i) begin
@@ -207,10 +218,10 @@ module core_controller_m #() (
             end
 
             if (!core_stall_i) begin
-              if (imem_addr == IMEM_ADDR_MAX - 1)
+              if (pc == IMEM_ADDR_MAX - 1)
                 state <= STATE_ERROR; // Overran end of IMEM
               else
-                imem_addr <= imem_addr + 1;
+                pc <= pc + 1;
 
               // Handle halt: Wait until halt instruction reaches writeback
               if (inst_opcode == OPCODE_HALT || halt_counter)
@@ -233,18 +244,18 @@ module core_controller_m #() (
               if (core_jump_i) begin
                 if (jump_type[1] == JUMP_TYPE_JAL && call_stack_idx != CALL_STACK_LEN - 1) begin
                   // Call stack overflow is a nop
-                  imem_addr <= jump_jal_offset;
+                  pc <= jump_jal_offset;
                   call_stack[call_stack_idx] <= jump_jal_offset;
                   call_stack_idx <= call_stack_idx + 1;
                 end
                 else if (jump_type[1] == JUMP_TYPE_JUMP)
-                  imem_addr <= jump_jal_offset;
+                  pc <= jump_jal_offset;
               end
 
               // Handle jret: Jump immediately, jret can't be predicated
               if (inst_opcode == OPCODE_JRET && call_stack_idx != 0) begin
                 // Call stack underflow is a nop
-                imem_addr <= call_stack[call_stack_idx];
+                pc <= call_stack[call_stack_idx];
                 call_stack_idx <= call_stack_idx - 1;
               end
             end
@@ -257,8 +268,16 @@ module core_controller_m #() (
           end
           STATE_HALTED: begin
             halt_counter <= 0;
-            if (!run_i)
-              state <= STATE_STOPPED;
+            if (pause_at_halt_i) begin
+              if (!run_i)
+                state <= STATE_STOPPED;
+            end
+            else begin
+              pc_list_idx <= pc_list_idx + 1;
+              core_stall <= 0;
+              core_flush <= 0;
+              state <= STATE_RUNNING;
+            end
           end
           STATE_ERROR: begin
             error_o <= 1;
@@ -267,9 +286,10 @@ module core_controller_m #() (
           end
         endcase
       end
-  end
 
-  always @(*) begin
+      if (halt_reached_clr_i)
+        halt_reached_o <= 0;
+    end
   end
 
 endmodule
