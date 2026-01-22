@@ -1,4 +1,9 @@
 module core_controller_wrapper_m #() (
+`ifdef USE_POWER_PINS
+    inout vpwrac,
+    input vpwrpc,
+`endif
+
     // Wishbone
     input wire wb_clk_i,
     input wire wb_rst_i,
@@ -24,38 +29,43 @@ endmodule
 
 
 module core_controller_m #() (
+`ifdef USE_POWER_PINS
+  inout vpwrac,
+  input vpwrpc,
+`endif
+
   input wire clk_i,
   input wire nrst_i,
 
   // Wishbone interface
-  output reg [`WORD_WIDTH-1:0] imem_do_o;
-  input wire [`WORD_WIDTH-1:0] imem_di_i;
-  input wire [IMEM_ADDR_WIDTH-1:0] imem_addr_i;
+  input wire imem_rw_i; // 1 = read, 0 = write
+  output wire [`WORD_WIDTH-1:0] imem_do_o,
+  input wire [`WORD_WIDTH-1:0] imem_di_i,
+  input wire [IMEM_ADDR_WIDTH-1:0] imem_addr_i,
 
-  input wire [`REG_SOURCE_WIDTH-1:0] global_regfile_write_addr_i;
-  input wire [`REG_SOURCE_WIDTH-1:0] global_regfile_read_addr_i;
-  input wire global_regfile_write_en_i;                        
-  input wire [`WORD_WIDTH-1:0] global_regfile_write_data_i;   
-  output wire [`WORD_WIDTH-1:0] global_regfile_read_data_o;
+  input wire [`REG_SOURCE_WIDTH-1:0] global_regfile_write_addr_i,
+  input wire [`REG_SOURCE_WIDTH-1:0] global_regfile_read_addr_i,
+  input wire global_regfile_write_en_i,                        
+  input wire [`WORD_WIDTH-1:0] global_regfile_write_data_i,   
+  output wire [`WORD_WIDTH-1:0] global_regfile_read_data_o,
 
-  input wire reset_core_i;    // 1: reset shader cores
-  input wire run_i;           // 0: pause, 1: play
-  input wire pause_at_halt_i; // 0: continue to next PC in PC list after halt. 1: pause after halt
-  input wire halt_reached_clr_i; // 1: clear halt reached flag
-  output reg halt_reached_o;
-  output reg error_o; // TODO
-
+  input wire reset_core_i,    // 1: reset shader cores
+  input wire run_i,           // 0: pause, 1: play
+  input wire pause_at_halt_i, // 0: continue to next PC in PC list after halt. 1: pause after halt
+  input wire halt_reached_clr_i, // 1: clear halt reached flag
+  output reg halt_reached_o,
+  output reg error_o,
 
   // Shader core interface
-  output reg [`WORD_WIDTH-1:0] inst_o;
-  input wire [`NUM_CORES-1:0] core_stall_i;
-  output wire core_stall_o;                 // Stalls all all stages on all cores
-  input wire [`NUM_CORES-1:0] core_flush_i;
-  output wire core_flush_o;                 // Flushes all stages on all cores
-  input wire [`NUM_CORES-1:0] core_jump_i;
-  output wire [`NUM_CORES-1:0] core_jump_o; // Flushes decode on all cores
-  output wire [`WORD_WIDTH-1:0] global_regfile_rs1_data_o; // Valid for the instruction currently in decode
-  output wire [`WORD_WIDTH-1:0] global_regfile_rs2_data_o; // Valid for the instruction currently in decode
+  output wire [`WORD_WIDTH-1:0] inst_o,
+  input wire [`NUM_CORES-1:0] core_stall_i,
+  output wire core_stall_o,                 // Stalls all all stages on all cores
+  input wire [`NUM_CORES-1:0] core_flush_i,
+  output wire core_flush_o,                 // Flushes all stages on all cores
+  input wire [`NUM_CORES-1:0] core_jump_i,
+  output wire core_jump_o,                  // Flushes decode on all cores
+  output wire [`WORD_WIDTH-1:0] global_regfile_rs1_data_o,
+  output wire [`WORD_WIDTH-1:0] global_regfile_rs2_data_o
 );
 
   localparam PC_LIST_LEN = 8;
@@ -81,13 +91,13 @@ module core_controller_m #() (
 
   // IMEM
   wire [`WORD_WIDTH-1:0] imem_do;
-  reg [`WORD_WIDTH-1:0] imem_di;
-  reg [IMEM_ADDR_WIDTH-1:0] imem_addr; // In *words*
-  reg imem_rw; // 1 = read, 0 = Write
+  assign imem_do_o = (state == STATE_STOPPED) ? imem_do : 0;
+  wire imem_addr   = (state == STATE_STOPPED) ? imem_addr_i : pc_list[pc_list_idx]; // In *words*
+  wire imem_rw     = (state == STATE_STOPPED) ? imem_rw_i : 1;
   sram_ip_wrapper imem(`WORD_WIDTH, IMEM_ADDR_WIDTH) (
     .CLKin(clk_i),
     .DO(imem_do),
-    .DI(imem_di),
+    .DI(imem_di_i),
     .BEN(32'hFFFFFFFF), // Write mask
     .AD(imem_addr),
     .EN(1),
@@ -103,8 +113,10 @@ module core_controller_m #() (
     .ScanInDR(0),
     .ScanOutCC(),
 
-    .vpwrac(), // TODO power
-    .vpwrpc()
+`ifdef USE_POWER_PINS
+    .vpwrac(vpwrac),
+    .vpwrpc(vpwrpc)
+`endif
   );
 
   // Instruction decode
@@ -115,17 +127,22 @@ module core_controller_m #() (
 
   // Tracking jumps and halts through the core pipeline
   reg [1:0] halt_counter;
+  assign inst_o = (halt_counter != 0) ? INST_NOP : imem_do; // Feed the core NOPs after a halt
   reg [`JUMP_WIDTH-1:0] jump_offsets [JUMP_STAGE];
   reg [JUMP_STAGE-1:0] jump_type;
   wire [`IMEM_ADDR_WIDTH-1:0] jump_jal_offset = imem_addr + jump_offsets[1][22:2]; // Add word offset, not byte offset
   wire [`IMEM_ADDR_WIDTH-1:0] jret_offset     = imem_addr + call_stack[call_stack_idx][22:2];
 
   // Core control signals
-  assign core_stall_o = core_stall_i ? 1'b1 : 1'b0; // TODO fix
-  assign core_jump_o = core_jump_i ? 1'b1 : 1'b0;
+  reg core_stall;
+  assign core_stall_o = (state == STATE_RUNNING) ? (core_stall_i ? 1'b1 : 0) : core_stall;
+  reg core_flush;
+  assign core_flush_o = (state == STATE_RUNNING) ? (core_flush_i ? 1'b1 : 0) : core_flush;
+  assign core_jump_o = core_jump_i ? 1'b1 : 1'b0
 
-  // PC
+  // PC, in *words*
   reg [PC_LIST_LEN-1:0] pc_list[`IMEM_ADDR_WIDTH-1:0];
+  reg [PC_LIST_BITS-1:0] pc_list_idx;
 
   // Call stack
   reg [CALL_STACK_LEN-1:0] call_stack[`IMEM_ADDR_WIDTH-1:0];
@@ -164,14 +181,15 @@ module core_controller_m #() (
       halt_counter <= 0;
       jump_present <= 0;
       for (i = 0; i < JUMP_IDX + 1; i++)
-        jump_offsets[i] = 0;
-      running <= 0;
+        jump_offsets[i] <= 0;
+      state <= 0;
     end
     else if (clk_i) begin
       if (reset_core_i) begin
+        // Shader core soft reset
         state <= STATE_STOPPED;
-        core_flush_o <= 1;
-        core_stall_o <= 1;
+        core_flush <= 1;
+        core_stall <= 1;
         error_o <= 0;
       end
       else begin
@@ -179,10 +197,14 @@ module core_controller_m #() (
           STATE_STOPPED: begin
             if (run_i)
               state <= STATE_RUNNING;
+            if (halt_reached_clr_i)
+              halt_reached_o <= 0;
           end
           STATE_RUNNING: begin
-            if (!run_i)
+            if (!run_i) begin
+              core_stall <= 1;
               state <= STATE_PAUSED;
+            end
 
             if (!core_stall_i) begin
               if (imem_addr == IMEM_ADDR_MAX - 1)
@@ -193,8 +215,12 @@ module core_controller_m #() (
               // Handle halt: Wait until halt instruction reaches writeback
               if (inst_opcode == OPCODE_HALT || halt_counter)
                 halt_counter <= halt_counter + 1;
-              if (halt_counter == HALT_STAGE - 1)
+              if (halt_counter == HALT_STAGE - 1) begin
+                core_stall <= 1;
+                core_flush <= 1;
+                halt_reached_o <= 1;
                 state <= STATE_HALTED;
+              end
 
               // Handle jump, jal: Record jump offsets and wait for jump sig
               // from any core. If jal, push to call stack.
@@ -224,21 +250,26 @@ module core_controller_m #() (
             end
           end
           STATE_PAUSED: begin
-            if (run_i)
+            if (run_i) begin
+              core_stall <= 0;
               state <= STATE_RUNNING;
+            end
           end
           STATE_HALTED: begin
             halt_counter <= 0;
+            if (!run_i)
+              state <= STATE_STOPPED;
           end
           STATE_ERROR: begin
             error_o <= 1;
+            if (!run_i)
+              state <= STATE_STOPPED;
           end
         endcase
       end
   end
 
   always @(*) begin
-    inst_o = (halt_counter != 0) ? INST_NOP : imem_do; // Feed the core NOPs after a halt
   end
 
 endmodule
