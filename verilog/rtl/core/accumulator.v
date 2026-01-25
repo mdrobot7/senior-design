@@ -8,6 +8,7 @@ module accumulator_m (
     input  wire                         clk_i,
     input  wire                         nrst_i,
     input  wire                         en_i,
+    input  wire                         clr_i,
     input  wire signed[`WORD_WIDTH-1:0] a_i,
 
     output reg  signed[`WORD_WIDTH-1:0] acc_o
@@ -18,6 +19,8 @@ module accumulator_m (
     
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin : RESET
+            acc_o <= '0;
+        end else if (clr_i) begin : CLEAR
             acc_o <= '0;
         end else if (en_i) begin : ACCUMULATE
             acc_o <= sum;
