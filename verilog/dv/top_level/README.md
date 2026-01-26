@@ -46,3 +46,5 @@ Pip packages can be installed normally using `pip` after the venv has been activ
   - Dependencies: `open3d`
 - `simulator.py`: Shader core simulator. Intended to be used for shader software development and core verification. Outputs a binary dump of system memory at the end of execution in `./memory.bin`.
   - Usage: `simulator.py --help`
+- `area_optimize.py`: Area optimizer. Pass in a set of areas to test, will return the smallest area that worked. Runs areas smallest -> largest and stops on the smallest successful run. Example: 10x10, 100x150, 200x200. If 10x10 fails but 100x150 succeeds, will not run 200x200.
+  - Usage: `area_optimizer.py [openlane_dir_name] [area_x1 area_y1 area_x2 area_y2 ...]`

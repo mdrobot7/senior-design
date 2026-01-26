@@ -14,8 +14,4 @@ subprocess.run(["cp", f"{optimizer}", "../../../../.."])
 os.chdir("../../../../..")
 subprocess.run(["chmod", "+x", f"{optimizer}"])
 subprocess.run(["python3", f"{optimizer}"] + sys.argv[1:])
-
-
-
-
 subprocess.run(["rm", f"{optimizer}"])
