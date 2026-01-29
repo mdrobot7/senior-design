@@ -1,7 +1,5 @@
 `include "svunit_defines.svh"
-`include "../../ip/CF_SRAM_1024x32/hdl/CF_SRAM_1024x32.v"
 `include "../../ip/CF_SRAM_1024x32/hdl/beh_models/CF_SRAM_1024x32.tt_180V_25C.v"
-`include "sram_ip_wrapper.v"
 
 module sram_ip_wrapper_unit_test;
   import svunit_pkg::svunit_testcase;
@@ -37,7 +35,7 @@ module sram_ip_wrapper_unit_test;
   // This is the UUT that we're 
   // running the Unit Tests on
   //===================================
-  sram_ip_wrapper #(32, 10) dut (
+  CF_SRAM_1024x32_macro dut (
     .DO(DO),
     .ScanOutCC(ScanOutCC),
     .AD(AD),
