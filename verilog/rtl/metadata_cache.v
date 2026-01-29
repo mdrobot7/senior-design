@@ -22,14 +22,14 @@ module metadata_cache
   
   output reg [9:0] sram_addr,     // SRAM Addr is {index, 4-highest offset bits}: addr[`SRAM_ADDR_RANGE]. Port AD
   output reg [31:0] sram_data_o,  // Port DI
-  output reg sram_r_en,           // 0 for write, 1 for read. Port R_WB
+  output reg sram_rw,           // 0 for write, 1 for read. Port R_WB
   output reg sram_en,             // enable SRAM. Port EN
   input wire [31:0] sram_data_i,  // Data out from SRAM to core. Port DO
   // All 32 BEN bits must be set high
 
   output reg mem_req_o,         // memory request signal
   output reg mem_rw,            
-  output reg mem_size_o,        // size of stream request
+  output reg [1:0] mem_size_o,  // size of stream request
   output reg mem_seqmst_o,      // seq request signal - master
   output reg [31:0] mem_addr,   // Address to memory
   output reg [31:0] mem_data_o, // Data to memory on write back
@@ -54,7 +54,7 @@ reg [TAG_BITS-1:0] tag   [BLOCKS-1:0];
 
 reg [31:0] req_addr;  
 reg [31:0] req_data;  
-reg        req_r_en; 
+reg        req_rw; 
 reg [TAG_BITS-1:0] req_tag;   
 reg [INDEX_BITS-1:0]  req_index;
 
@@ -86,7 +86,7 @@ always @ (posedge clk_i) begin
     mem_seqmst_o <= 0;
     req_addr <= 0;
     req_data <= 0;
-    req_r_en <= 0;
+    req_rw <= `SRAM_READ;
     req_index <= 0;
     req_tag <= 0;
     wb_count <= 0;
@@ -99,20 +99,20 @@ always @ (posedge clk_i) begin
     mem_rw <= `BUS_READ;
     mem_seqmst_o <= 0;
     sram_en <= 0;
-    sram_r_en <= 1;
+    sram_rw <= `SRAM_READ;
 
     case (state) 
 
     S_WAIT: begin
       if (core_req_i) begin
         req_addr <= addr_i;
-        req_r_en <= r_en_i;
+        req_rw <= r_en_i;
         req_data <= data_i;
         req_tag <= addr_i[TAG_ADDR_RANGE];
         req_index <= addr_i [INDEX_ADDR_RANGE];
         // pre req from SRAM
         sram_en <= 1;
-        sram_r_en <= 1;
+        sram_rw <= `SRAM_READ;
         sram_addr <= addr_i[SRAM_ADDR_RANGE];
         
         state <= S_TAG;
@@ -122,9 +122,9 @@ always @ (posedge clk_i) begin
 
     S_TAG: begin
       if (valid[req_index] && (req_tag == tag[req_index])) begin
-        if (!req_r_en) begin
+        if (!req_rw) begin
           sram_en <= 1;
-          sram_r_en <= 0;
+          sram_rw <= `SRAM_WRITE;
           sram_addr <= req_addr[SRAM_ADDR_RANGE];
           sram_data_o <= req_data;
           state <= S_HIT;
@@ -164,7 +164,7 @@ always @ (posedge clk_i) begin
       if (mem_ack_i) begin
         if (wb_count == 0) begin
           sram_en <= 1;
-          sram_r_en <= 1;
+          sram_rw <= `SRAM_READ;
           sram_addr <= {req_index, 4'd0};
           wb_count <= 1;
         end
@@ -179,7 +179,7 @@ always @ (posedge clk_i) begin
           end
           else begin
             sram_en <= 1;
-            sram_r_en <= 1;
+            sram_rw <= `SRAM_READ;
             sram_addr <= {req_index, wb_count[BLOCK_BITS-1:0]};
             wb_count <= wb_count + 1;
           end
@@ -190,7 +190,8 @@ always @ (posedge clk_i) begin
         mem_seqmst_o <= 1;
         if (!mem_ack_i) begin
           wb_count <= 0;
-          state <= req_r_en ? S_FILL : S_MISS_1;
+          // if write, skip Fill
+          state <= req_rw ? S_FILL : S_MISS_1;
         end
       end
     end
@@ -206,7 +207,7 @@ always @ (posedge clk_i) begin
       if (mem_ack_i && mem_seqslv_i) begin
         // read from MEM, write to SRAM
         sram_en <= 1;
-        sram_r_en <= 0; // write
+        sram_rw <= `SRAM_WRITE;
         sram_addr <= {req_index, fill_count[BLOCK_BITS-1:0]};
         sram_data_o <= mem_data_i;
 
@@ -235,13 +236,13 @@ always @ (posedge clk_i) begin
     S_MISS_1: begin
       sram_en <= 1;
       sram_addr <= req_addr[SRAM_ADDR_RANGE];
-      sram_r_en <= req_r_en;
+      sram_rw <= req_rw;
       sram_data_o <= req_data;
       state <= S_MISS_2;
     end
 
     S_MISS_2: begin
-      if (req_r_en)
+      if (req_rw == `SRAM_READ)
         core_data_o <= sram_data_i;
       else
         dirty[req_index] <= 1;
