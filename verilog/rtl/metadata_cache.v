@@ -1,11 +1,14 @@
 /*
   Metadata Cache for direct-mapped SRAM cache.
-  64-byte `BLOCKS.
+  64-byte BLOCKS.
   Physical SRAM is 1024x32 bit array, the cache logically treats it as 64 entries x 16 words each
   Uses Write Back Policy with Dirty bit.
   Prioritizes low latency reads
 */
 module metadata_cache
+#(
+  parameter BLOCK_WORD_SIZE = 16
+)
 (
   input wire clk_i,
   input wire rst_i,
@@ -17,7 +20,7 @@ module metadata_cache
   output reg [31:0] core_data_o,   // Data from SRAM to Core
   output reg core_ack_o,    // output ack for core cache controller
   
-  output reg [9:0] sram_addr,     // SRAM Addr is {index, 4-highest offset bits}: addr[`SRAM_ADDR]. Port AD
+  output reg [9:0] sram_addr,     // SRAM Addr is {index, 4-highest offset bits}: addr[`SRAM_ADDR_RANGE]. Port AD
   output reg [31:0] sram_data_o,  // Port DI
   output reg sram_r_en,           // 0 for write, 1 for read. Port R_WB
   output reg sram_en,             // enable SRAM. Port EN
@@ -35,18 +38,28 @@ module metadata_cache
   input wire mem_seqslv_i       // seq ready signal - slave
 );
 
-reg                valid [0:`BLOCKS-1]; 
-reg                dirty [0:`BLOCKS-1];
-reg [`TAG_BITS-1:0] tag   [0:`BLOCKS-1];
+parameter BLOCK_BITS = ($clog2(BLOCK_WORD_SIZE));
+parameter BLOCKS = (1024 / BLOCK_WORD_SIZE);
+parameter INDEX_BITS = ($clog2(BLOCKS));
+parameter OFFSET_BITS = ($clog2(BLOCK_WORD_SIZE << 2));
+parameter TAG_BITS = (32 - INDEX_BITS - OFFSET_BITS);
+
+localparam TAG_ADDR_RANGE = 31:(32 - TAG_BITS);
+localparam INDEX_ADDR_RANGE = (31-TAG_BITS):(OFFSET_BITS);
+localparam SRAM_ADDR_RANGE = 11:2;
+
+reg                valid [BLOCKS-1:0]; 
+reg                dirty [BLOCKS-1:0];
+reg [TAG_BITS-1:0] tag   [BLOCKS-1:0];
 
 reg [31:0] req_addr;  
 reg [31:0] req_data;  
 reg        req_r_en; 
-reg [`TAG_BITS-1:0] req_tag;   
-reg [`INDEX_BITS-1:0]  req_index;
+reg [TAG_BITS-1:0] req_tag;   
+reg [INDEX_BITS-1:0]  req_index;
 
-reg [`BLOCK_BITS:0] wb_count;
-reg [`BLOCK_BITS:0] fill_count;
+reg [BLOCK_BITS:0] wb_count;
+reg [BLOCK_BITS:0] fill_count;
 
 reg [2:0] state;
 localparam S_WAIT = 3'd0;
@@ -60,10 +73,10 @@ localparam S_MISS_2 = 3'd6;
 integer i;
 always @ (posedge clk_i) begin
   if (rst_i) begin
-    for (i = 0; i < `BLOCKS; i = i+1) begin
+    for (i = 0; i < BLOCKS; i = i+1) begin
       valid[i] <= 1'b0;
       dirty[i] <= 1'b0;
-      tag[i] <= {`TAG_BITS{1'b0}};
+      tag[i] <= {TAG_BITS{1'b0}};
     end
     state <= S_WAIT;
     core_ack_o <= 0;
@@ -80,7 +93,7 @@ always @ (posedge clk_i) begin
     fill_count <= 0;
   end
   else begin
-    // default
+    // defaults
     core_ack_o <= 0;
     mem_req_o <= 0;
     mem_rw <= `BUS_READ;
@@ -95,12 +108,12 @@ always @ (posedge clk_i) begin
         req_addr <= addr_i;
         req_r_en <= r_en_i;
         req_data <= data_i;
-        req_tag <= addr_i[`TAG_ADDR];
-        req_index <= addr_i [`INDEX_ADDR];
+        req_tag <= addr_i[TAG_ADDR_RANGE];
+        req_index <= addr_i [INDEX_ADDR_RANGE];
         // pre req from SRAM
         sram_en <= 1;
         sram_r_en <= 1;
-        sram_addr <= addr_i[`SRAM_ADDR];
+        sram_addr <= addr_i[SRAM_ADDR_RANGE];
         
         state <= S_TAG;
       end
@@ -112,7 +125,7 @@ always @ (posedge clk_i) begin
         if (!req_r_en) begin
           sram_en <= 1;
           sram_r_en <= 0;
-          sram_addr <= req_addr[`SRAM_ADDR];
+          sram_addr <= req_addr[SRAM_ADDR_RANGE];
           sram_data_o <= req_data;
           state <= S_HIT;
         end
@@ -159,21 +172,21 @@ always @ (posedge clk_i) begin
           mem_data_o <= sram_data_i; 
         
         if (mem_seqslv_i) begin
-          if (wb_count == ``BLOCK_WORD_SIZE) begin
+          if (wb_count == BLOCK_WORD_SIZE) begin
             mem_seqmst_o <= 1;
             dirty[req_index] <= 0;
-            wb_count <= `BLOCK_WORD_SIZE+1;
+            wb_count <= BLOCK_WORD_SIZE+1;
           end
           else begin
             sram_en <= 1;
             sram_r_en <= 1;
-            sram_addr <= {req_index, wb_count[`BLOCK_BITS-1:0]};
+            sram_addr <= {req_index, wb_count[BLOCK_BITS-1:0]};
             wb_count <= wb_count + 1;
           end
         end
       end
 
-      if (wb_count == `BLOCK_WORD_SIZE + 1) begin
+      if (wb_count == BLOCK_WORD_SIZE + 1) begin
         mem_seqmst_o <= 1;
         if (!mem_ack_i) begin
           wb_count <= 0;
@@ -194,12 +207,12 @@ always @ (posedge clk_i) begin
         // read from MEM, write to SRAM
         sram_en <= 1;
         sram_r_en <= 0; // write
-        sram_addr <= {req_index, fill_count[`BLOCK_BITS-1:0]};
+        sram_addr <= {req_index, fill_count[BLOCK_BITS-1:0]};
         sram_data_o <= mem_data_i;
 
-        if (fill_count == `BLOCK_WORD_SIZE-1) begin
+        if (fill_count == BLOCK_WORD_SIZE-1) begin
           mem_seqmst_o <= 1;
-          fill_count <= `BLOCK_WORD_SIZE;
+          fill_count <= BLOCK_WORD_SIZE;
           valid[req_index] <= 1;
           tag[req_index] <= req_tag;
           dirty[req_index] <= 0;
@@ -209,7 +222,7 @@ always @ (posedge clk_i) begin
         end
       end
 
-      if (fill_count == `BLOCK_WORD_SIZE) begin
+      if (fill_count == BLOCK_WORD_SIZE) begin
         mem_seqmst_o <= 1;
         if (!mem_ack_i) begin
           fill_count <= 0;
@@ -221,7 +234,7 @@ always @ (posedge clk_i) begin
 
     S_MISS_1: begin
       sram_en <= 1;
-      sram_addr <= req_addr[`SRAM_ADDR];
+      sram_addr <= req_addr[SRAM_ADDR_RANGE];
       sram_r_en <= req_r_en;
       sram_data_o <= req_data;
       state <= S_MISS_2;
