@@ -1,5 +1,5 @@
 # Usage:
-#   python3 area_optimizer.py [openlane_dir_name] [area_x1 area_y1 area_x2 area_y2 ...]
+#   python3 area_optimizer.py [openlane_dir_name]
 # Example:
 #   python3 area_optimizer.py core_accumulator
 import sys
