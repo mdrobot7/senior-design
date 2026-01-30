@@ -59,7 +59,7 @@ module core_controller_m #() (
   // Shader core interface
   output wire [`WORD_WIDTH-1:0] inst_o,
   input wire [`NUM_CORES-1:0] core_stall_i,
-  output wire core_stall_o,                 // Stalls all all stages on all cores
+  output wire [`NUM_CORES-1:0] core_stall_o, // Per-core stall control
   input wire [`NUM_CORES-1:0] core_flush_i,
   output wire core_flush_o,                 // Flushes all stages on all cores
   input wire [`NUM_CORES-1:0] core_jump_i,
@@ -192,7 +192,7 @@ module core_controller_m #() (
         call_stack[i] <= 0;
       call_stack_idx <= 0;
 
-      state <= 0;
+      state <= STATE_STOPPED;
     end
     else if (clk_i) begin
       if (reset_core_i) begin
