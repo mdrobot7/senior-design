@@ -21,14 +21,13 @@ module core_controller_wrapper_m #() (
     output reg [`BUS_MOPORT] mport_o,
 );
 
-  /*
-  * 
-  */
 
 endmodule
 
 
-module core_controller_m #() (
+module core_controller_m #(
+  parameter INDEX_BUFFER_ADDR = 0
+) (
 `ifdef USE_POWER_PINS
   inout vpwrac,
   inout vpwrpc,
@@ -37,33 +36,50 @@ module core_controller_m #() (
   input wire clk_i,
   input wire nrst_i,
 
-  // Wishbone interface
-  input wire imem_rw_i; // 1 = read, 0 = write
-  output wire [`WORD_WIDTH-1:0] imem_do_o,
-  input wire [`WORD_WIDTH-1:0] imem_di_i,
-  input wire [IMEM_ADDR_WIDTH-1:0] imem_addr_i,
+  // IMEM
+  input  wire                       imem_rw_i, // 1 = read, 0 = write
+  output wire [`WORD]               imem_do_o,
+  input  wire [`WORD]               imem_di_i,
+  input  wire [IMEM_ADDR_WIDTH-1:0] imem_addr_i,
 
-  input wire [`REG_SOURCE_WIDTH-1:0] global_regfile_write_addr_i,
-  input wire [`REG_SOURCE_WIDTH-1:0] global_regfile_read_addr_i,
-  input wire global_regfile_write_en_i,                        
-  input wire [`WORD_WIDTH-1:0] global_regfile_write_data_i,   
-  output wire [`WORD_WIDTH-1:0] global_regfile_read_data_o,
+  // Global regfile
+  input  wire [`REG_SOURCE_WIDTH-1:0] global_regfile_write_addr_i,
+  input  wire [`REG_SOURCE_WIDTH-1:0] global_regfile_read_addr_i,
+  input  wire                         global_regfile_write_en_i,
+  input  wire [`WORD_WIDTH-1:0]       global_regfile_write_data_i,
+  output wire [`WORD_WIDTH-1:0]       global_regfile_read_data_o,
 
+  // PKBus
+  input wire [`BUS_MIPORT] mport_i,
+  output reg [`BUS_MOPORT] mport_o,
+
+  // Shaded vertex cache
+  output wire [`WORD] vertcache_test_index_o,
+  output wire         vertcache_test_valid_o,
+  input  wire         vertcache_test_found_i,
+
+  // Vertex order buffer
+  input wire vertorder_full_i,
+
+  // Config/control
   input wire reset_core_i,    // 1: reset shader cores
   input wire run_i,           // 0: pause, 1: play
   input wire pause_at_halt_i, // 0: continue to next PC in PC list after halt. 1: pause after halt
   input wire halt_reached_clr_i, // 1: clear halt reached flag
   output reg halt_reached_o,
   output reg error_o,
+  input wire dispatch_indices_i,       // 0: $tid set to increasing ints, 1: $tid set using index buffer
+  input wire [`WORD] num_dispatches_i, // Number of jobs (indices or ints) to dispatch
+  output wire model_done_o;
 
   // Shader core interface
-  output wire [`WORD_WIDTH-1:0] inst_o,
-  input wire [`NUM_CORES-1:0] core_stall_i,
-  output wire [`NUM_CORES-1:0] core_stall_o, // Per-core stall control
-  input wire [`NUM_CORES-1:0] core_flush_i,
-  output wire core_flush_o,                 // Flushes all stages on all cores
-  input wire [`NUM_CORES-1:0] core_jump_i,
-  output wire core_jump_o,                  // Flushes decode on all cores
+  output wire [`WORD]           inst_o,
+  input  wire [`NUM_CORES-1:0]  core_stall_i,
+  output wire [`NUM_CORES-1:0]  core_stall_o, // Per-core stall control
+  input  wire [`NUM_CORES-1:0]  core_flush_i,
+  output wire                   core_flush_o, // Flushes all stages on all cores
+  input  wire [`NUM_CORES-1:0]  core_jump_i,
+  output wire                   core_jump_o,  // Flushes decode on all cores
   output wire [`WORD_WIDTH-1:0] global_regfile_rs1_data_o,
   output wire [`WORD_WIDTH-1:0] global_regfile_rs2_data_o
 );
@@ -73,7 +89,7 @@ module core_controller_m #() (
 
   localparam CALL_STACK_LEN = 8;
   localparam CALL_STACK_BITS = 3;
-  
+
   localparam IMEM_ADDR_WIDTH = 10;
   localparam IMEM_ADDR_MAX = (1 << IMEM_ADDR_MAX) - 1;
   localparam INST_NOP = 32'h08000000;
@@ -84,6 +100,9 @@ module core_controller_m #() (
   localparam JUMP_TYPE_JAL = 1;
 
   localparam STATE_STOPPED = 0; // Waiting for program to start from beginning
+  localparam STATE_DISPATCHING = 1; // Dispatching jobs
+  localparam STATE_VERTEX_SHADING = 2;
+  localparam STATE_FRAGMENT_SHADING = 3;
   localparam STATE_RUNNING = 1;
   localparam STATE_PAUSED = 2; // Manual pause by management core
   localparam STATE_HALTED = 3; // Halt instruction reached writeback
@@ -166,6 +185,40 @@ module core_controller_m #() (
     .r1_data_o(global_regfile_r1_data),
     .r2_data_o(global_regfile_rs2_data_o)
   );
+
+  // Dispatch
+  reg dispatch_enable;
+  wire [`WORD] dispatch_thread_id;
+  wire [`WORD] dispatch_inst;
+  wire [`WORD] dispatch_core_stall;
+  wire dispatch_done;
+  dispatch_m #(
+    INDEX_BUFFER_ADDR
+  ) (
+    .clk_i(clk_i),
+    .nrst_i(nrst_i),
+
+    .mport_i(mport_i),
+    .mport_o(mport_o),
+
+    .vertcache_test_index_o(vertcache_test_index_o),
+    .vertcache_test_valid_o(vertcache_test_valid_o),
+    .vertcache_test_found_i(vertcache_test_found_i),
+
+    .vertorder_full_i(vertorder_full_i),
+
+    .reset_dispatch_i(reset_dispatch_i),
+    .enable_i(dispatch_enable),
+    .dispatch_indices_i(dispatch_indices_i),
+    .num_dispatches_i(num_dispatches_i),
+
+    .thread_id_o(dispatch_thread_id),
+    .inst_o(dispatch_inst),
+    .core_stall_o(dispatch_core_stall),
+
+    .dispatch_done_o(dispatch_done),
+    .model_done_o(model_done_o), //  TODO fix
+  )
 
   reg [3:0] state;
 
