@@ -88,6 +88,8 @@ module dispatch_m #(
   reg [`WORD] thread_id;
 
   reg [$clog2(`NUM_CORES)-1:0] core_idx;
+  wire core_stall = ~(1 << core_idx);
+  wire core_stall_undispatched = {`NUM_CORES{1'b1}} << core_idx; // Handle partial dispatch by stalling cores without jobs
 
   always @(posedge clk_i, negedge nrst_i) begin
     if (nrst_i) begin
@@ -131,7 +133,7 @@ module dispatch_m #(
             if (!vertcache_test_found_i) begin
               // Dispatch to core
               thread_id_o <= index_fetch_mstreamo[`STREAM_MO_DATA(`WORD_WIDTH)];
-              core_stall_o <= ~(1 << core_idx);
+              core_stall_o <= core_stall;
               core_idx <= core_idx + 1;
             end
             else
@@ -139,14 +141,14 @@ module dispatch_m #(
           end
 
           if (core_idx == `NUM_CORES - 1 || vertorder_full_i) begin
-            core_stall_o <= {`NUM_CORES{1'b1}};
+            core_stall_o <= core_stall_undispatched;
             vertcache_test_valid_o <= 0;
             index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
             dispatch_done_o <= 1;
             state <= STATE_DISPATCH_DONE;
           end
           if (index_fetch_model_done) begin
-            core_stall_o <= {`NUM_CORES{1'b1}};
+            core_stall_o <= core_stall_undispatched;
             vertcache_test_valid_o <= 0;
             index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
             dispatch_done_o <= 1;
@@ -158,18 +160,18 @@ module dispatch_m #(
 
           // Fill in $tid with increasing numbers
           if (core_idx == `NUM_CORES - 1) begin
-            core_stall_o <= {`NUM_CORES{1'b1}};
+            core_stall_o <= core_stall_undispatched;
             core_idx <= 0;
             dispatch_done_o <= 1;
             state <= STATE_DISPATCH_DONE;
           end
           else if (thread_id == num_dispatches_i - 1) begin
-            core_stall_o <= {`NUM_CORES{1'b1}};
+            core_stall_o <= core_stall_undispatched;
             core_idx <= 0;
             dispatch_done_o <= 1;
             state <= STATE_MODEL_DONE;
           else begin
-            core_stall_o <= ~(1 << core_idx);
+            core_stall_o <= core_stall;
             thread_id_o <= thread_id;
             thread_id <= thread_id + 1;
             core_idx <= core_idx + 1;
