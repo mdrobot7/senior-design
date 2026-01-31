@@ -9,7 +9,7 @@ module index_fetch_m #(
   output reg [`BUS_MOPORT] mport_o,
 
   input wire pause_i,               // 1: Pause index fetching
-  input wire [`WORD] num_indices_i,
+  input wire [`WORD] num_dispatches_i,
   input wire model_done_clr_i,      // 1: Clear model done flag
   output reg model_done_o,          // 1: Fetched all indices in this model
 
@@ -78,7 +78,7 @@ module index_fetch_m #(
           else
             sstreami[`STREAM_SI_VALID(`WORD_WIDTH)] <= 0;
 
-          if (pause_i || fifo_full || index_buffer_offset >= num_indices_i - 1) begin
+          if (pause_i || fifo_full || index_buffer_offset >= num_dispatches_i - 1) begin
             // Stop on pause, fifo overrun, or index buffer overrun
             mport_o[`BUS_MO_SEQMST] <= 1;
           end
@@ -90,7 +90,7 @@ module index_fetch_m #(
         STATE_DONE: begin
           state <= STATE_READY;
 
-          if (index_buffer_offset >= num_indices_i)
+          if (index_buffer_offset >= num_dispatches_i)
             model_done_o <= 1;
 
           mport_o[`BUS_MO_REQ] <= 0;
