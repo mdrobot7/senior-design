@@ -30,7 +30,7 @@ module stream_fifo_m #(
             head <= 0;
             size <= 0;
 
-            for (i = 0; i < SIZE; i = i + 1) buffer[i] <= 0;
+            for (i = 0; i < DEPTH; i = i + 1) buffer[i] <= 0;
         end
         else if (clk_i) begin : CLOCK
             reg [DEPTH_LOG - 1:0] new_size;
