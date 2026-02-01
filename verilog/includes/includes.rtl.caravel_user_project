@@ -59,5 +59,7 @@
 
 -v $(USER_PROJECT_VERILOG)/rtl/spi_mem.v
 -v $(USER_PROJECT_VERILOG)/rtl/vertex_order_buffer.v
+-v $(USER_PROJECT_VERILOG)/rtl/shaded_vertex_cache.v
+-v $(USER_PROJECT_VERILOG)/rtl/vertex_reorder_controller.v
 -v $(USER_PROJECT_VERILOG)/rtl/vga.v
 -v $(USER_PROJECT_VERILOG)/rtl/wishbone_register.v
