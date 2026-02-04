@@ -99,9 +99,19 @@
 `define WORD_WIDTH (32)
 `define WORD `WORD_WIDTH - 1:0
 
+`define COLOR_WIDTH (8)
+`define COLOR `COLOR_WIDTH - 1:0
+
+`define TEX_DIM_WIDTH (16)
+`define TEX_DIM `TEX_DIM_WIDTH - 1:0
+
 `define DECIMAL_POS (10)
 
 `define WORD_SMAX (1 << (`WORD_WIDTH - 2))
+
+`define RAST_WAVG_OUT_WIDTH (`SC_WIDTH * 2 + `WORD_WIDTH * 3)
+`define RAST_DT_OUT_WIDTH (`SC_WIDTH * 2 + `WORD_WIDTH * 3)
+`define RAST_TS_OUT_WIDTH (`COLOR_WIDTH + `SC_WIDTH * 2 + `WORD_WIDTH * 3)
 
 `define BUS_ADDR_SIZE (32)
 `define BUS_ADDR_PORT (`BUS_ADDR_SIZE - 1):0
@@ -181,7 +191,9 @@
 `define STREAM_SI_LAST(data_size) ((data_size) + 1)
 
 // addresses
-`define ADDR_DEPTH_BUFFER (100000)
+`define ADDR_FB0          (0)
+`define ADDR_FB1          (320 * 240)
+`define ADDR_DEPTH_BUFFER (153600)
 
 // VGA
 `define VGA_RES_320x240 (2)

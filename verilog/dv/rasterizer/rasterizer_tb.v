@@ -19,6 +19,10 @@ module rasterizer_tb();
     wire [`BUS_MOPORT] mportbo;
     wire [`BUS_MIPORT] mportci;
     wire [`BUS_MOPORT] mportco;
+    wire [`BUS_MIPORT] mportdi;
+    wire [`BUS_MOPORT] mportdo;
+    wire [`BUS_MIPORT] mportei;
+    wire [`BUS_MOPORT] mporteo;
 
     wire [`BUS_SIPORT] sportai;
     wire [`BUS_SOPORT] sportao;
@@ -48,12 +52,12 @@ module rasterizer_tb();
     //     .mport_o(mportco)
     // );
 
-    busarb_m #(1, 1, 1) arbiter(
+    busarb_m #(3, 1, 1) arbiter(
         .clk_i(clk),
         .nrst_i(nrst),
 
-        .mports_i({ mportco }),
-        .mports_o({ mportci }),
+        .mports_i({ mportco, mportdo, mporteo }),
+        .mports_o({ mportci, mportdi, mportei }),
 
         .sports_i({ sportao }),
         .sports_o({ sportai })
@@ -94,6 +98,8 @@ module rasterizer_tb();
     wire busy;
     wire output_ready;
     reg [7:0] color;
+    reg [`BUS_ADDR_PORT] tex_addr;
+    reg [`TEX_DIM] tex_width;
 
     reg [31:0] t0x;
     reg [31:0] t0y;
@@ -116,13 +122,21 @@ module rasterizer_tb();
         .clk_i(clk),
         .nrst_i(nrst),
 
-        .mport_i({ mportai }),
-        .mport_o({ mportao }),
+        .depth_mport_i({ mportai }),
+        .depth_mport_o({ mportao }),
+
+        .pix_mport_i({ mportdi }),
+        .pix_mport_o({ mportdo }),
+
+        .tex_mport_i({ mportei }),
+        .tex_mport_o({ mporteo }),
 
         .run_i(run),
         .busy_o(busy),
 
-        .color_i(color),
+        .tex_addr_i(tex_addr),
+        .tex_width_i(tex_width),
+        .fb_i(1'b0),
 
         .t0x(t0x),
         .t0y(t0y),
@@ -163,14 +177,14 @@ module rasterizer_tb();
         .mstreamo_i(rasterizer.filt_bary_streamo)
     );
 
-    stream_stat_m #(SC_WIDTH * 2 + WORD_WIDTH * 3) wavg_stat(
+    stream_stat_m #(`RAST_WAVG_OUT_WIDTH) wavg_stat(
         .clk_i(clk),
 
         .mstreami_i(rasterizer.wavg_streami),
         .mstreamo_i(rasterizer.wavg_streamo)
     );
 
-    stream_stat_m #(SC_WIDTH * 2 + WORD_WIDTH * 3) wavg_fifo_stat(
+    stream_stat_m #(`RAST_WAVG_OUT_WIDTH) wavg_fifo_stat(
         .clk_i(clk),
 
         .mstreami_i(rasterizer.wavg_fifo_streami),
@@ -185,6 +199,9 @@ module rasterizer_tb();
 		$dumpvars(0, rasterizer_tb);
 
         run = 0;
+
+        tex_addr = `ADDR_FB1;
+        tex_width = 10;
 
         clk_rst.RESET();
 
@@ -206,13 +223,35 @@ module rasterizer_tb();
             end
         end
 
+        for (x = 0; x < 10; x = x + 1) begin
+            for (y = 0; y < 10; y = y + 1) begin
+                if ((x % 2 == 0) ^ (y % 2 == 0)) begin
+                    spi_chip.mem[`ADDR_FB1 + (y * 10 + x) + 0] = 8'b00111000;
+                end
+                else begin
+                    spi_chip.mem[`ADDR_FB1 + (y * 10 + x) + 0] = 8'b00000111;
+                end
+            end
+        end
+
+        for (x = 0; x < 10; x = x + 1) begin
+            for (y = 0; y < 10; y = y + 1) begin
+                if ((x % 2 == 0) ^ (y % 2 == 0)) begin
+                    spi_chip.mem[`ADDR_FB1 + 100 + (y * 10 + x) + 0] = 8'b11000000;
+                end
+                else begin
+                    spi_chip.mem[`ADDR_FB1 + 100 + (y * 10 + x) + 0] = 8'b00111111;
+                end
+            end
+        end
+
         for (x = 0; x < 320; x = x + 1) begin
             for (y = 0; y < 240; y = y + 1) begin
                 spi_chip.mem[y * 320 + x] = 0;
             end
         end
 
-`include "triangles.v"
+`include "two_triangles.v"
 
         clk_rst.WAIT_CYCLES(10);
     
@@ -243,7 +282,7 @@ module rasterizer_tb();
 
         $display("Dumping image...");
 
-        `VGA_WRITE("output.bmp", spi_chip.mem, 0, 320, 240, `COLOR_TYPE_RGB332);
+        `VGA_WRITE("output.bmp", spi_chip.mem, `ADDR_FB0, 320, 240, `COLOR_TYPE_RGB332);
 
         // `VGA_WRITE("depth.bmp", spi_chip.mem, `ADDR_DEPTH_BUFFER, 320, 240, `COLOR_TYPE_GSW);
 

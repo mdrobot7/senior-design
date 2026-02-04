@@ -6,13 +6,21 @@ module rasterizer_m #(
     input wire clk_i,
     input wire nrst_i,
 
-    input  wire [`BUS_MIPORT] mport_i,
-    output wire [`BUS_MOPORT] mport_o,
+    input  wire [`BUS_MIPORT] depth_mport_i,
+    output wire [`BUS_MOPORT] depth_mport_o,
+
+    input  wire [`BUS_MIPORT] pix_mport_i,
+    output wire [`BUS_MOPORT] pix_mport_o,
+
+    input  wire [`BUS_MIPORT] tex_mport_i,
+    output wire [`BUS_MOPORT] tex_mport_o,
 
     input  wire run_i,
     output wire busy_o,
 
-    input wire [7:0] color_i,
+    input wire [`BUS_ADDR_PORT] tex_addr_i,
+    input wire [`TEX_DIM] tex_width_i,
+    input wire fb_i,
 
     input wire [WORD_WIDTH - 1:0] t0x,
     input wire [WORD_WIDTH - 1:0] t0y,
@@ -82,12 +90,18 @@ module rasterizer_m #(
 
     reg [2:0] state;
 
+    reg fb;
+
     reg bary_last;
     reg bary_run;
     
     wire bary_init;
     wire bary_discard;
     wire bary_busy;
+
+    wire bary_check_busy;
+
+    reg [15:0] frags_in_flight; // TODO: perhaps smaller
 
     reg [SC_WIDTH - 1:0] posx;
     reg [SC_WIDTH - 1:0] posy;
@@ -108,32 +122,47 @@ module rasterizer_m #(
     wire [`STREAM_MIPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] filt_bary_streami;
     wire [`STREAM_MOPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] filt_bary_streamo;
 
-    wire [`STREAM_MIPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] wavg_streami;
-    wire [`STREAM_MOPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] wavg_streamo;
+    wire [`STREAM_MIPORT(`RAST_WAVG_OUT_WIDTH)] wavg_streami;
+    wire [`STREAM_MOPORT(`RAST_WAVG_OUT_WIDTH)] wavg_streamo;
 
-    wire [`STREAM_MIPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] wavg_fifo_streami;
-    wire [`STREAM_MOPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] wavg_fifo_streamo;
+    wire [`STREAM_MIPORT(`RAST_WAVG_OUT_WIDTH)] wavg_fifo_streami;
+    wire [`STREAM_MOPORT(`RAST_WAVG_OUT_WIDTH)] wavg_fifo_streamo;
+
+    wire [`STREAM_MIPORT(`RAST_DT_OUT_WIDTH)] filt_depth_streami;
+    wire [`STREAM_MOPORT(`RAST_DT_OUT_WIDTH)] filt_depth_streamo;
+
+    wire [`STREAM_MIPORT(`COLOR_WIDTH + SC_WIDTH * 2 + WORD_WIDTH * 3)] tex_streami;
+    wire [`STREAM_MOPORT(`COLOR_WIDTH + SC_WIDTH * 2 + WORD_WIDTH * 3)] tex_streamo;
 
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin
             state <= STATE_READY;
 
+            fb <= 0;
+
             posx <= 0;
             posy <= 0;
+
+            frags_in_flight <= 0;
 
             bary_run <= 0;
         end
         else if (clk_i) begin
+            if (!busy_o) begin
+                fb <= fb_i;
+            end
+            
             case (state)
                 STATE_READY: begin
                     if (run_i) begin
                         state <= STATE_BARY_BOOT;
-
-                        // TODO: handle edge cases here
+                        
                         posx  <= bbx0;
                         posy  <= bby0;
 
                         bary_last <= 0;
+
+                        frags_in_flight = 0;
                     end
                 end
 
@@ -176,9 +205,23 @@ module rasterizer_m #(
                 end
 
                 STATE_DONE: begin
-                    if (!run_i) state <= STATE_READY;
+                    if (!busy_o && !run_i) state <= STATE_READY;
                 end
             endcase
+
+            if (
+                filt_bary_streamo[`STREAM_MO_VALID(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] &&
+                filt_bary_streami[`STREAM_MI_READY(`SC_WIDTH * 2 + `WORD_WIDTH * 3)]
+            ) begin
+                frags_in_flight = frags_in_flight + 1;
+            end
+
+            if (
+                wavg_fifo_streamo[`STREAM_MO_VALID(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] &&
+                wavg_fifo_streami[`STREAM_MI_READY(`SC_WIDTH * 2 + `WORD_WIDTH * 3)]
+            ) begin
+                frags_in_flight = frags_in_flight - 1;
+            end
         end
     end
 
@@ -188,7 +231,8 @@ module rasterizer_m #(
     assign pos_streamo[`STREAM_MO_DATA(SC_WIDTH * 2)] = pos_stream_data;
     assign pos_streamo[`STREAM_MO_LAST(SC_WIDTH * 2)] = bary_last;
 
-    assign busy_o = (state != STATE_READY && state != STATE_DONE) || bary_busy;
+    // busy = (state != STATE_READY && state != STATE_DONE) || bary_busy
+    assign busy_o = (state != STATE_READY && state != STATE_DONE) || bary_busy || bary_check_busy || (frags_in_flight != 0); // TODO: make an busy and flushed different
 
     // #(WORD_WIDTH, WIDTH, HEIGHT)
     bary_pipe_m bary_pipe(
@@ -225,7 +269,9 @@ module rasterizer_m #(
         .sstream_o(bary_streami),
 
         .mstream_i(filt_bary_streami),
-        .mstream_o(filt_bary_streamo)
+        .mstream_o(filt_bary_streamo),
+
+        .busy_o(bary_check_busy)
     );
 
     wavg_pipe_m wavg_pipe(
@@ -250,7 +296,7 @@ module rasterizer_m #(
         .v2z(v2z)
     );
 
-    stream_fifo_m #(`SC_WIDTH * 2 + `WORD_WIDTH * 3, 5) wavg_fifo_pipe(
+    stream_fifo_m #(`RAST_WAVG_OUT_WIDTH) wavg_fifo_pipe(
         .clk_i(clk_i),
         .nrst_i(nrst_i),
 
@@ -261,17 +307,48 @@ module rasterizer_m #(
         .mstream_o(wavg_fifo_streamo)
     );
 
-    mem_write_m mem_write(
+    depth_test_m depth_test(
         .clk_i(clk_i),
         .nrst_i(nrst_i),
 
         .sstream_i(wavg_fifo_streamo),
         .sstream_o(wavg_fifo_streami),
 
-        .mport_i(mport_i),
-        .mport_o(mport_o),
+        .mstream_i(filt_depth_streami),
+        .mstream_o(filt_depth_streamo),
+
+        .mport_i(depth_mport_i),
+        .mport_o(depth_mport_o)
+    );
+
+    tex_sample_m tex_sample(
+        .clk_i(clk_i),
+        .nrst_i(nrst_i),
+
+        .sstream_i(filt_depth_streamo),
+        .sstream_o(filt_depth_streami),
+
+        .mstream_i(tex_streami),
+        .mstream_o(tex_streamo),
+
+        .mport_i(tex_mport_i),
+        .mport_o(tex_mport_o),
+
+        .tex_addr_i(tex_addr_i),
+        .tex_width_i(tex_width_i)
+    );
+
+    mem_write_m mem_write(
+        .clk_i(clk_i),
+        .nrst_i(nrst_i),
+
+        .sstream_i(tex_streamo),
+        .sstream_o(tex_streami),
+
+        .mport_i(pix_mport_i),
+        .mport_o(pix_mport_o),
         
-        .color_i(color_i)
+        .fb_i(fb)
     );
 
 endmodule

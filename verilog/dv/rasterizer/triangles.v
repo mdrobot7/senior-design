@@ -24,8 +24,8 @@ wait(!clk);
 run = 1;
 
 wait(busy);
-wait(!busy);
 run = 0;
+wait(!busy);
 
 clk_rst.WAIT_CYCLES(10);
 
@@ -53,8 +53,8 @@ wait(!clk);
 run = 1;
 
 wait(busy);
-wait(!busy);
 run = 0;
+wait(!busy);
 
 for (i = 0; i < 10; i = i + 1) begin
     wait(clk);
@@ -86,8 +86,8 @@ for (i = 0; i < 200; i = i + 1) begin
     run = 1;
 
     wait(busy);
-    wait(!busy);
     run = 0;
+    wait(!busy);
 
     for (j = 0; j < 10; j = j + 1) begin
         wait(clk);
@@ -120,8 +120,8 @@ for (i = 0; i < 200; i = i + 1) begin
     run = 1;
 
     wait(busy);
-    wait(!busy);
     run = 0;
+    wait(!busy);
 
     for (j = 0; j < 10; j = j + 1) begin
         wait(clk);
@@ -154,8 +154,8 @@ for (i = 0; i < 200; i = i + 1) begin
     run = 1;
 
     wait(busy);
-    wait(!busy);
     run = 0;
+    wait(!busy);
 
     for (j = 0; j < 10; j = j + 1) begin
         wait(clk);

@@ -5,8 +5,8 @@ module wavg_pipe_m(
     input  wire [`STREAM_SIPORT(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] sstream_i,
     output wire [`STREAM_SOPORT(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] sstream_o,
 
-    input  wire [`STREAM_MIPORT(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] mstream_i,
-    output wire [`STREAM_MOPORT(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] mstream_o,
+    input  wire [`STREAM_MIPORT(`RAST_WAVG_OUT_WIDTH)] mstream_i,
+    output wire [`STREAM_MOPORT(`RAST_WAVG_OUT_WIDTH)] mstream_o,
 
     input wire [`WORD_WIDTH - 1:0] t0x,
     input wire [`WORD_WIDTH - 1:0] t0y,
@@ -161,7 +161,7 @@ module wavg_pipe_m(
                     state <= STATE_RUN7;
 
                     a0a <= m0y;
-                    a0b <= m0y;
+                    a0b <= m1y;
                 end
 
                 STATE_RUN7: begin
@@ -180,9 +180,9 @@ module wavg_pipe_m(
         end
     end
 
-    assign mstream_o[`STREAM_MO_DATA(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] = out_data;
-    assign mstream_o[`STREAM_MO_VALID(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] = state == STATE_DONE;
-    assign mstream_o[`STREAM_MO_LAST(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] = last;
+    assign mstream_o[`STREAM_MO_DATA(`RAST_WAVG_OUT_WIDTH)] = out_data;
+    assign mstream_o[`STREAM_MO_VALID(`RAST_WAVG_OUT_WIDTH)] = state == STATE_DONE;
+    assign mstream_o[`STREAM_MO_LAST(`RAST_WAVG_OUT_WIDTH)] = last;
 
 
 endmodule
