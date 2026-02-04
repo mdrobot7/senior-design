@@ -4,6 +4,7 @@ import subprocess
 import json
 import math
 import argparse
+import time
 
 p = argparse.ArgumentParser(description="Area optimizer: maximize density then minimize die area.")
 p.add_argument("modulename", help="openlane design name")
@@ -27,8 +28,9 @@ config_path = os.path.join(project_root, openlane_dir, "config.json")
 runs_dir = os.path.join(project_root, openlane_dir, "runs")
 run_symlink = os.path.join(runs_dir, modulename)
 best_run_path = None
+start_time = time.time()
 
-cmd = f"bash -c 'source /local/toolchain/activate && cd {project_root} && export OPENLANE_ROOT={project_root}/dependencies/openlane_src && export PDK_ROOT={project_root}/dependencies/pdks && export PDK=sky130A && make {modulename}'"
+cmd = f"bash -c 'source /local/toolchain/activate 2>/dev/null || true; cd {project_root} && export OPENLANE_ROOT={project_root}/dependencies/openlane_src && export PDK_ROOT={project_root}/dependencies/pdks && export PDK=sky130A && make {modulename}'"
 
 density_interval = 0.05
 max_density = 1.0
@@ -58,7 +60,7 @@ while density_hi - density_lo > density_interval:
     config_data["PL_TARGET_DENSITY"] = density_mid
     with open(config_path, 'w') as f:
         json.dump(config_data, f, indent=4)
-    print(f"  Trying density {density_mid}")
+    print(f"\nTrying density {density_mid}\n")
     run_count += 1
     if subprocess.run(cmd, shell=True, cwd=project_root).returncode == 0:
         tg_density = density_mid
@@ -92,7 +94,7 @@ if subprocess.run(cmd, shell=True, cwd=project_root).returncode == 0:
         config_data["PL_TARGET_DENSITY"] = tg_density
         with open(config_path, 'w') as f:
             json.dump(config_data, f, indent=4)
-        print(f"Area {area_mid} ({dim_x}x{dim_y})")
+        print(f"\nArea {area_mid} ({dim_x}x{dim_y})\n")
         run_count += 1
         if subprocess.run(cmd, shell=True, cwd=project_root).returncode == 0:
             area_hi = area_mid
@@ -152,3 +154,14 @@ if best_run_path:
         f.write(f"DIE_AREA=0 0 {dim_x} {dim_y}\n")
         f.write(f"PL_TARGET_DENSITY={tg_density}\n")
     print(f"Best result tracked in: {result_path} (run: {best_run_tag})")
+
+# write optimizer log in runs directory
+elapsed = time.time() - start_time
+log_path = os.path.join(runs_dir, "optimizer.log")
+with open(log_path, "a") as f:
+    ts = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    f.write(
+        f"[{ts}] module={modulename} area={dim_x}x{dim_y} "
+        f"density={tg_density} time_sec={elapsed:.1f}\n"
+    )
+print(f"Optimizer log written to: {log_path}")
