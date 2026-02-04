@@ -22,9 +22,7 @@ module spi_mem_m #(
     localparam LATENCY_COUNT = 5;
 
     localparam CMD_READ          = 8'hA0;
-    localparam CMD_READ_WRAPPED  = 8'h80;
     localparam CMD_WRITE         = 8'h20;
-    localparam CMD_WRITE_WRAPPED = 8'h00;
 
     localparam STATE_READY         = 5'h00;
     localparam STATE_COMMAND       = 5'h01;
@@ -64,7 +62,7 @@ module spi_mem_m #(
         5'b00000
     };
 
-    reg [4:0] latency;
+    reg [5:0] latency;
     reg has_2lc;
 
     reg data_nibble;
@@ -138,8 +136,6 @@ module spi_mem_m #(
                     state <= STATE_ADDRESS;
 
                     spi_mosi_o <= full_address[address_nibble * 4+:4];
-
-                    has_2lc <= spi_dqsm_i;
                 end
 
                 STATE_ADDRESS: begin
@@ -147,14 +143,18 @@ module spi_mem_m #(
                         if (sport_i[`BUS_SI_RW] == `BUS_READ) begin
                             state <= STATE_READ_LATENCY;
 
-                            latency <= LATENCY_COUNT - 2;
+                            if (has_2lc) latency <= LATENCY_COUNT + LATENCY_COUNT - 2;
+                            else latency <= LATENCY_COUNT - 2;
                         end
                         else begin
                             state <= STATE_WRITE_LATENCY;
 
-                            latency <= LATENCY_COUNT - 2;
+                            if (has_2lc) latency <= LATENCY_COUNT + LATENCY_COUNT - 2;
+                            else latency <= LATENCY_COUNT - 2;
                         end
                     end
+
+                    if (address_nibble == 2) has_2lc <= spi_dqsm_i;
 
                     spi_mosi_o <= full_address[address_nibble * 4+:4];
 
@@ -164,16 +164,13 @@ module spi_mem_m #(
                 STATE_READ_LATENCY: begin
                     if (!spi_clk_o) begin
                         if (latency == 0) begin
-                            if (delayed_dqsm) begin
-                                state <= STATE_READ_WAIT;
+                            state <= STATE_READ_WAIT;
 
-                                data_nibble <= 1;
-                                data_byte   <= 0;
+                            data_nibble <= 1;
+                            data_byte   <= 0;
 
-                                data_buf    <= 0;
-                                data_ready <= 0;
-                            end
-                            else latency <= LATENCY_COUNT - 1;
+                            data_buf    <= 0;
+                            data_ready <= 0;
                         end
                         else begin
                             latency <= latency - 1;
@@ -238,22 +235,15 @@ module spi_mem_m #(
                 STATE_WRITE_LATENCY: begin
                     if (!spi_clk_o) begin
                         if (latency == 0) begin
-                            if (!has_2lc) begin
-                                state <= STATE_WRITE;
+                            state <= STATE_WRITE;
 
-                                data_nibble <= 0;
-                                data_byte   <= 0;
+                            data_nibble <= 0;
+                            data_byte   <= 0;
 
-                                data_buf   <= data_in;
-                                data_ready <= 0;
+                            data_buf   <= data_in;
+                            data_ready <= 0;
 
-                                spi_mosi_o <= data_in[7:4];
-                            end
-                            else begin
-                                latency <= LATENCY_COUNT - 2;
-
-                                has_2lc <= 0;
-                            end
+                            spi_mosi_o <= data_in[7:4];
                         end
                         else begin
                             latency <= latency - 1;

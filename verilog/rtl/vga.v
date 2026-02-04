@@ -172,6 +172,7 @@ module vga_m #(
     output reg [`BUS_MOPORT] mport_o,
 
     input wire fb_i,
+    input wire word_color_i,
 
     output reg [7:0] pixel_o,
     output reg hsync_o,
@@ -215,6 +216,7 @@ module vga_m #(
     reg [7:0] line_cache[CACHE_WIDTH-1:0]; // 320x240 resolution, cache one line
     reg [9:0] line_cache_idx;
     reg fb;
+    reg word_color;
     localparam FB_READ_STATE_READY = 2'd0;
     localparam FB_READ_STATE_PREP = 2'd1;
     localparam FB_READ_STATE_READ = 2'd2;
@@ -275,6 +277,7 @@ module vga_m #(
                 line_cache[i] <= 0;
             line_cache_idx <= 0;
             fb <= 0;
+            word_color <= 0;
             fb_read_state <= FB_READ_STATE_READY;
             mport_o <= 0;
         end
@@ -312,6 +315,7 @@ module vga_m #(
                 pixel_double_counter <= 0;                // Make sure the first pixel gets outputted
                 line_double_counter <= 0;
                 fb <= fb_i;                               // Keep this up to date
+                word_color <= word_color_i;
                 fb_read_state <= FB_READ_STATE_READY;
             end
             else begin
@@ -327,12 +331,13 @@ module vga_m #(
                                 res_h_counter <= 0;
                                 if (line_double_counter == resolution - 1) begin
                                     line_double_counter <= 0;
-                                    if (res_v_counter == res_v_active - 1)
+                                    if (res_v_counter == res_v_active - 1) begin
                                         res_v_counter <= 0;
-                                    else
+                                    end
+                                    else begin
                                         res_v_counter <= res_v_counter + 1;
+                                    end
 
-                                    fb <= fb_i;
                                     fb_read_state <= FB_READ_STATE_PREP;
                                 end
                                 else
@@ -343,6 +348,12 @@ module vga_m #(
                         end
                         else
                             pixel_double_counter <= pixel_double_counter + 1; // Handle pixel doubling
+                    end
+                    else begin
+                        if (res_v_counter == 0) begin
+                            fb <= fb_i;
+                            word_color <= word_color_i;
+                        end
                     end
 
                     if (base_h_counter == base_h_total - 1) begin
@@ -376,15 +387,24 @@ module vga_m #(
                     end
                     FB_READ_STATE_READ: begin
                         if (mport_i[`BUS_MI_SEQSLV]) begin
-                            line_cache[line_cache_idx]     <= pixel_data_in[7:0];
-                            line_cache[line_cache_idx + 1] <= pixel_data_in[15:8];
-                            line_cache[line_cache_idx + 2] <= pixel_data_in[23:16];
-                            line_cache[line_cache_idx + 3] <= pixel_data_in[31:24];
-                            // mport_o[`BUS_MO_ADDR] <= mport_o[`BUS_MO_ADDR] + 4;
-                            line_cache_idx <= line_cache_idx + 4;
+                            if (!word_color) begin
+                                line_cache[line_cache_idx]     <= pixel_data_in[7:0];
+                                line_cache[line_cache_idx + 1] <= pixel_data_in[15:8];
+                                line_cache[line_cache_idx + 2] <= pixel_data_in[23:16];
+                                line_cache[line_cache_idx + 3] <= pixel_data_in[31:24];
+                                line_cache_idx <= line_cache_idx + 4;
 
-                            if (line_cache_idx >= res_h_active - 8) begin
-                                mport_o[`BUS_MO_SEQMST] <= 1;
+                                if (line_cache_idx >= res_h_active - 8) begin
+                                    mport_o[`BUS_MO_SEQMST] <= 1;
+                                end
+                            end
+                            else begin
+                                line_cache[line_cache_idx]     <= { pixel_data_in[7:5], 5'b00000 };
+                                line_cache_idx <= line_cache_idx + 1;
+
+                                if (line_cache_idx >= res_h_active - 2) begin
+                                    mport_o[`BUS_MO_SEQMST] <= 1;
+                                end
                             end
                         end
 
@@ -399,7 +419,8 @@ module vga_m #(
 
                         mport_o[`BUS_MO_REQ] <= 0;
                         mport_o[`BUS_MO_SEQMST] <= 0;
-                        mport_o[`BUS_MO_ADDR] <= mport_o[`BUS_MO_ADDR] + res_h_active;
+                        if (!word_color) mport_o[`BUS_MO_ADDR] <= mport_o[`BUS_MO_ADDR] + res_h_active;
+                        else mport_o[`BUS_MO_ADDR] <= mport_o[`BUS_MO_ADDR] + 4 * res_h_active;
                         // end
                     end
                 endcase
