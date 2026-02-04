@@ -55,14 +55,21 @@ static inline void init_io() {
     while (reg_mprj_xfer == 1);
 }
 
-#define MEM_IO_CTRL_SCK   (reg_mprj_io_12)
-#define MEM_IO_CTRL_CS    (reg_mprj_io_7)
-#define MEM_IO_CTRL_DQSM  (reg_mprj_io_13)
-#define MEM_IO_CTRL_DEBUG (reg_mprj_io_15)
-#define MEM_IO_CTRL_SIO0  (reg_mprj_io_8)
-#define MEM_IO_CTRL_SIO1  (reg_mprj_io_9)
-#define MEM_IO_CTRL_SIO2  (reg_mprj_io_10)
-#define MEM_IO_CTRL_SIO3  (reg_mprj_io_11)
+#define MEM_IO_CTRL_SCK1   (reg_mprj_io_12)
+#define MEM_IO_CTRL_CS1    (reg_mprj_io_7)
+#define MEM_IO_CTRL_DQSM1  (reg_mprj_io_13)
+#define MEM_IO_CTRL_SIO01  (reg_mprj_io_8)
+#define MEM_IO_CTRL_SIO11  (reg_mprj_io_9)
+#define MEM_IO_CTRL_SIO21  (reg_mprj_io_10)
+#define MEM_IO_CTRL_SIO31  (reg_mprj_io_11)
+
+#define MEM_IO_CTRL_SCK2   (reg_mprj_io_20)
+#define MEM_IO_CTRL_CS2    (reg_mprj_io_15)
+#define MEM_IO_CTRL_DQSM2  (reg_mprj_io_21)
+#define MEM_IO_CTRL_SIO02  (reg_mprj_io_16)
+#define MEM_IO_CTRL_SIO12  (reg_mprj_io_17)
+#define MEM_IO_CTRL_SIO22  (reg_mprj_io_18)
+#define MEM_IO_CTRL_SIO32  (reg_mprj_io_19)
 
 #define VGA_IO_R0 (reg_mprj_io_24)
 #define VGA_IO_R1 (reg_mprj_io_25)
@@ -91,17 +98,34 @@ void main() {
 
     reg_uart_enable = 1;
 
-    MEM_IO_CTRL_SCK  = GPIO_MODE_USER_STD_OUTPUT;
-    MEM_IO_CTRL_CS   = GPIO_MODE_USER_STD_OUTPUT;
+    reg_mprj_io_16 = GPIO_MODE_USER_STD_OUTPUT;
+    reg_mprj_io_17 = GPIO_MODE_USER_STD_OUTPUT;
+    reg_mprj_io_18 = GPIO_MODE_USER_STD_OUTPUT;
+    reg_mprj_io_19 = GPIO_MODE_USER_STD_OUTPUT;
 
-    MEM_IO_CTRL_DQSM = GPIO_MODE_USER_STD_BIDIRECTIONAL;
+    reg_mprj_io_20 = GPIO_MODE_USER_STD_OUTPUT;
+    reg_mprj_io_21 = GPIO_MODE_USER_STD_OUTPUT;
+    reg_mprj_io_22 = GPIO_MODE_USER_STD_OUTPUT;
 
-    MEM_IO_CTRL_SIO0 = GPIO_MODE_USER_STD_BIDIRECTIONAL;
-    MEM_IO_CTRL_SIO1 = GPIO_MODE_USER_STD_BIDIRECTIONAL;
-    MEM_IO_CTRL_SIO2 = GPIO_MODE_USER_STD_BIDIRECTIONAL;
-    MEM_IO_CTRL_SIO3 = GPIO_MODE_USER_STD_BIDIRECTIONAL;
-    
-    MEM_IO_CTRL_DEBUG = GPIO_MODE_USER_STD_BIDIRECTIONAL;
+    MEM_IO_CTRL_SCK1  = GPIO_MODE_USER_STD_OUTPUT;
+    MEM_IO_CTRL_CS1   = GPIO_MODE_USER_STD_OUTPUT;
+
+    MEM_IO_CTRL_DQSM1 = GPIO_MODE_USER_STD_BIDIRECTIONAL;
+
+    MEM_IO_CTRL_SIO01 = GPIO_MODE_USER_STD_BIDIRECTIONAL;
+    MEM_IO_CTRL_SIO11 = GPIO_MODE_USER_STD_BIDIRECTIONAL;
+    MEM_IO_CTRL_SIO21 = GPIO_MODE_USER_STD_BIDIRECTIONAL;
+    MEM_IO_CTRL_SIO31 = GPIO_MODE_USER_STD_BIDIRECTIONAL;
+
+    MEM_IO_CTRL_SCK2  = GPIO_MODE_USER_STD_OUTPUT;
+    MEM_IO_CTRL_CS2   = GPIO_MODE_USER_STD_OUTPUT;
+
+    MEM_IO_CTRL_DQSM2 = GPIO_MODE_USER_STD_BIDIRECTIONAL;
+
+    MEM_IO_CTRL_SIO02 = GPIO_MODE_USER_STD_BIDIRECTIONAL;
+    MEM_IO_CTRL_SIO12 = GPIO_MODE_USER_STD_BIDIRECTIONAL;
+    MEM_IO_CTRL_SIO22 = GPIO_MODE_USER_STD_BIDIRECTIONAL;
+    MEM_IO_CTRL_SIO32 = GPIO_MODE_USER_STD_BIDIRECTIONAL;
 
     VGA_IO_R0 = GPIO_MODE_USER_STD_OUTPUT;
     VGA_IO_R1 = GPIO_MODE_USER_STD_OUTPUT;
@@ -113,15 +137,6 @@ void main() {
     VGA_IO_B1 = GPIO_MODE_USER_STD_OUTPUT;
     VGA_IO_HSYNC = GPIO_MODE_USER_STD_OUTPUT;
     VGA_IO_VSYNC = GPIO_MODE_USER_STD_OUTPUT;
-
-    reg_mprj_io_16 = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_17 = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_18 = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_19 = GPIO_MODE_USER_STD_OUTPUT;
-
-    reg_mprj_io_20 = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_21 = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_22 = GPIO_MODE_USER_STD_OUTPUT;
 
     reg_mprj_xfer = 1;
     while (reg_mprj_xfer == 1);
