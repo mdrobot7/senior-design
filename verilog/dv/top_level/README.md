@@ -47,4 +47,7 @@ Pip packages can be installed normally using `pip` after the venv has been activ
 - `simulator.py`: Shader core simulator. Intended to be used for shader software development and core verification. Outputs a binary dump of system memory at the end of execution in `./memory.bin`.
   - Usage: `simulator.py --help`
 - `area_optimize.py`: Area optimizer. Requires that module has already been hardened and that a valid config.json file exists (will start optimizing target density using valid working dimensions). Once the highest density achieved, will start a binary search for the optimal area. Once a small enough square area has been found, will attempt different dimension sizes.  
-  - Usage: `area_optimizer.py [openlane_dir_name]
+  - Usage: `area_optimize.py [openlane_dir_name]`
+  - optional flags:
+    - `-r`: Once we find an optimal area, try rectangular dimensions
+    - `-a [area]`: Best guess area, might offer some performance benefits?
