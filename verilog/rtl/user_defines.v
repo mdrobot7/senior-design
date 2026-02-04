@@ -191,8 +191,8 @@
 `define STREAM_SI_LAST(data_size) ((data_size) + 1)
 
 // addresses
-`define ADDR_FB0          (0)
-`define ADDR_FB1          (320 * 240)
+`define ADDR_FB0          (4000000)
+`define ADDR_FB1          (4000000 + 320 * 240)
 `define ADDR_DEPTH_BUFFER (153600)
 
 // VGA

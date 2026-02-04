@@ -98,6 +98,7 @@ module rasterizer_m #(
     wire bary_init;
     wire bary_discard;
     wire bary_busy;
+    wire write_busy;
 
     wire bary_check_busy;
 
@@ -232,9 +233,8 @@ module rasterizer_m #(
     assign pos_streamo[`STREAM_MO_LAST(SC_WIDTH * 2)] = bary_last;
 
     // busy = (state != STATE_READY && state != STATE_DONE) || bary_busy
-    assign busy_o = (state != STATE_READY && state != STATE_DONE) || bary_busy || bary_check_busy || (frags_in_flight != 0); // TODO: make an busy and flushed different
+    assign busy_o = (state != STATE_READY && state != STATE_DONE) || bary_busy || bary_check_busy || write_busy || (frags_in_flight != 0); // TODO: make an busy and flushed different
 
-    // #(WORD_WIDTH, WIDTH, HEIGHT)
     bary_pipe_m bary_pipe(
         .clk_i(clk_i),
         .nrst_i(nrst_i),
@@ -341,6 +341,8 @@ module rasterizer_m #(
     mem_write_m mem_write(
         .clk_i(clk_i),
         .nrst_i(nrst_i),
+
+        .busy_o(write_busy),
 
         .sstream_i(tex_streamo),
         .sstream_o(tex_streami),

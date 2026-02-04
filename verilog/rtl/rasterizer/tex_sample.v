@@ -100,6 +100,8 @@ module tex_sample_m(
                         out_ready <= 0;
                     end
                 end
+
+                default: ;
             endcase
         end
     end

@@ -89,9 +89,6 @@ module user_project_wrapper #(
     assign clk = wb_clk_i;
     assign nrst = la_data_in[0];
 
-    wire [3:0] debug;
-    wire [2:0] debug2;
-
     wire [`BUS_MIPORT] mportai;
     wire [`BUS_MOPORT] mportao;
 
@@ -104,45 +101,81 @@ module user_project_wrapper #(
     wire [`BUS_MIPORT] mportdi;
     wire [`BUS_MOPORT] mportdo;
 
+    wire [`BUS_MIPORT] mportei;
+    wire [`BUS_MOPORT] mporteo;
+
+    wire [`BUS_MIPORT] mportfi;
+    wire [`BUS_MOPORT] mportfo;
+
     wire [`BUS_SIPORT] sportai;
     wire [`BUS_SOPORT] sportao;
 
-    busarb_m #(3, 1, 1) arbiter(
+    wire [`BUS_SIPORT] sportbi;
+    wire [`BUS_SOPORT] sportbo;
+
+    busarb_m #(5, 2, 2) arbiter(
         .clk_i(clk),
         .nrst_i(nrst),
 
-        .mports_i({ mportco, mportbo, mportao }),
-        .mports_o({ mportci, mportbi, mportai }),
+        .mports_i({ mportfo, mporteo, mportco, mportbo, mportao }),
+        .mports_o({ mportfi, mportei, mportci, mportbi, mportai }),
 
-        .sports_i({ sportao }),
-        .sports_o({ sportai })
+        .sports_i({ sportbo, sportao }),
+        .sports_o({ sportbi, sportai })
     );
 
-    wire spi_clk;
-    wire spi_cs;
-    wire [3:0] spi_mosi;
-    reg  [3:0] spi_miso;
-    reg  spi_dqsmi;
-    wire spi_dqsmo;
-    wire [3:0] spi_sio_en;
-    wire spi_dqsm_en;
+    wire spi1_clk;
+    wire spi1_cs;
+    wire [3:0] spi1_mosi;
+    reg  [3:0] spi1_miso;
+    reg  spi1_dqsmi;
+    wire spi1_dqsmo;
+    wire [3:0] spi1_sio_en;
+    wire spi1_dqsm_en;
 
-    spi_mem_m #(0, 4000000) spi_mem(
+    wire spi2_clk;
+    wire spi2_cs;
+    wire [3:0] spi2_mosi;
+    reg  [3:0] spi2_miso;
+    reg  spi2_dqsmi;
+    wire spi2_dqsmo;
+    wire [3:0] spi2_sio_en;
+    wire spi2_dqsm_en;
+
+    spi_mem_m #(0, 4000000) spi_mem1(
         .clk_i(clk),
         .nrst_i(nrst),
 
         .sport_i(sportai),
         .sport_o(sportao),
 
-        .spi_clk_o(spi_clk),
-        .spi_cs_o(spi_cs),
-        .spi_mosi_o(spi_mosi),
-        .spi_miso_i(spi_miso),
-        .spi_dqsm_i(spi_dqsmi),
-        .spi_dqsm_o(spi_dqsmo),
+        .spi_clk_o(spi1_clk),
+        .spi_cs_o(spi1_cs),
+        .spi_mosi_o(spi1_mosi),
+        .spi_miso_i(spi1_miso),
+        .spi_dqsm_i(spi1_dqsmi),
+        .spi_dqsm_o(spi1_dqsmo),
 
-        .spi_sio_en_o(spi_sio_en),
-        .spi_dqsm_en_o(spi_dqsm_en)
+        .spi_sio_en_o(spi1_sio_en),
+        .spi_dqsm_en_o(spi1_dqsm_en)
+    );
+
+    spi_mem_m #(4000000, 4000000) spi_mem2(
+        .clk_i(clk),
+        .nrst_i(nrst),
+
+        .sport_i(sportbi),
+        .sport_o(sportbo),
+
+        .spi_clk_o(spi2_clk),
+        .spi_cs_o(spi2_cs),
+        .spi_mosi_o(spi2_mosi),
+        .spi_miso_i(spi2_miso),
+        .spi_dqsm_i(spi2_dqsmi),
+        .spi_dqsm_o(spi2_dqsmo),
+
+        .spi_sio_en_o(spi2_sio_en),
+        .spi_dqsm_en_o(spi2_dqsm_en)
     );
 
     wire [2:0] red;
@@ -178,13 +211,12 @@ module user_project_wrapper #(
         .vsync_o(vsync)
     );
 
-    // assign debug[1:0] = arbiter.state[0];
-    // assign debug[2] = arbiter.master_handled[0];
-    // assign debug[3] = arbiter.master_handled[1];
-
     reg  run;
     wire busy;
     reg [7:0] color;
+
+    reg [`BUS_ADDR_PORT] tex_addr;
+    reg [`TEX_DIM] tex_width;
 
     reg [31:0] t0x;
     reg [31:0] t0y;
@@ -203,28 +235,38 @@ module user_project_wrapper #(
     reg [31:0] v2y;
     reg [31:0] v2z;
 
-    word_stripe_cache_m #(8, 3) word_cache(
-        .clk_i(clk),
-        .nrst_i(nrst),
+    assign mportbi = mportdi;
+    assign mportbo = mportdo;
 
-        .cached_mport_i(mportdo), 
-        .cached_mport_o(mportdi),
+    // word_stripe_cache_m #(8, 3) word_cache(
+    //     .clk_i(clk),
+    //     .nrst_i(nrst),
 
-        .mport_i(mportbi),
-        .mport_o(mportbo)
-    );
+    //     .cached_mport_i(mportdo), 
+    //     .cached_mport_o(mportdi),
+
+    //     .mport_i(mportbi),
+    //     .mport_o(mportbo)
+    // );
 
     rasterizer_m rasterizer(
         .clk_i(clk),
         .nrst_i(nrst),
 
-        .mport_i(mportdi),
-        .mport_o(mportdo),
+        .depth_mport_i({ mportdi }),
+        .depth_mport_o({ mportdo }),
+
+        .pix_mport_i({ mportei }),
+        .pix_mport_o({ mporteo }),
+
+        .tex_mport_i({ mportfi }),
+        .tex_mport_o({ mportfo }),
 
         .run_i(run),
         .busy_o(busy),
 
-        .color_i(color),
+        .tex_addr_i(tex_addr),
+        .tex_width_i(tex_width),
 
         .fb_i(!fb),
 
@@ -245,9 +287,6 @@ module user_project_wrapper #(
         .v2y(v2y),
         .v2z(v2z)
     );
-
-    assign debug = clk;
-    assign debug2 = clk;
 
     reg [7:0] state;
 
@@ -282,6 +321,8 @@ module user_project_wrapper #(
 
             temp <= 0;
             yep <= 0;
+
+            tex_addr <= 32'd460800;
         end
         else if (clk) begin
             case (state)
@@ -294,7 +335,7 @@ module user_project_wrapper #(
                 0: begin
                     mportco[`BUS_MO_ADDR] <= addr;
                     // mportco[`BUS_MO_DATA] <= { addrp0, addrp1, addrp2, addrp3 };
-                    mportco[`BUS_MO_DATA] <= 32'h00000000;
+                    mportco[`BUS_MO_DATA] <= 32'h38383838;
                     mportco[`BUS_MO_SIZE] <= `BUS_SIZE_STREAM;
                     mportco[`BUS_MO_RW]   <= `BUS_WRITE;
                     mportco[`BUS_MO_REQ]  <= 1;
@@ -385,23 +426,26 @@ module user_project_wrapper #(
                 4: begin
                     color <= 8'b00000111;
 
-                    v0x = yep << `DECIMAL_POS;
-                    v0y = yep << `DECIMAL_POS;
+                    tex_addr <= fb ? `ADDR_FB1 : `ADDR_FB0;
+                    tex_width <= 320;
+
+                    v0x = (100 + yep) << `DECIMAL_POS;
+                    v0y = (yep) << `DECIMAL_POS;
                     v0z = 80;
                     t0x = 0;
                     t0y = 0;
 
-                    v1x = 100 << `DECIMAL_POS;
+                    v1x = (100 + 120) << `DECIMAL_POS;
                     v1y = 30 << `DECIMAL_POS;
                     v1z = 240;
-                    t1x = 10;
+                    t1x = 320;
                     t1y = 0;
 
-                    v2x = 30 << `DECIMAL_POS;
-                    v2y = 100 << `DECIMAL_POS;
+                    v2x = (100 + 30) << `DECIMAL_POS;
+                    v2y = 120 << `DECIMAL_POS;
                     v2z = 240;
                     t2x = 0;
-                    t2y = 10;
+                    t2y = 240;
 
                     run <= 1;
 
@@ -429,6 +473,9 @@ module user_project_wrapper #(
                 6: begin
                     color <= 8'b00111000;
 
+                    tex_addr <= 32'd460800 + 100;
+                    tex_width <= 10;
+
                     v0x = 5 << `DECIMAL_POS;
                     v0y = 50 << `DECIMAL_POS;
                     v0z = 160;
@@ -441,8 +488,8 @@ module user_project_wrapper #(
                     t1x = 10;
                     t1y = 0;
                     
-                    v2x = 70 << `DECIMAL_POS;
-                    v2y = 70 << `DECIMAL_POS;
+                    v2x = 220 << `DECIMAL_POS;
+                    v2y = 220 << `DECIMAL_POS;
                     v2z = 160;
                     t2x = 0;
                     t2y = 10;
@@ -475,20 +522,20 @@ module user_project_wrapper #(
                 end
 
                 10: begin
-                    if (timer == 1000) begin
+                    if (timer == 50000000) begin
                         state <= 0;
 
                         addr <= fb ? `ADDR_FB0 : `ADDR_FB1;
                         end_addr <= (fb ? `ADDR_FB0 : `ADDR_FB1) + (320 * 240);
 
-                        if (yep < 100) yep <= yep + 1;
+                        if (yep < 100) yep <= yep + 5;
                         else yep <= 0;
                     end
                     else timer <= timer + 1;
                 end
 
                 101: begin
-                    if (timer == 100000) begin
+                    if (timer == 10000) begin
                         state <= 10;
 
                         timer <= 0;
@@ -497,6 +544,8 @@ module user_project_wrapper #(
                     end
                     else timer <= timer + 1;
                 end
+
+                default: ;
             endcase
         end
     end
@@ -505,17 +554,27 @@ module user_project_wrapper #(
         io_oeb <= 0;
         io_out <= 0;
 
-        io_oeb[11:8] <= spi_sio_en;
-        io_oeb[13]    <= spi_dqsm_en;
+        io_oeb[11:8] <= spi1_sio_en;
+        io_oeb[13]    <= spi1_dqsm_en;
 
-        io_out[11:8] <= spi_mosi;
-        io_out[7]    <= spi_cs;
-        io_out[12]   <= spi_clk;
-        io_out[13]   <= spi_dqsmo;
-        
-        io_out[19:16]   <= debug;
-        
-        io_out[22:20]   <= debug2;
+        io_out[11:8] <= spi1_mosi;
+        io_out[7]    <= spi1_cs;
+        io_out[12]   <= spi1_clk;
+        io_out[13]   <= spi1_dqsmo;
+
+        spi1_miso  <= io_in[11:8];
+        spi1_dqsmi <= io_in[13];
+
+        io_oeb[19:16] <= spi2_sio_en;
+        io_oeb[13]    <= spi2_dqsm_en;
+
+        io_out[19:16] <= spi2_mosi;
+        io_out[15]    <= spi2_cs;
+        io_out[20]   <= spi2_clk;
+        io_out[21]   <= spi2_dqsmo;
+
+        spi2_miso  <= io_in[19:16];
+        spi2_dqsmi <= io_in[21];
 
         io_out[26:24] <= red;
         io_out[30:28] <= green;
@@ -523,9 +582,6 @@ module user_project_wrapper #(
 
         io_out[23] <= hsync;
         io_out[22] <= vsync;
-
-        spi_miso  <= io_in[11:8];
-        spi_dqsmi <= io_in[13];
     end
 
 endmodule	// user_project_wrapper

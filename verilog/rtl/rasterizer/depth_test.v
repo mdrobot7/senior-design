@@ -98,6 +98,8 @@ module depth_test_m(
                         state <= 0;
                     end
                 end
+
+                default: ;
             endcase
         end
     end
