@@ -15,14 +15,14 @@ module metadata_cache
 
   input wire core_req_i,    // request signal by a core
   input wire [31:0] data_i,
-  input wire [31:0] addr_i, // 32-bit addr: 20-bit tag, 6-bit index, 6-bit offset.
-  input wire r_en_i,        // read enable. 0 for write, 1 for read
+  input wire [31:0] addr_i, // 32-bit addr: 20-bit tag.
+  input wire rw_i,          // 0 for write, 1 for read
   output reg [31:0] core_data_o,   // Data from SRAM to Core
   output reg core_ack_o,    // output ack for core cache arbiter
   
-  output reg [9:0] sram_addr,     // SRAM Addr is {index, 4-highest offset bits}: addr[`SRAM_ADDR_RANGE]. Port AD
+  output reg [9:0] sram_addr,     // Port AD
   output reg [31:0] sram_data_o,  // Port DI
-  output reg sram_rw,           // 0 for write, 1 for read. Port R_WB
+  output reg sram_rw,             // 0 for write, 1 for read. Port R_WB
   output reg sram_en,             // enable SRAM. Port EN
   input wire [31:0] sram_data_i,  // Data out from SRAM to core. Port DO
   // All 32 SRAM BEN bits must be set high
@@ -106,7 +106,7 @@ always @ (posedge clk_i) begin
       if (core_req_i) begin
         core_ack_o <= 1;
         req_addr <= addr_i;
-        req_rw <= r_en_i;
+        req_rw <= rw_i;
         req_data <= data_i;
         req_tag <= addr_i[TAG_ADDR_RANGE];
         req_index <= addr_i [INDEX_ADDR_RANGE];
