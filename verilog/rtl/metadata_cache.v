@@ -11,21 +11,21 @@ module metadata_cache
 )
 (
   input wire clk_i,
-  input wire rst_i,
+  input wire nrst_i,
 
   input wire core_req_i,    // request signal by a core
   input wire [31:0] data_i,
   input wire [31:0] addr_i, // 32-bit addr: 20-bit tag, 6-bit index, 6-bit offset.
   input wire r_en_i,        // read enable. 0 for write, 1 for read
   output reg [31:0] core_data_o,   // Data from SRAM to Core
-  output reg core_ack_o,    // output ack for core cache controller
+  output reg core_ack_o,    // output ack for core cache arbiter
   
   output reg [9:0] sram_addr,     // SRAM Addr is {index, 4-highest offset bits}: addr[`SRAM_ADDR_RANGE]. Port AD
   output reg [31:0] sram_data_o,  // Port DI
   output reg sram_rw,           // 0 for write, 1 for read. Port R_WB
   output reg sram_en,             // enable SRAM. Port EN
   input wire [31:0] sram_data_i,  // Data out from SRAM to core. Port DO
-  // All 32 BEN bits must be set high
+  // All 32 SRAM BEN bits must be set high
 
   output reg mem_req_o,         // memory request signal
   output reg mem_rw,            
@@ -72,7 +72,7 @@ localparam S_MISS_2 = 3'd6;
 
 integer i;
 always @ (posedge clk_i) begin
-  if (rst_i) begin
+  if (!nrst_i) begin
     for (i = 0; i < BLOCKS; i = i+1) begin
       valid[i] <= 1'b0;
       dirty[i] <= 1'b0;
@@ -94,7 +94,6 @@ always @ (posedge clk_i) begin
   end
   else begin
     // defaults
-    core_ack_o <= 0;
     mem_req_o <= 0;
     mem_rw <= `BUS_READ;
     mem_seqmst_o <= 0;
@@ -105,6 +104,7 @@ always @ (posedge clk_i) begin
 
     S_WAIT: begin
       if (core_req_i) begin
+        core_ack_o <= 1;
         req_addr <= addr_i;
         req_rw <= r_en_i;
         req_data <= data_i;
@@ -116,6 +116,9 @@ always @ (posedge clk_i) begin
         sram_addr <= addr_i[SRAM_ADDR_RANGE];
         
         state <= S_TAG;
+      end
+      else begin
+        core_ack_o <= 0;
       end
     end
 
@@ -149,7 +152,7 @@ always @ (posedge clk_i) begin
     // For write hit
     S_HIT: begin
       dirty[req_index] <= 1;
-      core_ack_o <= 1;
+      core_ack_o <= 0;
       state <= S_WAIT;
     end
     
@@ -247,7 +250,7 @@ always @ (posedge clk_i) begin
       else
         dirty[req_index] <= 1;
 
-      core_ack_o <= 1;
+      core_ack_o <= 0;
       state <= S_WAIT;
     end
 
