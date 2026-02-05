@@ -6,7 +6,9 @@ module bary_check_pipe_m(
     output wire [`STREAM_SOPORT(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] sstream_o,
 
     input  wire [`STREAM_MIPORT(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] mstream_i,
-    output reg  [`STREAM_MOPORT(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] mstream_o
+    output reg  [`STREAM_MOPORT(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] mstream_o,
+
+    output wire busy_o
 );
 
     wire [2 * `SC_WIDTH + 3 * `WORD_WIDTH - 1:0] in_data;
@@ -31,5 +33,9 @@ module bary_check_pipe_m(
             end
         end
     end
+
+    assign busy_o =
+        mstream_o[`STREAM_MO_VALID(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] ||
+        sstream_i[`STREAM_SI_VALID(`SC_WIDTH * 2 + `WORD_WIDTH * 3)];
 
 endmodule
