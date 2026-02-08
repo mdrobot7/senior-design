@@ -1,6 +1,6 @@
 module vertex_order_buffer_m #(
     parameter ENTRIES = 1,
-    parameter INDEX_WIDTH = 3
+    parameter INDEX_WIDTH = `NUM_CORES_WIDTH
 ) (
     input wire clk_i,
     input wire nrst_i,
@@ -30,7 +30,7 @@ module vertex_order_buffer_m #(
     );
 
     assign full_o = !sstream_o[`STREAM_SO_READY(INDEX_WIDTH)];
-    
+
     assign empty_o = mstream_o[`STREAM_MO_VALID(INDEX_WIDTH)];
 
 endmodule

@@ -5,9 +5,11 @@ module stream_fifo_m #(
     input wire clk_i,
     input wire nrst_i,
 
+    // Data input
     input  wire [`STREAM_SIPORT(SIZE)] sstream_i,
     output wire [`STREAM_SOPORT(SIZE)] sstream_o,
 
+    // Data output
     input  wire [`STREAM_MIPORT(SIZE)] mstream_i,
     output wire [`STREAM_MOPORT(SIZE)] mstream_o
 );
