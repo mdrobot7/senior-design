@@ -13,12 +13,8 @@ module metadata_cache
   input wire clk_i,
   input wire nrst_i,
 
-  input wire core_req_i,    // request signal by a core
-  input wire [31:0] data_i,
-  input wire [31:0] addr_i, // 32-bit addr: 20-bit tag.
-  input wire rw_i,          // 0 for write, 1 for read
-  output reg [31:0] core_data_o,   // Data from SRAM to Core
-  output reg core_ack_o,    // output ack for core cache arbiter
+  input wire [`BUS_SIPORT] s_core_i;
+  output wire [`BUS_SOPORT] s_core_o;
   
   output reg [9:0] sram_addr,     // Port AD
   output reg [31:0] sram_data_o,  // Port DI
@@ -27,15 +23,8 @@ module metadata_cache
   input wire [31:0] sram_data_i,  // Data out from SRAM to core. Port DO
   // All 32 SRAM BEN bits must be set high
 
-  output reg mem_req_o,         // memory request signal
-  output reg mem_rw,            
-  output reg [1:0] mem_size_o,  // size of stream request
-  output reg mem_seqmst_o,      // seq request signal - master
-  output reg [31:0] mem_addr,   // Address to memory
-  output reg [31:0] mem_data_o, // Data to memory on write back
-  input wire [31:0] mem_data_i, // Data in from mem to SRAM/core
-  input wire mem_ack_i,         // ack for mem request
-  input wire mem_seqslv_i       // seq ready signal - slave
+  input wire [`BUS_MIPORT] m_mem_i;
+  output reg [`BUS_MOPORT] m_mem_o;
 );
 
 parameter BLOCK_BITS = ($clog2(BLOCK_WORD_SIZE));
@@ -47,6 +36,39 @@ parameter TAG_BITS = (32 - INDEX_BITS - OFFSET_BITS);
 localparam TAG_ADDR_RANGE = 31:(32 - TAG_BITS);
 localparam INDEX_ADDR_RANGE = (31-TAG_BITS):(OFFSET_BITS);
 localparam SRAM_ADDR_RANGE = 11:2;
+
+wire core_req_i;
+wire [31:0] data_i;
+wire [31:0] addr_i;
+wire rw_i;
+assign core_req_i = s_core_i[`BUS_SI_REQ];
+assign data_i = s_core_i[`BUS_SI_DATA];
+assign addr_i = s_core_i[`BUS_SI_ADDR];
+assign rw_i = s_core_i[`BUS_SI_RW];
+
+reg [31:0] core_data_o; // Data from SRAM to Core
+reg core_ack_o;
+assign s_core_o[`BUS_SO_DATA] = core_data_o;
+assign s_core_o[`BUS_SO_ACK] = core_ack_o;
+
+reg mem_req_o;        
+reg mem_rw;          
+reg mem_seqmst_o;
+reg [31:0] mem_addr;
+reg [31:0] mem_data_o;
+assign m_mem_o[`BUS_MO_REQ] = mem_req_o;
+assign m_mem_o[`BUS_MO_RW] = mem_rw;
+assign m_mem_o[`BUS_MO_SIZE] = `BUS_SIZE_STREAM; // always stream
+assign m_mem_o[`BUS_MO_SEQMST] = mem_seqmst_o;
+assign m_mem_o[`BUS_MO_ADDR] = mem_addr;
+assign m_mem_o[`BUS_MO_DATA] = mem_data_o;
+
+wire mem_ack_i;
+wire mem_seqslv_i;
+wire [31:0] mem_data_i;
+assign mem_ack_i = m_mem_i[`BUS_MI_ACK];
+assign mem_seqslv_i = m_mem_i[`BUS_MI_SEQSLV];
+assign mem_data_i = m_mem_i[`BUS_MI_DATA];
 
 reg                valid [BLOCKS-1:0]; 
 reg                dirty [BLOCKS-1:0];
@@ -82,7 +104,6 @@ always @ (posedge clk_i) begin
     core_ack_o <= 0;
     sram_en <= 0;
     mem_req_o <= 0;
-    mem_size_o <= `BUS_SIZE_STREAM;
     mem_seqmst_o <= 0;
     req_addr <= 0;
     req_data <= 0;
@@ -161,7 +182,6 @@ always @ (posedge clk_i) begin
       // write back to mem
       mem_req_o <= 1;
       mem_rw <= `BUS_WRITE;
-      mem_size_o <= `BUS_SIZE_STREAM;
       mem_addr <= {tag[req_index], req_index, 6'd0};
 
       if (mem_ack_i) begin
@@ -203,7 +223,6 @@ always @ (posedge clk_i) begin
     S_FILL: begin
       mem_req_o <= 1;
       mem_rw <= `BUS_READ;
-      mem_size_o <= `BUS_SIZE_STREAM;
       mem_addr <= {req_tag, req_index, 6'b0};
       mem_seqmst_o <= 0;
 

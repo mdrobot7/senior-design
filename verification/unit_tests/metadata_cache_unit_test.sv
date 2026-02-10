@@ -2,6 +2,7 @@
 `include "user_defines.v"
 
 `include "test/clk_rst.v"
+`include "test/spi_chip.v"
 
 module bus_unit_test;
   import svunit_pkg::svunit_testcase;
@@ -11,6 +12,30 @@ module bus_unit_test;
 
   wire clk, nrst;
   clk_rst_m clk_rst(.clk_o(clk), .nrst_o(nrst));
+
+  reg core_req;
+  reg data_from_core;
+  reg core_addr;
+  reg core_rw;
+  wire data_to_core;
+  wire core_ack;
+
+  wire sram_addr;
+  wire data_to_sram;
+  wire sram_rw;
+  wire sram_en;
+  reg data_from_sram;
+
+  wire mem_req;
+  wire mem_rw;
+  wire mem_size;
+  wire mem_seqmst;
+  wire mem_addr;
+  wire data_to_mem;
+  reg data_from_mem;
+  reg mem_ack;
+  reg mem_seqslv;
+
 
 
   //===================================
@@ -22,28 +47,28 @@ module bus_unit_test;
     .clk_i(clk),
     .nrst_i(nrst),
 
-    .core_req_i(),
-    .data_i(),
-    .addr_i(),
-    .rw_i(),
-    .core_data_out(),
-    .core_ack_o(),
+    .core_req_i(core_req),
+    .data_i(data_from_core),
+    .addr_i(core_addr),
+    .rw_i(core_rw),
+    .core_data_out(data_to_core),
+    .core_ack_o(core_ack),
 
-    .sram_addr(),
-    .sram_data_o(),
-    .sram_rw(),
-    .sram_en(),
-    .sram_data_i(),
+    .sram_addr(sram_addr),
+    .sram_data_o(data_to_sram),
+    .sram_rw(sram_rw),
+    .sram_en(sram_en),
+    .sram_data_i(data_from_sram),
 
-    .mem_req_o(),
-    .mem_rw(),
-    .mem_size_o(),
-    .mem_seqmst_o(),
-    .mem_addr(),
-    .mem_data_o(),
-    .mem_data_i(),
-    .mem_ack_i(),
-    .mem_seqslv_i()
+    .mem_req_o(mem_req),
+    .mem_rw(mem_rw),
+    .mem_size_o(mem_size),
+    .mem_seqmst_o(mem_seqmst),
+    .mem_addr(mem_addr),
+    .mem_data_o(data_to_mem),
+    .mem_data_i(data_from_mem),
+    .mem_ack_i(mem_ack),
+    .mem_seqslv_i(mem_seqslv)
   );
 
 
@@ -61,6 +86,10 @@ module bus_unit_test;
   task setup();
     svunit_ut.setup();
     /* Place Setup Code Here */
+
+    mem_size = `BUS_SIZE_STREAM;
+    
+
 
     clk_rst.RESET();
   endtask
