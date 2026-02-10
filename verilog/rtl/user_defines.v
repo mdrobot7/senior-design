@@ -299,7 +299,7 @@
 `define WB_EX_RESULT   (`WB_SIG_WIDTH'h0)
 `define WB_MEM_RESULT   (`WB_SIG_WIDTH'h1)
 `define WB_MAC_RESULT   (`WB_SIG_WIDTH'h2)
-//decoder 
+//decoder
 //decode ctl sigs
 `define R1_USE_GLOBAL_VAL_IDX   (0)
 `define R2_USE_GLOBAL_VAL_IDX   (`R1_USE_GLOBAL_VAL_IDX + 1)
@@ -329,3 +329,9 @@
 // Shaded vertices (sizes are temporary)
 `define SHADED_VERTEX_WIDTH (32)
 `define SHADED_VERTEX (`SHADED_VERTEX_WIDTH-1):0
+
+// Wishbone reg
+`define WBREG_TYPE_REG (0)
+`define WBREG_TYPE_W1C (1) // Write 1 to clear
+`define WBREG_TYPE_W1S (2) // Write 1 to set
+`define WBREG_TYPE_W1T (3) // Write 1 to toggle

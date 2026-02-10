@@ -65,7 +65,7 @@ assign wbs_ack_o = wbs_ack_s;
 
 wire oe_enable_s;
 
-localparam integer NUM_ADDRS = 3;
+localparam integer NUM_ADDRS = 8;
 
 wire [31:0] wbs_datN_o [NUM_ADDRS:0];
 wire wbs_ackN_o [NUM_ADDRS-1:0];
@@ -87,11 +87,16 @@ always @* begin
     `address_map(0, 32'h30123400, 32'hFFFFFFF0);
     `address_map(1, 32'h30123500, 32'hFFFFFFF0);
     `address_map(2, 32'h30123600, 32'hFFFFFFF0);
+    `address_map(3, 32'h30123700, 32'hFFFFFFF0);
+    `address_map(4, 32'h30123800, 32'hFFFFFFF0);
+    `address_map(5, 32'h30123900, 32'hFFFFFFF0);
+    `address_map(6, 32'h30123A00, 32'hFFFFFFF0);
+    `address_map(7, 32'h30123B00, 32'hFFFFFFF0);
 end
 
 // Baseline
-wire [31:0] reg0_0;
-wishbone_register_m #(32'h01010101, 1) reg0 (
+wire [31:0] reg0;
+wishbone_register_m #(32'h01010101, 1, `WBREG_TYPE_REG) reg0 (
     .wb_clk_i(wb_clk_i),
     .wb_rst_i(wb_rst_i),
     .wbs_stb_i(wbs_stbN_i[0]),
@@ -105,12 +110,14 @@ wishbone_register_m #(32'h01010101, 1) reg0 (
 
     .access_read_mask_i(32'hFFFFFFFF),
     .access_write_mask_i(32'hFFFFFFFF),
-    .reg_o(reg0_0)
+    .periph_read_mask_i(32'h00000000),
+    .reg_i(),
+    .reg_o(reg0)
 );
 
 // Write mask
-wire [31:0] reg1_0;
-wishbone_register_m #(32'h01010101, 1) reg1 (
+wire [31:0] reg1;
+wishbone_register_m #(32'h01010101, 1, `WBREG_TYPE_REG) reg1 (
     .wb_clk_i(wb_clk_i),
     .wb_rst_i(wb_rst_i),
     .wbs_stb_i(wbs_stbN_i[1]),
@@ -124,12 +131,14 @@ wishbone_register_m #(32'h01010101, 1) reg1 (
 
     .access_read_mask_i(32'hFFFFFFFF),
     .access_write_mask_i(32'hFFFF0000),
-    .reg_o(reg1_0)
+    .periph_read_mask_i(32'h00000000),
+    .reg_i(),
+    .reg_o(reg1)
 );
 
 // Read mask
-wire [31:0] reg2_0;
-wishbone_register_m #(32'h01010101, 1) reg2 (
+wire [31:0] reg2;
+wishbone_register_m #(32'h01010101, 1, `WBREG_TYPE_REG) reg2 (
     .wb_clk_i(wb_clk_i),
     .wb_rst_i(wb_rst_i),
     .wbs_stb_i(wbs_stbN_i[2]),
@@ -143,9 +152,117 @@ wishbone_register_m #(32'h01010101, 1) reg2 (
 
     .access_read_mask_i(32'h0000FFFF),
     .access_write_mask_i(32'hFFFFFFFF),
-    .reg_o(reg2_0)
+    .periph_read_mask_i(32'h00000000),
+    .reg_i(),
+    .reg_o(reg2)
 );
 
+// Write 1 to clear
+wire [31:0] reg3;
+wishbone_register_m #(32'h01010101, 1, `WBREG_TYPE_W1C) reg3 (
+    .wb_clk_i(wb_clk_i),
+    .wb_rst_i(wb_rst_i),
+    .wbs_stb_i(wbs_stbN_i[3]),
+    .wbs_cyc_i(wbs_cyc_i),
+    .wbs_we_i(wbs_we_i),
+    .wbs_sel_i(wbs_sel_i),
+    .wbs_dat_i(wbs_dat_i),
+    .wbs_adr_i(wbs_adr_i),
+    .wbs_ack_o(wbs_ackN_o[3]),
+    .wbs_dat_o(wbs_datN_o[3]),
+
+    .access_read_mask_i(32'hFFFFFFFF),
+    .access_write_mask_i(32'hFFFFFFFF),
+    .periph_read_mask_i(32'h00000000),
+    .reg_i(),
+    .reg_o(reg3)
+);
+
+// Write 1 to set
+wire [31:0] reg4;
+wishbone_register_m #(32'h01010101, 1, `WBREG_TYPE_W1S) reg4 (
+    .wb_clk_i(wb_clk_i),
+    .wb_rst_i(wb_rst_i),
+    .wbs_stb_i(wbs_stbN_i[4]),
+    .wbs_cyc_i(wbs_cyc_i),
+    .wbs_we_i(wbs_we_i),
+    .wbs_sel_i(wbs_sel_i),
+    .wbs_dat_i(wbs_dat_i),
+    .wbs_adr_i(wbs_adr_i),
+    .wbs_ack_o(wbs_ackN_o[4]),
+    .wbs_dat_o(wbs_datN_o[4]),
+
+    .access_read_mask_i(32'hFFFFFFFF),
+    .access_write_mask_i(32'hFFFFFFFF),
+    .periph_read_mask_i(32'h00000000),
+    .reg_i(),
+    .reg_o(reg4)
+);
+
+// Write 1 to toggle
+wire [31:0] reg5;
+wishbone_register_m #(32'h01010101, 1, `WBREG_TYPE_W1T) reg5 (
+    .wb_clk_i(wb_clk_i),
+    .wb_rst_i(wb_rst_i),
+    .wbs_stb_i(wbs_stbN_i[5]),
+    .wbs_cyc_i(wbs_cyc_i),
+    .wbs_we_i(wbs_we_i),
+    .wbs_sel_i(wbs_sel_i),
+    .wbs_dat_i(wbs_dat_i),
+    .wbs_adr_i(wbs_adr_i),
+    .wbs_ack_o(wbs_ackN_o[5]),
+    .wbs_dat_o(wbs_datN_o[5]),
+
+    .access_read_mask_i(32'hFFFFFFFF),
+    .access_write_mask_i(32'hFFFFFFFF),
+    .periph_read_mask_i(32'h00000000),
+    .reg_i(),
+    .reg_o(reg5)
+);
+
+// Multi-word reg: address masking handled by address map above.
+wire [`WORD_WIDTH*4-1:0] reg6;
+wishbone_register_m #({32'h03030303, 32'h02020202, 32'h10101010, 32'h01010101}, 4, `WBREG_TYPE_REG, 32'h30123A00) reg6 (
+    .wb_clk_i(wb_clk_i),
+    .wb_rst_i(wb_rst_i),
+    .wbs_stb_i(wbs_stbN_i[6]),
+    .wbs_cyc_i(wbs_cyc_i),
+    .wbs_we_i(wbs_we_i),
+    .wbs_sel_i(wbs_sel_i),
+    .wbs_dat_i(wbs_dat_i),
+    .wbs_adr_i(wbs_adr_i),
+    .wbs_ack_o(wbs_ackN_o[6]),
+    .wbs_dat_o(wbs_datN_o[6]),
+
+    .access_read_mask_i({128{1'b1}}),
+    .access_write_mask_i(128{1'b1}}),
+    .periph_read_mask_i(128{1'b0}}),
+    .reg_i(),
+    .reg_o(reg6)
+);
+
+// Read from peripheral's reg
+reg [31:0] reg7;
+always @(posedge wb_rst_i)
+  reg7 <= 32'h01010101;
+wishbone_register_m #(0, 1, `WBREG_TYPE_REG) reg7 (
+    .wb_clk_i(wb_clk_i),
+    .wb_rst_i(wb_rst_i),
+    .wbs_stb_i(wbs_stbN_i[7]),
+    .wbs_cyc_i(wbs_cyc_i),
+    .wbs_we_i(wbs_we_i),
+    .wbs_sel_i(wbs_sel_i),
+    .wbs_dat_i(wbs_dat_i),
+    .wbs_adr_i(wbs_adr_i),
+    .wbs_ack_o(wbs_ackN_o[7]),
+    .wbs_dat_o(wbs_datN_o[7]),
+
+    .access_read_mask_i(32'hFFFFFFFF),
+    .access_write_mask_i(0),
+    .periph_read_mask_i(32'hFFFFFFFF),
+    .reg_i(reg7),
+    .reg_o()
+);
 // ---- Set pin directions ----
 
 // Everything unused
