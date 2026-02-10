@@ -111,7 +111,7 @@ wishbone_register_m #(32'h01010101, 1, `WBREG_TYPE_REG) reg0 (
     .access_read_mask_i(32'hFFFFFFFF),
     .access_write_mask_i(32'hFFFFFFFF),
     .periph_read_mask_i(32'h00000000),
-    .reg_i(),
+    .reg_i(0),
     .reg_o(reg0_data)
 );
 
@@ -132,7 +132,7 @@ wishbone_register_m #(32'h01010101, 1, `WBREG_TYPE_REG) reg1 (
     .access_read_mask_i(32'hFFFFFFFF),
     .access_write_mask_i(32'hFFFF0000),
     .periph_read_mask_i(32'h00000000),
-    .reg_i(),
+    .reg_i(0),
     .reg_o(reg1_data)
 );
 
@@ -153,7 +153,7 @@ wishbone_register_m #(32'h01010101, 1, `WBREG_TYPE_REG) reg2 (
     .access_read_mask_i(32'h0000FFFF),
     .access_write_mask_i(32'hFFFFFFFF),
     .periph_read_mask_i(32'h00000000),
-    .reg_i(),
+    .reg_i(0),
     .reg_o(reg2_data)
 );
 
@@ -174,7 +174,7 @@ wishbone_register_m #(32'h01010101, 1, `WBREG_TYPE_W1C) reg3 (
     .access_read_mask_i(32'hFFFFFFFF),
     .access_write_mask_i(32'hFFFFFFFF),
     .periph_read_mask_i(32'h00000000),
-    .reg_i(),
+    .reg_i(0),
     .reg_o(reg3_data)
 );
 
@@ -195,7 +195,7 @@ wishbone_register_m #(32'h01010101, 1, `WBREG_TYPE_W1S) reg4 (
     .access_read_mask_i(32'hFFFFFFFF),
     .access_write_mask_i(32'hFFFFFFFF),
     .periph_read_mask_i(32'h00000000),
-    .reg_i(),
+    .reg_i(0),
     .reg_o(reg4_data)
 );
 
@@ -216,7 +216,7 @@ wishbone_register_m #(32'h01010101, 1, `WBREG_TYPE_W1T) reg5 (
     .access_read_mask_i(32'hFFFFFFFF),
     .access_write_mask_i(32'hFFFFFFFF),
     .periph_read_mask_i(32'h00000000),
-    .reg_i(),
+    .reg_i(0),
     .reg_o(reg5_data)
 );
 
@@ -237,7 +237,7 @@ wishbone_register_m #({32'h03030303, 32'h02020202, 32'h10101010, 32'h01010101}, 
     .access_read_mask_i({128{1'b1}}),
     .access_write_mask_i({128{1'b1}}),
     .periph_read_mask_i({128{1'b0}}),
-    .reg_i(),
+    .reg_i(128'h0),
     .reg_o(reg6_data)
 );
 
