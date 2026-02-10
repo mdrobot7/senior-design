@@ -65,16 +65,14 @@ module wishbone_register_m #(
         end
         else if (wb_clk_i) begin
             if (wbs_we) begin
-                case (TYPE) begin
-                  WBREG_TYPE_REG:
-                    reg_o[bit_offset +: `WORD_WIDTH] <= wbs_dat_i & access_write_mask_i;
-                  WBREG_TYPE_W1C:
-                    reg_o[bit_offset +: `WORD_WIDTH] <= (reg_o[bit_offset +: `WORD_WIDTH] & ~(wbs_dat_i & access_write_mask_i));
-                  WBREG_TYPE_W1S:
-                    reg_o[bit_offset +: `WORD_WIDTH] <= (reg_o[bit_offset +: `WORD_WIDTH] |  (wbs_dat_i & access_write_mask_i));
-                  WBREG_TYPE_W1T:
-                    reg_o[bit_offset +: `WORD_WIDTH] <= (reg_o[bit_offset +: `WORD_WIDTH] ^  (wbs_dat_i & access_write_mask_i));
-                endcase
+                if (TYPE == `WBREG_TYPE_REG)
+                  reg_o[bit_offset +: `WORD_WIDTH] <= wbs_dat_i & access_write_mask_i;
+                if (TYPE == `WBREG_TYPE_W1C)
+                  reg_o[bit_offset +: `WORD_WIDTH] <= (reg_o[bit_offset +: `WORD_WIDTH] & ~(wbs_dat_i & access_write_mask_i));
+                if (TYPE == `WBREG_TYPE_W1S)
+                  reg_o[bit_offset +: `WORD_WIDTH] <= (reg_o[bit_offset +: `WORD_WIDTH] |  (wbs_dat_i & access_write_mask_i));
+                if (TYPE == `WBREG_TYPE_W1T)
+                  reg_o[bit_offset +: `WORD_WIDTH] <= (reg_o[bit_offset +: `WORD_WIDTH] ^  (wbs_dat_i & access_write_mask_i));
             end
         end
     end
