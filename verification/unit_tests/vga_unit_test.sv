@@ -94,9 +94,9 @@ module vga_unit_test;
   reg enable;
   reg [3:0] prescaler;
   reg [3:0] resolution;
-  reg fb;
+  reg [`WORD] fb_addr;
 
-  vga_m #(FB0_ADDR, FB1_ADDR) my_vga (
+  vga_m my_vga (
     .clk_i(clk),
     .nrst_i(nrst),
     .enable_i(enable),
@@ -112,7 +112,7 @@ module vga_unit_test;
     .base_v_bporch_i(base_v_bporch),
     .mport_i(mportai),
     .mport_o(mportao),
-    .fb_i(fb),
+    .fb_addr_i(fb_addr),
     .pixel_o(pixel),
     .hsync_o(hsync),
     .vsync_o(vsync)
@@ -187,7 +187,7 @@ module vga_unit_test;
   `SVTEST(test_320x240_fb0)
     prescaler = 1;
     resolution = `VGA_RES_320x240;
-    fb = 0;
+    fb_addr = FB0_ADDR;
     clk_rst_slow.WAIT_CYCLES(1);
     enable = 1;
     test_fb(0, `VGA_RES_320x240);
@@ -196,7 +196,7 @@ module vga_unit_test;
   `SVTEST(test_160x120_fb0)
     prescaler = 1;
     resolution = `VGA_RES_160x120;
-    fb = 0;
+    fb_addr = FB0_ADDR;
     clk_rst_slow.WAIT_CYCLES(1);
     enable = 1;
     test_fb(0, `VGA_RES_160x120);
@@ -205,7 +205,7 @@ module vga_unit_test;
   `SVTEST(test_80x60_fb0)
     prescaler = 1;
     resolution = `VGA_RES_80x60;
-    fb = 0;
+    fb_addr = FB0_ADDR;
     clk_rst_slow.WAIT_CYCLES(1);
     enable = 1;
     test_fb(0, `VGA_RES_80x60);
@@ -214,7 +214,7 @@ module vga_unit_test;
   `SVTEST(test_320x240_fb1)
     prescaler = 1;
     resolution = `VGA_RES_320x240;
-    fb = 1;
+    fb_addr = FB1_ADDR;
     clk_rst_slow.WAIT_CYCLES(1);
     enable = 1;
     test_fb(1, `VGA_RES_320x240);
@@ -223,7 +223,7 @@ module vga_unit_test;
   `SVTEST(test_160x120_fb1)
     prescaler = 1;
     resolution = `VGA_RES_160x120;
-    fb = 1;
+    fb_addr = FB1_ADDR;
     clk_rst_slow.WAIT_CYCLES(1);
     enable = 1;
     test_fb(1, `VGA_RES_160x120);
@@ -232,7 +232,7 @@ module vga_unit_test;
   `SVTEST(test_80x60_fb1)
     prescaler = 1;
     resolution = `VGA_RES_80x60;
-    fb = 1;
+    fb_addr = FB1_ADDR;
     clk_rst_slow.WAIT_CYCLES(1);
     enable = 1;
     test_fb(1, `VGA_RES_80x60);
@@ -241,7 +241,7 @@ module vga_unit_test;
   `SVTEST(test_320x240_fb0_prescaled)
     prescaler = 5;
     resolution = `VGA_RES_320x240;
-    fb = 0;
+    fb_addr = FB0_ADDR;
     clk_fast_sel = 1; // clk_fast is 5x faster
     clk_rst_fast.WAIT_CYCLES(3); // TB quirk: VSYNC/HSYNC have to be perfectly in
                                  // phase with clk_slow, so delay a little. Won't
