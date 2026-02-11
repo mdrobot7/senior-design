@@ -13,8 +13,8 @@ module metadata_cache
   input wire clk_i,
   input wire nrst_i,
 
-  input wire [`BUS_SIPORT] s_core_i;
-  output wire [`BUS_SOPORT] s_core_o;
+  input wire [`BUS_SIPORT] s_core_i,
+  output wire [`BUS_SOPORT] s_core_o,
   
   output reg [9:0] sram_addr,     // Port AD
   output reg [31:0] sram_data_o,  // Port DI
@@ -23,8 +23,8 @@ module metadata_cache
   input wire [31:0] sram_data_i,  // Data out from SRAM to core. Port DO
   // All 32 SRAM BEN bits must be set high
 
-  input wire [`BUS_MIPORT] m_mem_i;
-  output reg [`BUS_MOPORT] m_mem_o;
+  input wire [`BUS_MIPORT] m_mem_i,
+  output wire [`BUS_MOPORT] m_mem_o
 );
 
 parameter BLOCK_BITS = ($clog2(BLOCK_WORD_SIZE));
@@ -82,6 +82,7 @@ reg [INDEX_BITS-1:0]  req_index;
 
 reg [BLOCK_BITS:0] wb_count;
 reg [BLOCK_BITS:0] fill_count;
+reg wb_done;
 
 reg [2:0] state;
 localparam S_WAIT = 3'd0;
@@ -198,7 +199,7 @@ always @ (posedge clk_i) begin
           if (wb_count == BLOCK_WORD_SIZE) begin
             mem_seqmst_o <= 1;
             dirty[req_index] <= 0;
-            wb_count <= BLOCK_WORD_SIZE+1;
+            wb_done <= 1;
           end
           else begin
             sram_en <= 1;
@@ -209,9 +210,10 @@ always @ (posedge clk_i) begin
         end
       end
 
-      if (wb_count == BLOCK_WORD_SIZE + 1) begin
+      if (wb_done) begin
         mem_seqmst_o <= 1;
         if (!mem_ack_i) begin
+          wb_done <= 0;
           wb_count <= 0;
           // if write, skip Fill
           state <= req_rw ? S_FILL : S_MISS_1;
@@ -272,6 +274,9 @@ always @ (posedge clk_i) begin
       core_ack_o <= 0;
       state <= S_WAIT;
     end
+
+    default:
+      state <= S_WAIT;
 
     endcase
   end
