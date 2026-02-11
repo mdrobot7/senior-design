@@ -10,6 +10,7 @@
 #define REG5    (*((volatile uint32_t *) 0x30123900))   // W1T
 #define REG6(x) (((volatile uint32_t *) 0x30123A00)[x]) // Multi-word: has 4 32-bit entries
 #define REG7    (*((volatile uint32_t *) 0x30123B00))   // Read from peripheral
+#define REG8    (*((volatile uint32_t *) 0x30123C00))   // Enable-protection
 
 void main() {
   reg_mprj_xfer = 1;
@@ -36,6 +37,8 @@ void main() {
     test_fail();
   if (REG7 != 0x01010101)
     test_fail();
+  if (REG8 != 0x01010101)
+    test_fail();
 
   REG0    = 0x12345678;
   REG1    = 0x12345678;
@@ -48,12 +51,13 @@ void main() {
   REG6(2) = 0x12345678;
   REG6(3) = 0x12345678;
   REG7    = 0x12345678;
+  REG8    = 0x12344571; // Leave enabled
 
   if (REG0 != 0x12345678)
     test_fail();
-  if (REG1 != 0x12340000)
+  if (REG1 != 0x12340101) // Only write the top 2 bytes
     test_fail();
-  if (REG2 != 0x00005678)
+  if (REG2 != 0x00005678) // Only read the bottom 2 bytes
     test_fail();
   if (REG3 != 0x01010000)
     test_fail();
@@ -67,6 +71,15 @@ void main() {
       || REG6(3) != 0x12345678)
     test_fail();
   if (REG7 != 0x01010101)
+    test_fail();
+  if (REG8 != 0x01010101)
+    test_fail();
+
+  REG8 = 0x55555550;
+  if (REG8 != 0x01010100)
+    test_fail();
+  REG8 = 0x55555550;
+  if (REG8 != 0x55555550)
     test_fail();
   test_pass();
 }
