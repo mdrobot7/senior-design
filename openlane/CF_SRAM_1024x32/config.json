@@ -1,18 +1,12 @@
 {
-
-    "meta": {
-        "flow": "Classic",
-        "substituting_steps": {
-            "Yosys.JSONHeader": null,
-            "Odb.SetPowerConnections": null,
-            "Odb.WriteVerilogHeader": null
-        }
-    },
-    "DESIGN_NAME": "CF_SRAM_1024x32",
+    "DESIGN_NAME": "CF_SRAM_1024x32_wrapper",
+    "DESIGN_IS_CORE": 0,
+    "RUN_LINTER": 1,
     "FP_PDN_MULTILAYER": true,
     "FP_PDN_CORE_RING": false,
     "VERILOG_FILES": [
-        "dir::../../ip/CF_SRAM_1024x32/hdl/CF_SRAM_1024x32.v"
+        "dir::../../ip/CF_SRAM_1024x32/hdl/CF_SRAM_1024x32_wrapper.v",
+        "dir::../../ip/CF_SRAM_1024x32/hdl/CF_SRAM_1024x32_stub.v"
     ],
     "//VERILOG_DEFINES": ["PnR"],
     "SYNTH_USE_PG_PINS_DEFINES": "USE_POWER_PINS",
@@ -31,9 +25,7 @@
     "GND_NETS": [
         "VGND"
     ],
-    "EXTRA_VERILOG_MODELS": [
-        "dir::../../ip/CF_SRAM_1024x32/hdl/CF_SRAM_1024x32_stub.v"
-    ],
+    "SYNTH_READ_BLACKBOX_LIB": true,
     "EXTRA_GDS_FILES": [
         "dir::../../ip/CF_SRAM_1024x32/gds/CF_SRAM_1024x32.gds"
     ],
@@ -55,12 +47,7 @@
     "FP_PDN_HSPACING": 10,
     "FP_PDN_VPITCH": 50,
     "FP_PDN_HPITCH": 50,
-    "FP_PDN_MACRO_HOOKS": [
-        "i_sram VPWR VGND vpwra vgnd",
-        "i_sram VPWR VGND vpb vnb",
-        "i_sram VPWR VGND vpwrp vgnd",
-        "i_sram VPWR VGND vpwrm vgnd"
-    ],
+    "FP_PDN_MACRO_HOOKS": "i_sram VPWR VGND vpwra vgnd,i_sram VPWR VGND vpb vnb,i_sram VPWR VGND vpwrp vgnd,i_sram VPWR VGND vpwrm vgnd",
     "FP_PDN_CFG": "dir::pdn.tcl",
     "QUIT_ON_LINTER_ERRORS": false,
     "QUIT_ON_SYNTH_CHECKS": false,
