@@ -265,13 +265,39 @@ module rasterizer_tb();
             end
         end
 
+        for (x = 0; x < 10; x = x + 1) begin
+            for (y = 0; y < 10; y = y + 1) begin
+                if ((x % 2 == 0) ^ (y % 2 == 0)) begin
+                    spi_chip.mem[`ADDR_FB1 + (y * 10 + x) + 0] = 8'b00111000;
+                end
+                else begin
+                    spi_chip.mem[`ADDR_FB1 + (y * 10 + x) + 0] = 8'b00000111;
+                end
+            end
+        end
+
+        for (x = 0; x < 10; x = x + 1) begin
+            for (y = 0; y < 10; y = y + 1) begin
+                if ((x % 2 == 0) ^ (y % 2 == 0)) begin
+                    spi_chip.mem[`ADDR_FB1 + 100 + (y * 10 + x) + 0] = 8'b11000000;
+                end
+                else begin
+                    spi_chip.mem[`ADDR_FB1 + 100 + (y * 10 + x) + 0] = 8'b00111111;
+                end
+            end
+        end
+
         for (x = 0; x < 320; x = x + 1) begin
             for (y = 0; y < 240; y = y + 1) begin
                 WRITE_MEM(`ADDR_FB0 + (y * 320 + x), 0);
             end
         end
 
+<<<<<<< HEAD
 `include "duwe_cube.v"
+=======
+`include "two_triangles.v"
+>>>>>>> origin
 
         clk_rst.WAIT_CYCLES(10);
     
@@ -302,7 +328,11 @@ module rasterizer_tb();
 
         $display("Dumping image...");
 
+<<<<<<< HEAD
         `VGA_WRITE("output.bmp", spi_chip1.mem, `ADDR_FB0, 320, 240, `COLOR_TYPE_RGB332);
+=======
+        `VGA_WRITE("output.bmp", spi_chip.mem, `ADDR_FB0, 320, 240, `COLOR_TYPE_RGB332);
+>>>>>>> origin
 
         // `VGA_WRITE("depth.bmp", spi_chip1.mem, `ADDR_DEPTH_BUFFER, 320, 240, `COLOR_TYPE_GSW);
 

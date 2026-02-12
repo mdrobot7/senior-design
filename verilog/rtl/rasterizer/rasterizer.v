@@ -105,6 +105,10 @@ module rasterizer_m #(
 
     reg [15:0] frags_in_flight; // TODO: perhaps smaller
 
+    wire bary_check_busy;
+
+    reg [15:0] frags_in_flight; // TODO: perhaps smaller
+
     reg [SC_WIDTH - 1:0] posx;
     reg [SC_WIDTH - 1:0] posy;
 
@@ -133,8 +137,13 @@ module rasterizer_m #(
     wire [`STREAM_MIPORT(`RAST_DT_OUT_WIDTH)] filt_depth_streami;
     wire [`STREAM_MOPORT(`RAST_DT_OUT_WIDTH)] filt_depth_streamo;
 
+<<<<<<< HEAD
     wire [`STREAM_MIPORT(`RAST_TS_OUT_WIDTH)] tex_streami;
     wire [`STREAM_MOPORT(`RAST_TS_OUT_WIDTH)] tex_streamo;
+=======
+    wire [`STREAM_MIPORT(`COLOR_WIDTH + SC_WIDTH * 2 + WORD_WIDTH * 3)] tex_streami;
+    wire [`STREAM_MOPORT(`COLOR_WIDTH + SC_WIDTH * 2 + WORD_WIDTH * 3)] tex_streamo;
+>>>>>>> origin
 
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin
@@ -366,6 +375,36 @@ module rasterizer_m #(
         .nrst_i(nrst_i),
 
         .busy_o(write_busy),
+
+        .sstream_i(tex_streamo),
+        .sstream_o(tex_streami),
+
+        .mport_i(pix_mport_i),
+        .mport_o(pix_mport_o),
+        
+        .fb_i(fb)
+    );
+
+    tex_sample_m tex_sample(
+        .clk_i(clk_i),
+        .nrst_i(nrst_i),
+
+        .sstream_i(filt_depth_streamo),
+        .sstream_o(filt_depth_streami),
+
+        .mstream_i(tex_streami),
+        .mstream_o(tex_streamo),
+
+        .mport_i(tex_mport_i),
+        .mport_o(tex_mport_o),
+
+        .tex_addr_i(tex_addr_i),
+        .tex_width_i(tex_width_i)
+    );
+
+    mem_write_m mem_write(
+        .clk_i(clk_i),
+        .nrst_i(nrst_i),
 
         .sstream_i(tex_streamo),
         .sstream_o(tex_streami),

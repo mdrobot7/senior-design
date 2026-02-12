@@ -300,7 +300,7 @@
 `define WB_EX_RESULT   (`WB_SIG_WIDTH'h0)
 `define WB_MEM_RESULT   (`WB_SIG_WIDTH'h1)
 `define WB_MAC_RESULT   (`WB_SIG_WIDTH'h2)
-//decoder 
+//decoder
 //decode ctl sigs
 `define R1_USE_GLOBAL_VAL_IDX   (0)
 `define R2_USE_GLOBAL_VAL_IDX   (`R1_USE_GLOBAL_VAL_IDX + 1)
@@ -331,9 +331,19 @@
 `define SHADED_VERTEX_WIDTH (32)
 `define SHADED_VERTEX (`SHADED_VERTEX_WIDTH-1):0
 
+<<<<<<< HEAD
 // fixed point
 `define FP(x) (($signed((x) * (64'b1 << `DECIMAL_POS))) & 32'hFFFFFFFF)
 
 `define FP_MUL(a, b) (($signed({ {`WORD_WIDTH{a[`WORD_WIDTH - 1]}}, (a) }) * $signed({ {`WORD_WIDTH{b[`WORD_WIDTH - 1]}}, (b) })) >>> `DECIMAL_POS)
 `define FP_DIV(a, b) ((($signed({ {`WORD_WIDTH{a[`WORD_WIDTH - 1]}}, (a) }) << `DECIMAL_POS) / $signed({ {`WORD_WIDTH{b[`WORD_WIDTH - 1]}}, (b) })))
 `define FP_INV(x) ((1 << (2 * `DECIMAL_POS)) / $signed({ {`WORD_WIDTH{x[`WORD_WIDTH - 1]}}, x }))
+=======
+// Wishbone reg
+`define WBREG_TYPE_REG (0)
+`define WBREG_TYPE_W1C (1) // Write 1 to clear
+`define WBREG_TYPE_W1S (2) // Write 1 to set
+`define WBREG_TYPE_W1T (3) // Write 1 to toggle
+
+`define CORE_MAILBOX_HEIGHT (8)
+>>>>>>> origin

@@ -15,6 +15,7 @@
 module wishbone_register_m #(
     parameter RESET_VALUE = 32'h0,
     parameter SIZE_WORDS = 1,
+    parameter TYPE = `WBREG_TYPE_REG,
     parameter ADDRESS = 0
 ) (
     // Wishbone
@@ -31,8 +32,15 @@ module wishbone_register_m #(
 
     // Register
     input wire [(SIZE_WORDS * `WORD_WIDTH)-1:0] access_read_mask_i,
-    input wire [(SIZE_WORDS * `WORD_WIDTH)-1:0] access_write_mask_i,
-    output reg [(SIZE_WORDS * `WORD_WIDTH)-1:0] reg_o
+    input wire [(SIZE_WORDS * `WORD_WIDTH)-1:0] access_write_mask_i, // 1: Bit is writable. If a bit in periph_read_mask_i is set,
+                                                                     // the corresponding bit in this field must be cleared.
+    input wire [(SIZE_WORDS * `WORD_WIDTH)-1:0] periph_read_mask_i,  // 1: Read from reg_i, 0: read from reg_o.
+
+    input wire [(SIZE_WORDS * `WORD_WIDTH)-1:0] enable_prot_i,       // 1: Bit is enable-protected
+    input wire                                  enable_i,            // 1: Downstream device is enabled
+
+    input wire [(SIZE_WORDS * `WORD_WIDTH)-1:0] reg_i,               // Read from peripheral
+    output reg [(SIZE_WORDS * `WORD_WIDTH)-1:0] reg_o                // Write to peripheral
 );
 
     wire wbs_we;
@@ -47,9 +55,15 @@ module wishbone_register_m #(
     );
 
     // (wbs_adr_i - ADDRESS) = 0 should return reg_o[31:0]
-    wire [`WORD_WIDTH-1:0] bit_offset;
-    assign bit_offset = (SIZE_WORDS == 1) ? 0 : {(wbs_adr_i - ADDRESS), 3'b000}; // Bit offset = byte offset * 8
-    assign wbs_dat_o = reg_o[bit_offset +: `WORD_WIDTH] & access_read_mask_i;
+    wire [`WORD_WIDTH-1:0] bit_offset = (SIZE_WORDS == 1) ? 0 : {(wbs_adr_i - ADDRESS), 3'b000}; // Bit offset = byte offset * 8
+    wire [`WORD_WIDTH-1:0] read_rego = reg_o[bit_offset +: `WORD_WIDTH];
+    wire [`WORD_WIDTH-1:0] read_regi = reg_i[bit_offset +: `WORD_WIDTH];
+
+    assign wbs_dat_o =  ((read_rego & ~periph_read_mask_i)
+                       | (read_regi &  periph_read_mask_i))
+                       & access_read_mask_i;
+
+    integer i;
 
     always @ (posedge wb_clk_i or posedge wb_rst_i) begin
         if (wb_rst_i) begin // Wishbone rst is positive
@@ -57,7 +71,23 @@ module wishbone_register_m #(
         end
         else if (wb_clk_i) begin
             if (wbs_we) begin
-                reg_o[bit_offset +: `WORD_WIDTH] <= wbs_dat_i & access_write_mask_i;
+                // Should synthesize to a 5-input mux on each bit of the reg
+                // with the inputs reg_o[i], din[i], 0, 1, !reg_o[i] corresponding
+                // to no change, input data, clear, set, and toggle.
+                for (i = 0; i < (SIZE_WORDS * `WORD_WIDTH)-1; i++) begin
+                    if (access_write_mask_i[bit_offset + i] &&
+                        (!enable_prot_i[bit_offset + i] || !enable_i)) begin
+                        if (TYPE == `WBREG_TYPE_REG)
+                            reg_o[bit_offset + i] <= wbs_dat_i[i];
+                        if (TYPE == `WBREG_TYPE_W1C && wbs_dat_i[i])
+                            reg_o[bit_offset + i] <= 0;
+                        if (TYPE == `WBREG_TYPE_W1S && wbs_dat_i[i])
+                            reg_o[bit_offset + i] <= 1;
+                        if (TYPE == `WBREG_TYPE_W1T && wbs_dat_i[i])
+                            reg_o[bit_offset + i] <= !reg_o[bit_offset + i];
+                    end
+                    // else don't change
+                end
             end
         end
     end

@@ -40,7 +40,6 @@ IndentPPDirectives: None
 IndentWidth: '2'
 IndentWrappedFunctionNames: 'true'
 KeepEmptyLinesAtTheStartOfBlocks: 'true'
-Language: Cpp
 MaxEmptyLinesToKeep: '2'
 NamespaceIndentation: All
 PenaltyBreakFirstLessLess: '100'
@@ -70,5 +69,8 @@ SpacesInSquareBrackets: 'false'
 Standard: Cpp11
 TabWidth: '2'
 UseTab: Never
-
+---
+Language: Cpp
+---
+Language: C
 ...

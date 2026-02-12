@@ -2,10 +2,15 @@ module mem_write_m(
     input wire clk_i,
     input wire nrst_i,
 
+<<<<<<< HEAD
     output wire busy_o,
 
     input  wire [`STREAM_SIPORT(`RAST_TS_OUT_WIDTH)] sstream_i,
     output wire [`STREAM_SOPORT(`RAST_TS_OUT_WIDTH)] sstream_o,
+=======
+    input  wire [`STREAM_SIPORT(`COLOR_WIDTH + `SC_WIDTH * 2 + `WORD_WIDTH * 3)] sstream_i,
+    output wire [`STREAM_SOPORT(`COLOR_WIDTH + `SC_WIDTH * 2 + `WORD_WIDTH * 3)] sstream_o,
+>>>>>>> origin
 
     input  wire [`BUS_MIPORT] mport_i,
     output reg  [`BUS_MOPORT] mport_o,
