@@ -137,13 +137,8 @@ module rasterizer_m #(
     wire [`STREAM_MIPORT(`RAST_DT_OUT_WIDTH)] filt_depth_streami;
     wire [`STREAM_MOPORT(`RAST_DT_OUT_WIDTH)] filt_depth_streamo;
 
-<<<<<<< HEAD
     wire [`STREAM_MIPORT(`RAST_TS_OUT_WIDTH)] tex_streami;
     wire [`STREAM_MOPORT(`RAST_TS_OUT_WIDTH)] tex_streamo;
-=======
-    wire [`STREAM_MIPORT(`COLOR_WIDTH + SC_WIDTH * 2 + WORD_WIDTH * 3)] tex_streami;
-    wire [`STREAM_MOPORT(`COLOR_WIDTH + SC_WIDTH * 2 + WORD_WIDTH * 3)] tex_streamo;
->>>>>>> origin
 
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin
