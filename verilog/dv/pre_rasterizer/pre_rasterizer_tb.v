@@ -3,13 +3,45 @@ module dummy_core_m(
     input wire nrst_i,
 
     input  wire [`WORD] index_i,
+    input  wire         valid_i,
+    output reg          full_o,
     input  wire         run_i,
 
     input  wire [`STREAM_MIPORT(`SHADED_VERTEX_WIDTH)] mstream_i,
-    output wire [`STREAM_MOPORT(`SHADED_VERTEX_WIDTH)] mstream_o
+    output reg  [`STREAM_MOPORT(`SHADED_VERTEX_WIDTH)] mstream_o
 );
 
+    wire [`SHADED_VERTEX] lut[2:0];
 
+    assign lut[0] = 0;
+    assign lut[1] = 0;
+    assign lut[2] = 0;
+
+    reg [`WORD] index;
+
+    always @(posedge clk_i, negedge nrst_i) begin
+        if (nrst_i) begin
+            full_o <= 0;
+
+            mstream_o <= 0;
+
+            index <= 0;
+        end
+        else if (clk_i) begin
+            mstream_o[`STREAM_MO_VALID(`SHADED_VERTEX_WIDTH)] <= 0;
+
+            if (valid_i && !full_o) begin
+                index <= index_i;
+
+                full_o <= 1;
+            end
+
+            if (run_i && full_o) begin
+                mstream_o[`STREAM_MO_DATA(`SHADED_VERTEX_WIDTH)] <= lut[index];
+                mstream_o[`STREAM_MO_VALID(`SHADED_VERTEX_WIDTH)] <= 1;
+            end
+        end
+    end
 
 endmodule
 
@@ -24,7 +56,9 @@ module pre_rasterizer_tb();
         .nrst_o(nrst)
     );
 
-    reg  [`WORD] cores_index [CORE_COUNT - 1:0];
+    reg  [`WORD] cores_index;
+    reg  cores_valid [CORE_COUNT - 1:0];
+    wire cores_full [CORE_COUNT - 1:0];
     reg  cores_run [CORE_COUNT - 1:0];
 
     wire [`STREAM_MIPORT(`SHADED_VERTEX_WIDTH)] cores_mstreami [CORE_COUNT - 1:0];
@@ -46,6 +80,12 @@ module pre_rasterizer_tb();
     wire [`STREAM_MIPORT(`SHADED_VERTEX_WIDTH)] svf_mstreami;
     wire [`STREAM_MOPORT(`SHADED_VERTEX_WIDTH)] svf_mstreamo;
 
+    wire [`STREAM_SIPORT(2)] vob_sstreami;
+    wire [`STREAM_SOPORT(2)] vob_sstreamo;
+
+    wire [`STREAM_MIPORT(2)] vob_mstreami;
+    wire [`STREAM_MOPORT(2)] vob_mstreamo;
+
     generate
         genvar i;
 
@@ -54,7 +94,9 @@ module pre_rasterizer_tb();
                 .clk_i(clk),
                 .nrst_i(nrst),
 
-                .index_i(cores_index[i]),
+                .index_i(cores_index),
+                .valid_i(cores_valid[i]),
+                .full_o(cores_full[i]),
                 .run_i(cores_run[i]),
 
                 .mstream_i(cores_mstreami[i]),
@@ -92,9 +134,64 @@ module pre_rasterizer_tb();
         .mstream_o(svf_mstreamo)
     );
 
-    initial begin
+    stream_master_m #(2) order_master(
+        .clk_i(clk),
+        
+        .mstream_i(vob_sstreamo),
+        .mstream_o(vob_sstreami)
+    );
+
+    vertex_order_buffer_m #(10, 2) order_buffer(
+        .clk_i(clk),
+        .nrst_i(nrst),
+
+        .sstream_i(vob_sstreami),
+        .sstream_o(vob_sstreamo),
+        
+        .mstream_i(vob_mstreami),
+        .mstream_o(vob_mstreamo)
+    );
+
+    initial begin : MAIN
+        integer i;
+
+		$dumpfile("pre_rasterizer.vcd");
+		$dumpvars(0, pre_rasterizer_tb);
+
+        cores_index[i] = 0;
+
+        for (i = 0; i < CORE_COUNT; i = i + 1) begin
+            cores_valid[i] = 0;
+        end
+
+        svc_test_index = 0;
+        svc_test_valid = 0;
+
+        svc_store_vertex = 0;
+        svc_store_index  = 0;
+        svc_store_valid  = 0;
+
         #1000;
         $finish;
     end
+
+    task QUEUE_VERTEX;
+        input [`WORD] index;
+
+        integer i;
+    begin
+        for (i = 0; i < CORE_COUNT; i = i + 1) begin
+            if (!cores_full[i]) begin
+                cores_index[i] = index;
+                cores_valid[i] = 1;
+
+                wait(!clk);
+                wait(clk);
+
+                cores[]
+            end
+        end
+    end
+    endtask
 
 endmodule

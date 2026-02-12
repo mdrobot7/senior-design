@@ -293,11 +293,7 @@ module rasterizer_tb();
             end
         end
 
-<<<<<<< HEAD
 `include "duwe_cube.v"
-=======
-`include "two_triangles.v"
->>>>>>> origin
 
         clk_rst.WAIT_CYCLES(10);
     
@@ -328,11 +324,7 @@ module rasterizer_tb();
 
         $display("Dumping image...");
 
-<<<<<<< HEAD
         `VGA_WRITE("output.bmp", spi_chip1.mem, `ADDR_FB0, 320, 240, `COLOR_TYPE_RGB332);
-=======
-        `VGA_WRITE("output.bmp", spi_chip.mem, `ADDR_FB0, 320, 240, `COLOR_TYPE_RGB332);
->>>>>>> origin
 
         // `VGA_WRITE("depth.bmp", spi_chip1.mem, `ADDR_DEPTH_BUFFER, 320, 240, `COLOR_TYPE_GSW);
 
