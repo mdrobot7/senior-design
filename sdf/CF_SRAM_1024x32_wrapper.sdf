@@ -1,7 +1,7 @@
 (DELAYFILE
  (SDFVERSION "3.0")
  (DESIGN "CF_SRAM_1024x32_wrapper")
- (DATE "Thu Feb 12 12:15:00 2026")
+ (DATE "Thu Feb 12 21:32:02 2026")
  (VENDOR "Parallax")
  (PROGRAM "STA")
  (VERSION "2.4.0")
