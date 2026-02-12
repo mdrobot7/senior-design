@@ -27,7 +27,11 @@ module regfile_m #(
     input wire [REGFILE_ADDR_SIZE-1:0] r2_addr_i,
     
     output reg [REGFILE_WIDTH-1:0] r1_data_o,
-    output reg [REGFILE_WIDTH-1:0] r2_data_o
+    output reg [REGFILE_WIDTH-1:0] r2_data_o,
+
+    input wire inbox_write_i,
+    input  wire[REGFILE_WIDTH * `CORE_MAILBOX_HEIGHT-1:0] inbox_i,
+    output reg[REGFILE_WIDTH * `CORE_MAILBOX_HEIGHT-1:0] outbox_o
 );
     localparam REGFILE_HIGHEST_ADDR = REGFILE_HEIGHT + REGFILE_BASE_ADDR - 1;
     reg [REGFILE_WIDTH - 1:0] mem [REGFILE_HIGHEST_ADDR:REGFILE_BASE_ADDR];
@@ -39,18 +43,27 @@ module regfile_m #(
                 mem[i] <= 0;
             end
         end
-        else if (clk_i && wr_en_i) begin : WRITE
-            if(!HAS_ZERO_REG) begin
-                mem[wr_addr_i] <= wr_data_i;
+        else if (clk_i) begin : WRITE
+            integer i;
+            if(inbox_write_i) begin
+                for(i = 0; i < `CORE_MAILBOX_HEIGHT; i = i + 1) begin
+                    $display("mem write ");
+                    mem[i + 1] <= inbox_i[(i*REGFILE_WIDTH) +: REGFILE_WIDTH];
+                end
             end
-            else if(HAS_ZERO_REG) begin
-                mem[wr_addr_i] <= (wr_addr_i == REGFILE_HIGHEST_ADDR ? 0 : wr_data_i);
+            else if(wr_en_i) begin
+                if(!HAS_ZERO_REG) begin
+                    mem[wr_addr_i] <= wr_data_i;
+                end
+                else if(HAS_ZERO_REG) begin
+                    mem[wr_addr_i] <= (wr_addr_i == REGFILE_HIGHEST_ADDR ? 0 : wr_data_i);
+                end
             end
-
         end
     end
 
     always @(*) begin : READ
+        integer i;
         //Forwards data if current write = current read address
         if(!HAS_ZERO_REG) begin
             r1_data_o = ((r1_addr_i == wr_addr_i) && wr_en_i) ? wr_data_i : mem[r1_addr_i];
@@ -59,6 +72,10 @@ module regfile_m #(
             r1_data_o = ((r1_addr_i == wr_addr_i) && wr_en_i && (wr_addr_i != REGFILE_HIGHEST_ADDR)) ? wr_data_i : mem[r1_addr_i];
             r2_data_o = ((r2_addr_i == wr_addr_i) && wr_en_i && (wr_addr_i != REGFILE_HIGHEST_ADDR)) ? wr_data_i : mem[r2_addr_i];
 
+        end
+
+        for(i = 0; i < `CORE_MAILBOX_HEIGHT; i = i + 1) begin
+            outbox_o[i*REGFILE_WIDTH +: REGFILE_WIDTH] = {mem[i + 1]};
         end
     end
 

@@ -20,11 +20,13 @@ module regfile_m_unit_test;
 
   wire clk, nrst;
   clk_rst_m clk_rst(.clk_o(clk), .nrst_o(nrst));
-  reg wr_en;
+  reg wr_en, inbox_write;
   reg[REG_WIDTH-1:0] wr_data;
   reg[3:0] wr_addr, r1_addr, r2_addr;
+  reg[`WORD_WIDTH * `CORE_MAILBOX_HEIGHT-1:0] inbox;
 
   wire[`WORD_WIDTH-1:0] r1_data, r2_data;
+  wire[`WORD_WIDTH * `CORE_MAILBOX_HEIGHT-1:0] outbox;
 
   reg [REG_WIDTH-1:0] test_regfile [CORE_HEIGHT-1:0];
 
@@ -39,7 +41,11 @@ module regfile_m_unit_test;
     .r2_addr_i(r2_addr),
 
     .r1_data_o(r1_data),
-    .r2_data_o(r2_data)
+    .r2_data_o(r2_data),
+
+    .inbox_write_i(inbox_write),
+    .inbox_i(inbox),
+    .outbox_o(outbox)
   );
 
 
@@ -57,7 +63,7 @@ module regfile_m_unit_test;
   task setup();
     svunit_ut.setup();
     /* Place Setup Code Here */
-
+    inbox_write <= 0;
     clk_rst.RESET();
   endtask
 
@@ -111,13 +117,24 @@ module regfile_m_unit_test;
       r2_addr <= i;
       
       @(posedge clk);
-      //$display("r1_data:0x%h\nr2_data:0x%h\ntestreg_data:0x%h", r1_data, r2_data, test_regfile[i]);
       `FAIL_UNLESS_EQUAL(r1_data, r2_data);
       `FAIL_UNLESS_EQUAL(test_regfile[i], r1_data);
     end
   `SVTEST_END
 
-
+`SVTEST(mailbox_test)
+    integer i, j;
+    for(i = 0; i < 100; i=i+1) begin
+        inbox_write <= 1;
+        wr_en <= 0;
+        for (j = 0; j < `CORE_MAILBOX_HEIGHT; j=j+1) begin
+            inbox[j*REG_WIDTH +: REG_WIDTH] = $urandom;
+        end
+        @(posedge clk);
+        @(posedge clk);
+        `FAIL_UNLESS_EQUAL(inbox, outbox);
+    end
+`SVTEST_END
 
   `SVUNIT_TESTS_END
 
