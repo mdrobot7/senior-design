@@ -98,6 +98,12 @@ module rasterizer_m #(
     wire bary_init;
     wire bary_discard;
     wire bary_busy;
+    wire write_busy;
+    wire depth_busy;
+
+    wire bary_check_busy;
+
+    reg [15:0] frags_in_flight; // TODO: perhaps smaller
 
     wire bary_check_busy;
 
@@ -131,8 +137,8 @@ module rasterizer_m #(
     wire [`STREAM_MIPORT(`RAST_DT_OUT_WIDTH)] filt_depth_streami;
     wire [`STREAM_MOPORT(`RAST_DT_OUT_WIDTH)] filt_depth_streamo;
 
-    wire [`STREAM_MIPORT(`COLOR_WIDTH + SC_WIDTH * 2 + WORD_WIDTH * 3)] tex_streami;
-    wire [`STREAM_MOPORT(`COLOR_WIDTH + SC_WIDTH * 2 + WORD_WIDTH * 3)] tex_streamo;
+    wire [`STREAM_MIPORT(`RAST_TS_OUT_WIDTH)] tex_streami;
+    wire [`STREAM_MOPORT(`RAST_TS_OUT_WIDTH)] tex_streamo;
 
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin
@@ -222,6 +228,20 @@ module rasterizer_m #(
             ) begin
                 frags_in_flight = frags_in_flight - 1;
             end
+
+            if (
+                filt_depth_streamo[`STREAM_MO_VALID(`RAST_DT_OUT_WIDTH)] &&
+                filt_depth_streami[`STREAM_MI_READY(`RAST_DT_OUT_WIDTH)]
+            ) begin
+                frags_in_flight = frags_in_flight + 1;
+            end
+
+            if (
+                tex_streamo[`STREAM_MO_VALID(`RAST_TS_OUT_WIDTH)] &&
+                tex_streami[`STREAM_MI_READY(`RAST_TS_OUT_WIDTH)]
+            ) begin
+                frags_in_flight = frags_in_flight - 1;
+            end
         end
     end
 
@@ -232,9 +252,14 @@ module rasterizer_m #(
     assign pos_streamo[`STREAM_MO_LAST(SC_WIDTH * 2)] = bary_last;
 
     // busy = (state != STATE_READY && state != STATE_DONE) || bary_busy
-    assign busy_o = (state != STATE_READY && state != STATE_DONE) || bary_busy || bary_check_busy || (frags_in_flight != 0); // TODO: make an busy and flushed different
+    assign busy_o =
+        (state != STATE_READY && state != STATE_DONE) ||
+        bary_busy ||
+        bary_check_busy ||
+        depth_busy ||
+        write_busy ||
+        (frags_in_flight != 0); // TODO: make an busy and flushed different
 
-    // #(WORD_WIDTH, WIDTH, HEIGHT)
     bary_pipe_m bary_pipe(
         .clk_i(clk_i),
         .nrst_i(nrst_i),
@@ -318,7 +343,41 @@ module rasterizer_m #(
         .mstream_o(filt_depth_streamo),
 
         .mport_i(depth_mport_i),
-        .mport_o(depth_mport_o)
+        .mport_o(depth_mport_o),
+        
+        .busy_o(depth_busy)
+    );
+
+    tex_sample_m tex_sample(
+        .clk_i(clk_i),
+        .nrst_i(nrst_i),
+
+        .sstream_i(filt_depth_streamo),
+        .sstream_o(filt_depth_streami),
+
+        .mstream_i(tex_streami),
+        .mstream_o(tex_streamo),
+
+        .mport_i(tex_mport_i),
+        .mport_o(tex_mport_o),
+
+        .tex_addr_i(tex_addr_i),
+        .tex_width_i(tex_width_i)
+    );
+
+    mem_write_m mem_write(
+        .clk_i(clk_i),
+        .nrst_i(nrst_i),
+
+        .busy_o(write_busy),
+
+        .sstream_i(tex_streamo),
+        .sstream_o(tex_streami),
+
+        .mport_i(pix_mport_i),
+        .mport_o(pix_mport_o),
+        
+        .fb_i(fb)
     );
 
     tex_sample_m tex_sample(

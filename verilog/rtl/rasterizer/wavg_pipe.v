@@ -151,7 +151,7 @@ module wavg_pipe_m(
                 STATE_RUN5: begin
                     state <= STATE_RUN6;
 
-                    tx <= a0y;
+                    tx <= a0y >>> `DECIMAL_POS;
 
                     a0a <= temp;
                     a0b <= m1y;
@@ -161,14 +161,14 @@ module wavg_pipe_m(
                     state <= STATE_RUN7;
 
                     a0a <= m0y;
-                    a0b <= m1y;
+                    a0b <= a0y;
                 end
 
                 STATE_RUN7: begin
                     state <= STATE_DONE;
-                    ty <= a0y;
+                    ty = a0y >>> `DECIMAL_POS;
 
-                    out_data <= { posx, posy, tx, a0y, depth };
+                    out_data <= { posx, posy, tx, ty, depth };
                 end
 
                 STATE_DONE: begin

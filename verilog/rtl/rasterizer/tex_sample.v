@@ -37,7 +37,7 @@ module tex_sample_m(
 
             mport_o <= 0;
 
-            addr       <= 32'hFFFFFFFF;
+            addr       <= 32'hFFFFFFFE;
             prev_addr  <= 32'hFFFFFFFF;
 
             out_ready <= 0;
@@ -100,6 +100,8 @@ module tex_sample_m(
                         out_ready <= 0;
                     end
                 end
+
+                default: ;
             endcase
         end
     end

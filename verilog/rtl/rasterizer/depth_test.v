@@ -9,7 +9,9 @@ module depth_test_m(
     output wire [`STREAM_MOPORT(`RAST_DT_OUT_WIDTH)] mstream_o,
 
     input  wire [`BUS_MIPORT] mport_i,
-    output reg  [`BUS_MOPORT] mport_o
+    output reg  [`BUS_MOPORT] mport_o,
+
+    output wire busy_o
 );
 
     `DL_DEFINE(logger, "depth_test_m", `DL_MAGENTA, 1);
@@ -30,8 +32,11 @@ module depth_test_m(
             state <= 0;
 
             mport_o <= 0;
-
-            out_ready <= 0;
+            // fixed point
+            `define FP(x) (($signed((x) * (64'b1 << `DECIMAL_POS))) & 32'hFFFFFFFF)
+            
+            `define FP_MUL(a, b) (($signed({ {`WORD_WIDTH{a[`WORD_WIDTH - 1]}}, (a) }) * $signed({ {`WORD_WIDTH{b[`WORD_WIDTH - 1]}}, (b) })) >>> `DECIMAL_POS)
+            `define FP_DIV(a, b) ((($signed({ {`WORD_WIDTH{a[`WORD_WIDTH - 1]}}, (a) }) << `DECIMAL_POS) / $signed({ {`WORD_WIDTH{b[`WORD_WIDTH - 1]}}, (b) })))
         end
         else if (clk_i) begin
             case (state)
@@ -98,10 +103,14 @@ module depth_test_m(
                         state <= 0;
                     end
                 end
+
+                default: ;
             endcase
         end
     end
 
     assign sstream_o[`STREAM_SO_READY(`RAST_DT_OUT_WIDTH)] = state == 0;
+
+    assign busy_o = state != 0;
 
 endmodule
