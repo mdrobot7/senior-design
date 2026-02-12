@@ -1,8 +1,8 @@
-CARAVEL_ROOT: /local/colinm22/sdmay26-24/caravel
-MCW_ROOT: /local/colinm22/sdmay26-24/mgmt_core_wrapper
+CARAVEL_ROOT: /home/sforde22/Caravel/sdmay26-24/caravel
+MCW_ROOT: /home/sforde22/Caravel/sdmay26-24/mgmt_core_wrapper
 PDK: sky130A
-PDK_ROOT: /local/colinm22/sdmay26-24/dependencies/pdks
-USER_PROJECT_ROOT: /local/colinm22/sdmay26-24
+PDK_ROOT: /home/sforde22/Caravel/sdmay26-24/dependencies/pdks
+USER_PROJECT_ROOT: /home/sforde22/Caravel/sdmay26-24
 caravan: false
 clk: 25
 emailto: [null]

@@ -66,3 +66,5 @@
 -v $(USER_PROJECT_VERILOG)/rtl/vga.v
 -v $(USER_PROJECT_VERILOG)/rtl/wishbone_register.v
 -v $(USER_PROJECT_VERILOG)/rtl/image.v
+
+-v $(USER_PROJECT_VERILOG)/../ip/CF_SRAM_1024x32/hdl/beh_models/CF_SRAM_1024x32.tt_180V_25C.v
