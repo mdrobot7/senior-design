@@ -37,7 +37,7 @@ module tex_sample_m(
 
             mport_o <= 0;
 
-            addr       <= 32'hFFFFFFFF;
+            addr       <= 32'hFFFFFFFE;
             prev_addr  <= 32'hFFFFFFFF;
 
             out_ready <= 0;
@@ -57,12 +57,12 @@ module tex_sample_m(
                 1: begin
                     addr = addr + ty * tex_width_i;
                     
-                    if (prev_addr == addr) begin
-                        state <= 4;
+                    // if (prev_addr == addr) begin
+                    //     state <= 4;
 
-                        out_ready <= 1;
-                    end
-                    else begin
+                    //     out_ready <= 1;
+                    // end
+                    // else begin
                         state <= 2;
 
                         mport_o[`BUS_MO_ADDR] <= addr;
@@ -71,7 +71,7 @@ module tex_sample_m(
                         mport_o[`BUS_MO_SIZE] <= `BUS_SIZE_BYTE;
 
                         mport_o[`BUS_MO_REQ]  <= 1;
-                    end
+                    // end
                 end
 
                 2: begin

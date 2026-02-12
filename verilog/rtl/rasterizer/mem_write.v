@@ -4,8 +4,8 @@ module mem_write_m(
 
     output wire busy_o,
 
-    input  wire [`STREAM_SIPORT(`COLOR_WIDTH + `SC_WIDTH * 2 + `WORD_WIDTH * 3)] sstream_i,
-    output wire [`STREAM_SOPORT(`COLOR_WIDTH + `SC_WIDTH * 2 + `WORD_WIDTH * 3)] sstream_o,
+    input  wire [`STREAM_SIPORT(`RAST_TS_OUT_WIDTH)] sstream_i,
+    output wire [`STREAM_SOPORT(`RAST_TS_OUT_WIDTH)] sstream_o,
 
     input  wire [`BUS_MIPORT] mport_i,
     output reg  [`BUS_MOPORT] mport_o,
@@ -34,10 +34,10 @@ module mem_write_m(
         else if (clk_i) begin
             case (state)
                 0: begin
-                    if (sstream_i[`STREAM_SI_VALID(`COLOR_WIDTH + `SC_WIDTH * 2 + `WORD_WIDTH * 3)]) begin
+                    if (sstream_i[`STREAM_SI_VALID(`RAST_TS_OUT_WIDTH)]) begin
                         state <= 1;
 
-                        { color, posx, posy, tx, ty, depth } <= sstream_i[`STREAM_SI_DATA(`COLOR_WIDTH + `SC_WIDTH * 2 + `WORD_WIDTH * 3)];
+                        { color, posx, posy, tx, ty, depth } <= sstream_i[`STREAM_SI_DATA(`RAST_TS_OUT_WIDTH)];
                     end
                 end
 
@@ -68,7 +68,7 @@ module mem_write_m(
         end
     end
 
-    assign sstream_o[`STREAM_SO_READY(`COLOR_WIDTH + `SC_WIDTH * 2 + `WORD_WIDTH * 3)] = state == 0;
+    assign sstream_o[`STREAM_SO_READY(`RAST_TS_OUT_WIDTH)] = state == 0;
 
     assign busy_o = state != 0;
 

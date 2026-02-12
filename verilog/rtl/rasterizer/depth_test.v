@@ -9,7 +9,9 @@ module depth_test_m(
     output wire [`STREAM_MOPORT(`RAST_DT_OUT_WIDTH)] mstream_o,
 
     input  wire [`BUS_MIPORT] mport_i,
-    output reg  [`BUS_MOPORT] mport_o
+    output reg  [`BUS_MOPORT] mport_o,
+
+    output wire busy_o
 );
 
     `DL_DEFINE(logger, "depth_test_m", `DL_MAGENTA, 1);
@@ -105,5 +107,7 @@ module depth_test_m(
     end
 
     assign sstream_o[`STREAM_SO_READY(`RAST_DT_OUT_WIDTH)] = state == 0;
+
+    assign busy_o = state != 0;
 
 endmodule

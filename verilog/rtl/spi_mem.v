@@ -53,9 +53,6 @@ module spi_mem_m #(
     reg [2:0]  address_nibble;
     reg [22:0] address;
 
-    wire [`BUS_ADDR_PORT] in_addr;
-    assign in_addr = sport_i[`BUS_SI_ADDR] - ADDRESS;
-
     wire [31:0] full_address;
     assign full_address = {
         3'b000,
@@ -109,7 +106,7 @@ module spi_mem_m #(
                 STATE_READY: begin
                     if (
                         sport_i[`BUS_SI_REQ] &&
-                        in_addr < SIZE &&
+                        bus_addr < SIZE &&
                         spi_clk
                     ) begin
                         state <= STATE_READY_DELAY;
@@ -120,7 +117,7 @@ module spi_mem_m #(
                     state <= STATE_COMMAND;
 
                     address_nibble <= 7;
-                    address <= in_addr;
+                    address <= bus_addr;
 
                     if (sport_i[`BUS_SI_RW] == `BUS_READ) command = CMD_READ;
                     else command = CMD_WRITE;

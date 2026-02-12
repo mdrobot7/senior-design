@@ -191,9 +191,10 @@
 `define STREAM_SI_LAST(data_size) ((data_size) + 1)
 
 // addresses
-`define ADDR_FB0          (4000000)
-`define ADDR_FB1          (4000000 + 320 * 240)
-`define ADDR_DEPTH_BUFFER (153600)
+`define ADDR_FB0          (0)
+`define ADDR_FB1          (0 + 320 * 240)
+`define ADDR_DEPTH_BUFFER (0 + 320 * 240 + 320 * 240)
+// `define ADDR_DEPTH_BUFFER (4000000)
 
 // VGA
 `define VGA_RES_320x240 (2)
@@ -329,3 +330,10 @@
 // Shaded vertices (sizes are temporary)
 `define SHADED_VERTEX_WIDTH (32)
 `define SHADED_VERTEX (`SHADED_VERTEX_WIDTH-1):0
+
+// fixed point
+`define FP(x) (($signed((x) * (64'b1 << `DECIMAL_POS))) & 32'hFFFFFFFF)
+
+`define FP_MUL(a, b) (($signed({ {`WORD_WIDTH{a[`WORD_WIDTH - 1]}}, (a) }) * $signed({ {`WORD_WIDTH{b[`WORD_WIDTH - 1]}}, (b) })) >>> `DECIMAL_POS)
+`define FP_DIV(a, b) ((($signed({ {`WORD_WIDTH{a[`WORD_WIDTH - 1]}}, (a) }) << `DECIMAL_POS) / $signed({ {`WORD_WIDTH{b[`WORD_WIDTH - 1]}}, (b) })))
+`define FP_INV(x) ((1 << (2 * `DECIMAL_POS)) / $signed({ {`WORD_WIDTH{x[`WORD_WIDTH - 1]}}, x }))

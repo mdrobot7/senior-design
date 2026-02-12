@@ -113,15 +113,15 @@ module user_project_wrapper #(
     wire [`BUS_SIPORT] sportbi;
     wire [`BUS_SOPORT] sportbo;
 
-    busarb_m #(5, 2, 2) arbiter(
+    busarb_m #(5, 1, 1) arbiter(
         .clk_i(clk),
         .nrst_i(nrst),
 
         .mports_i({ mportfo, mporteo, mportco, mportbo, mportao }),
         .mports_o({ mportfi, mportei, mportci, mportbi, mportai }),
 
-        .sports_i({ sportbo, sportao }),
-        .sports_o({ sportbi, sportai })
+        .sports_i({ sportao }), // sportbo, 
+        .sports_o({ sportai })
     );
 
     wire spi1_clk;
@@ -206,7 +206,7 @@ module user_project_wrapper #(
         .mport_o(mportao),
         .fb_i(fb),
         .word_color_i(1'b0),
-        .pixel_o({ red, green, blue }), // Remap standard 8 bit color to the correct IO
+        .pixel_o({ blue, green, red }), // Remap standard 8 bit color to the correct IO
         .hsync_o(hsync),
         .vsync_o(vsync)
     );
@@ -305,6 +305,8 @@ module user_project_wrapper #(
     assign addrp2 = addr + 2;
     assign addrp3 = addr + 3;
 
+    image_m image();
+
     always @(posedge clk, negedge nrst) begin
         if (!nrst) begin
             state <= 100;
@@ -330,6 +332,7 @@ module user_project_wrapper #(
                     state <= 101;
 
                     timer <= 0;
+                    temp <= 0;
                 end
 
                 0: begin
@@ -426,26 +429,27 @@ module user_project_wrapper #(
                 4: begin
                     color <= 8'b00000111;
 
-                    tex_addr <= fb ? `ADDR_FB1 : `ADDR_FB0;
-                    tex_width <= 320;
+                    // tex_addr <= fb ? `ADDR_FB1 : `ADDR_FB0;
+                    tex_addr <= 32'd460800;
+                    tex_width <= 60;
 
-                    v0x = (100 + yep) << `DECIMAL_POS;
-                    v0y = (yep) << `DECIMAL_POS;
+                    v0x = 30 << `DECIMAL_POS;
+                    v0y = (30 - 40 + yep) << `DECIMAL_POS;
                     v0z = 80;
                     t0x = 0;
                     t0y = 0;
 
-                    v1x = (100 + 120) << `DECIMAL_POS;
-                    v1y = 30 << `DECIMAL_POS;
+                    v1x = 120 << `DECIMAL_POS;
+                    v1y = (30 + 40 - yep) << `DECIMAL_POS;
                     v1z = 240;
-                    t1x = 320;
+                    t1x = `FP(60);
                     t1y = 0;
 
-                    v2x = (100 + 30) << `DECIMAL_POS;
-                    v2y = 120 << `DECIMAL_POS;
+                    v2x = 30 << `DECIMAL_POS;
+                    v2y = (120 - 40 + yep) << `DECIMAL_POS;
                     v2z = 240;
                     t2x = 0;
-                    t2y = 240;
+                    t2y = `FP(60);
 
                     run <= 1;
 
@@ -473,26 +477,26 @@ module user_project_wrapper #(
                 6: begin
                     color <= 8'b00111000;
 
-                    tex_addr <= 32'd460800 + 100;
-                    tex_width <= 10;
+                    tex_addr <= 32'd460800;
+                    tex_width <= 60;
 
-                    v0x = 5 << `DECIMAL_POS;
-                    v0y = 50 << `DECIMAL_POS;
+                    v0x = 30 << `DECIMAL_POS;
+                    v0y = (120 - 40 + yep) << `DECIMAL_POS;
                     v0z = 160;
                     t0x = 0;
-                    t0y = 0;
+                    t0y = `FP(60);
                     
-                    v1x = 50 << `DECIMAL_POS;
-                    v1y = 5 << `DECIMAL_POS;
+                    v1x = 120 << `DECIMAL_POS;
+                    v1y = (30 + 40 - yep) << `DECIMAL_POS;
                     v1z = 160;
-                    t1x = 10;
+                    t1x = `FP(60);
                     t1y = 0;
                     
-                    v2x = 220 << `DECIMAL_POS;
-                    v2y = 220 << `DECIMAL_POS;
+                    v2x = 120 << `DECIMAL_POS;
+                    v2y = (120 + 40 - yep) << `DECIMAL_POS;
                     v2z = 160;
-                    t2x = 0;
-                    t2y = 10;
+                    t2x = `FP(60);
+                    t2y = `FP(60);
 
                     run <= 1;
 
@@ -522,19 +526,46 @@ module user_project_wrapper #(
                 end
 
                 10: begin
-                    if (timer == 50000000) begin
+                    if (timer == 500) begin
                         state <= 0;
 
                         addr <= fb ? `ADDR_FB0 : `ADDR_FB1;
                         end_addr <= (fb ? `ADDR_FB0 : `ADDR_FB1) + (320 * 240);
 
-                        if (yep < 100) yep <= yep + 5;
+                        if (yep < 80) yep <= yep + 5;
                         else yep <= 0;
                     end
                     else timer <= timer + 1;
                 end
 
                 101: begin
+                    if (temp == 60*60) begin
+                        state <= 103;
+                    end
+                    else begin
+                        mportco[`BUS_MO_ADDR] <= 32'd460800 + temp;
+                        mportco[`BUS_MO_DATA] <= image.tex_data[temp];
+                        mportco[`BUS_MO_SIZE] <= `BUS_SIZE_BYTE;
+                        mportco[`BUS_MO_RW]   <= `BUS_WRITE;
+                        mportco[`BUS_MO_REQ]  <= 1;
+
+                        if (mportci[`BUS_MI_ACK]) begin
+                            state <= 102;
+                        end
+                    end
+                end
+
+                102: begin
+                    if (!mportci[`BUS_MI_ACK]) begin
+                        state <= 101;
+
+                        mportco[`BUS_MO_REQ]  <= 0;
+
+                        temp <= temp + 1;
+                    end
+                end
+
+                103: begin
                     if (timer == 10000) begin
                         state <= 10;
 
