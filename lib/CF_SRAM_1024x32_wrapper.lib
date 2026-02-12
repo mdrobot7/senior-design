@@ -1,0 +1,556 @@
+library (CF_SRAM_1024x32_wrapper) {
+  comment                        : "";
+  delay_model                    : table_lookup;
+  simulation                     : false;
+  capacitive_load_unit (1,pF);
+  leakage_power_unit             : 1pW;
+  current_unit                   : "1A";
+  pulling_resistance_unit        : "1kohm";
+  time_unit                      : "1ns";
+  voltage_unit                   : "1v";
+  library_features(report_delay_calculation);
+
+  input_threshold_pct_rise : 50;
+  input_threshold_pct_fall : 50;
+  output_threshold_pct_rise : 50;
+  output_threshold_pct_fall : 50;
+  slew_lower_threshold_pct_rise : 20;
+  slew_lower_threshold_pct_fall : 20;
+  slew_upper_threshold_pct_rise : 80;
+  slew_upper_threshold_pct_fall : 80;
+  slew_derate_from_library : 1.0;
+
+
+  nom_process                    : 1.0;
+  nom_temperature                : 25.0;
+  nom_voltage                    : 1.80;
+
+  type ("AD") {
+    base_type : array;
+    data_type : bit;
+    bit_width : 10;
+    bit_from : 9;
+    bit_to : 0;
+  }
+  type ("BEN") {
+    base_type : array;
+    data_type : bit;
+    bit_width : 32;
+    bit_from : 31;
+    bit_to : 0;
+  }
+  type ("DI") {
+    base_type : array;
+    data_type : bit;
+    bit_width : 32;
+    bit_from : 31;
+    bit_to : 0;
+  }
+  type ("DO") {
+    base_type : array;
+    data_type : bit;
+    bit_width : 32;
+    bit_from : 31;
+    bit_to : 0;
+  }
+
+  cell ("CF_SRAM_1024x32_wrapper") {
+    pin("CLKin") {
+      direction : input;
+      capacitance : 0.0503;
+    }
+    pin("EN") {
+      direction : input;
+      capacitance : 0.0795;
+    }
+    pin("R_WB") {
+      direction : input;
+      capacitance : 0.0809;
+    }
+    pin("SM") {
+      direction : input;
+      capacitance : 0.0753;
+    }
+    pin("ScanInCC") {
+      direction : input;
+      capacitance : 0.0576;
+    }
+    pin("ScanInDL") {
+      direction : input;
+      capacitance : 0.0573;
+    }
+    pin("ScanInDR") {
+      direction : input;
+      capacitance : 0.0628;
+    }
+    pin("ScanOutCC") {
+      direction : output;
+      capacitance : 0.0424;
+    }
+    pin("TM") {
+      direction : input;
+      capacitance : 0.0700;
+    }
+    pin("WLBI") {
+      direction : input;
+      capacitance : 0.0604;
+    }
+    pin("WLOFF") {
+      direction : input;
+      capacitance : 0.0627;
+    }
+    pin("vpwrac") {
+      direction : input;
+      capacitance : 0.0635;
+    }
+    pin("vpwrpc") {
+      direction : input;
+      capacitance : 0.0642;
+    }
+    bus("AD") {
+      bus_type : AD;
+      direction : input;
+      capacitance : 0.0000;
+    pin("AD[9]") {
+      direction : input;
+      capacitance : 0.0036;
+    }
+    pin("AD[8]") {
+      direction : input;
+      capacitance : 0.0032;
+    }
+    pin("AD[7]") {
+      direction : input;
+      capacitance : 0.0034;
+    }
+    pin("AD[6]") {
+      direction : input;
+      capacitance : 0.0036;
+    }
+    pin("AD[5]") {
+      direction : input;
+      capacitance : 0.0027;
+    }
+    pin("AD[4]") {
+      direction : input;
+      capacitance : 0.0026;
+    }
+    pin("AD[3]") {
+      direction : input;
+      capacitance : 0.0035;
+    }
+    pin("AD[2]") {
+      direction : input;
+      capacitance : 0.0032;
+    }
+    pin("AD[1]") {
+      direction : input;
+      capacitance : 0.0031;
+    }
+    pin("AD[0]") {
+      direction : input;
+      capacitance : 0.0036;
+    }
+    }
+    bus("BEN") {
+      bus_type : BEN;
+      direction : input;
+      capacitance : 0.0000;
+    pin("BEN[31]") {
+      direction : input;
+      capacitance : 0.0026;
+    }
+    pin("BEN[30]") {
+      direction : input;
+      capacitance : 0.0022;
+    }
+    pin("BEN[29]") {
+      direction : input;
+      capacitance : 0.0033;
+    }
+    pin("BEN[28]") {
+      direction : input;
+      capacitance : 0.0045;
+    }
+    pin("BEN[27]") {
+      direction : input;
+      capacitance : 0.0062;
+    }
+    pin("BEN[26]") {
+      direction : input;
+      capacitance : 0.0074;
+    }
+    pin("BEN[25]") {
+      direction : input;
+      capacitance : 0.0070;
+    }
+    pin("BEN[24]") {
+      direction : input;
+      capacitance : 0.0083;
+    }
+    pin("BEN[23]") {
+      direction : input;
+      capacitance : 0.0098;
+    }
+    pin("BEN[22]") {
+      direction : input;
+      capacitance : 0.0126;
+    }
+    pin("BEN[21]") {
+      direction : input;
+      capacitance : 0.0177;
+    }
+    pin("BEN[20]") {
+      direction : input;
+      capacitance : 0.0222;
+    }
+    pin("BEN[19]") {
+      direction : input;
+      capacitance : 0.0290;
+    }
+    pin("BEN[18]") {
+      direction : input;
+      capacitance : 0.0273;
+    }
+    pin("BEN[17]") {
+      direction : input;
+      capacitance : 0.0255;
+    }
+    pin("BEN[16]") {
+      direction : input;
+      capacitance : 0.0288;
+    }
+    pin("BEN[15]") {
+      direction : input;
+      capacitance : 0.0300;
+    }
+    pin("BEN[14]") {
+      direction : input;
+      capacitance : 0.0313;
+    }
+    pin("BEN[13]") {
+      direction : input;
+      capacitance : 0.0398;
+    }
+    pin("BEN[12]") {
+      direction : input;
+      capacitance : 0.0387;
+    }
+    pin("BEN[11]") {
+      direction : input;
+      capacitance : 0.0353;
+    }
+    pin("BEN[10]") {
+      direction : input;
+      capacitance : 0.0404;
+    }
+    pin("BEN[9]") {
+      direction : input;
+      capacitance : 0.0464;
+    }
+    pin("BEN[8]") {
+      direction : input;
+      capacitance : 0.0401;
+    }
+    pin("BEN[7]") {
+      direction : input;
+      capacitance : 0.0442;
+    }
+    pin("BEN[6]") {
+      direction : input;
+      capacitance : 0.0504;
+    }
+    pin("BEN[5]") {
+      direction : input;
+      capacitance : 0.0471;
+    }
+    pin("BEN[4]") {
+      direction : input;
+      capacitance : 0.0536;
+    }
+    pin("BEN[3]") {
+      direction : input;
+      capacitance : 0.0594;
+    }
+    pin("BEN[2]") {
+      direction : input;
+      capacitance : 0.0349;
+    }
+    pin("BEN[1]") {
+      direction : input;
+      capacitance : 0.0572;
+    }
+    pin("BEN[0]") {
+      direction : input;
+      capacitance : 0.0539;
+    }
+    }
+    bus("DI") {
+      bus_type : DI;
+      direction : input;
+      capacitance : 0.0000;
+    pin("DI[31]") {
+      direction : input;
+      capacitance : 0.0029;
+    }
+    pin("DI[30]") {
+      direction : input;
+      capacitance : 0.0029;
+    }
+    pin("DI[29]") {
+      direction : input;
+      capacitance : 0.0029;
+    }
+    pin("DI[28]") {
+      direction : input;
+      capacitance : 0.0029;
+    }
+    pin("DI[27]") {
+      direction : input;
+      capacitance : 0.0032;
+    }
+    pin("DI[26]") {
+      direction : input;
+      capacitance : 0.0032;
+    }
+    pin("DI[25]") {
+      direction : input;
+      capacitance : 0.0035;
+    }
+    pin("DI[24]") {
+      direction : input;
+      capacitance : 0.0032;
+    }
+    pin("DI[23]") {
+      direction : input;
+      capacitance : 0.0031;
+    }
+    pin("DI[22]") {
+      direction : input;
+      capacitance : 0.0030;
+    }
+    pin("DI[21]") {
+      direction : input;
+      capacitance : 0.0030;
+    }
+    pin("DI[20]") {
+      direction : input;
+      capacitance : 0.0030;
+    }
+    pin("DI[19]") {
+      direction : input;
+      capacitance : 0.0030;
+    }
+    pin("DI[18]") {
+      direction : input;
+      capacitance : 0.0030;
+    }
+    pin("DI[17]") {
+      direction : input;
+      capacitance : 0.0030;
+    }
+    pin("DI[16]") {
+      direction : input;
+      capacitance : 0.0037;
+    }
+    pin("DI[15]") {
+      direction : input;
+      capacitance : 0.0030;
+    }
+    pin("DI[14]") {
+      direction : input;
+      capacitance : 0.0027;
+    }
+    pin("DI[13]") {
+      direction : input;
+      capacitance : 0.0027;
+    }
+    pin("DI[12]") {
+      direction : input;
+      capacitance : 0.0027;
+    }
+    pin("DI[11]") {
+      direction : input;
+      capacitance : 0.0027;
+    }
+    pin("DI[10]") {
+      direction : input;
+      capacitance : 0.0030;
+    }
+    pin("DI[9]") {
+      direction : input;
+      capacitance : 0.0030;
+    }
+    pin("DI[8]") {
+      direction : input;
+      capacitance : 0.0030;
+    }
+    pin("DI[7]") {
+      direction : input;
+      capacitance : 0.0030;
+    }
+    pin("DI[6]") {
+      direction : input;
+      capacitance : 0.0033;
+    }
+    pin("DI[5]") {
+      direction : input;
+      capacitance : 0.0030;
+    }
+    pin("DI[4]") {
+      direction : input;
+      capacitance : 0.0029;
+    }
+    pin("DI[3]") {
+      direction : input;
+      capacitance : 0.0029;
+    }
+    pin("DI[2]") {
+      direction : input;
+      capacitance : 0.0029;
+    }
+    pin("DI[1]") {
+      direction : input;
+      capacitance : 0.0029;
+    }
+    pin("DI[0]") {
+      direction : input;
+      capacitance : 0.0047;
+    }
+    }
+    bus("DO") {
+      bus_type : DO;
+      direction : output;
+      capacitance : 0.0000;
+    pin("DO[31]") {
+      direction : output;
+      capacitance : 0.0646;
+    }
+    pin("DO[30]") {
+      direction : output;
+      capacitance : 0.0615;
+    }
+    pin("DO[29]") {
+      direction : output;
+      capacitance : 0.0551;
+    }
+    pin("DO[28]") {
+      direction : output;
+      capacitance : 0.0358;
+    }
+    pin("DO[27]") {
+      direction : output;
+      capacitance : 0.0543;
+    }
+    pin("DO[26]") {
+      direction : output;
+      capacitance : 0.0492;
+    }
+    pin("DO[25]") {
+      direction : output;
+      capacitance : 0.0512;
+    }
+    pin("DO[24]") {
+      direction : output;
+      capacitance : 0.0463;
+    }
+    pin("DO[23]") {
+      direction : output;
+      capacitance : 0.0412;
+    }
+    pin("DO[22]") {
+      direction : output;
+      capacitance : 0.0349;
+    }
+    pin("DO[21]") {
+      direction : output;
+      capacitance : 0.0461;
+    }
+    pin("DO[20]") {
+      direction : output;
+      capacitance : 0.0348;
+    }
+    pin("DO[19]") {
+      direction : output;
+      capacitance : 0.0397;
+    }
+    pin("DO[18]") {
+      direction : output;
+      capacitance : 0.0342;
+    }
+    pin("DO[17]") {
+      direction : output;
+      capacitance : 0.0373;
+    }
+    pin("DO[16]") {
+      direction : output;
+      capacitance : 0.0348;
+    }
+    pin("DO[15]") {
+      direction : output;
+      capacitance : 0.0318;
+    }
+    pin("DO[14]") {
+      direction : output;
+      capacitance : 0.0290;
+    }
+    pin("DO[13]") {
+      direction : output;
+      capacitance : 0.0256;
+    }
+    pin("DO[12]") {
+      direction : output;
+      capacitance : 0.0242;
+    }
+    pin("DO[11]") {
+      direction : output;
+      capacitance : 0.0194;
+    }
+    pin("DO[10]") {
+      direction : output;
+      capacitance : 0.0163;
+    }
+    pin("DO[9]") {
+      direction : output;
+      capacitance : 0.0146;
+    }
+    pin("DO[8]") {
+      direction : output;
+      capacitance : 0.0149;
+    }
+    pin("DO[7]") {
+      direction : output;
+      capacitance : 0.0155;
+    }
+    pin("DO[6]") {
+      direction : output;
+      capacitance : 0.0127;
+    }
+    pin("DO[5]") {
+      direction : output;
+      capacitance : 0.0106;
+    }
+    pin("DO[4]") {
+      direction : output;
+      capacitance : 0.0080;
+    }
+    pin("DO[3]") {
+      direction : output;
+      capacitance : 0.0051;
+    }
+    pin("DO[2]") {
+      direction : output;
+      capacitance : 0.0051;
+    }
+    pin("DO[1]") {
+      direction : output;
+      capacitance : 0.0021;
+    }
+    pin("DO[0]") {
+      direction : output;
+      capacitance : 0.0005;
+    }
+    }
+  }
+
+}
