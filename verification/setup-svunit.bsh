@@ -13,7 +13,7 @@ export SALT_LICENSE_SERVER=1717@io.ece.iastate.edu
 
 # Sets up search paths
 RTL_PATH=$(realpath $(pwd)/../verilog/rtl)
-echo +incdir+${RTL_PATH} > ./unit_tests/rtl.f
+echo +incdir+${RTL_PATH} +define+SVUNIT > ./unit_tests/rtl.f
 
 # Sets up unit test path
 export UNIT_TEST_PATH=$(pwd)/unit_tests

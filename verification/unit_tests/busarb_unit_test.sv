@@ -6,10 +6,10 @@
 
 `include "test/clk_rst.v"
 `include "test/spi_chip.v"
+`include "test/bus_slave.v"
+`include "test/bus_master.v"
 
 `include "bus/busarb.v"
-`include "bus/busslave.v"
-`include "bus/virtual_master.v"
 
 module busarb_m_unit_test;
   import svunit_pkg::svunit_testcase;
@@ -34,7 +34,7 @@ module busarb_m_unit_test;
 
 
   //===================================
-  // This is the UUT that we're 
+  // This is the UUT that we're
   // running the Unit Tests on
   //===================================
   busarb_m #(2, 2, 2) dut(
@@ -48,7 +48,7 @@ module busarb_m_unit_test;
     .sports_o({ sportbi, sportai })
   );
 
-  virtual_master_m master_a(
+  bus_master_m master_a(
     .clk_i(clk),
     .nrst_i(nrst),
 
@@ -56,14 +56,14 @@ module busarb_m_unit_test;
     .mport_o(mportao)
   );
 
-  virtual_master_m master_b(
+  bus_master_m master_b(
     .clk_i(clk),
     .nrst_i(nrst),
 
     .mport_i(mportbi),
     .mport_o(mportbo)
   );
-    
+
   wire spi_clk1;
   wire spi_cs1;
   wire [3:0] spi_mosi1;
@@ -94,7 +94,7 @@ module busarb_m_unit_test;
       .dqsm_o(spi_dqsmi1),
       .dqsm_i(spi_dqsmo1)
   );
-  
+
   wire spi_clk2;
   wire spi_cs2;
   wire [3:0] spi_mosi2;
@@ -147,7 +147,7 @@ module busarb_m_unit_test;
 
 
   //===================================
-  // Here we deconstruct anything we 
+  // Here we deconstruct anything we
   // need after running the Unit Tests
   //===================================
   task teardown();
