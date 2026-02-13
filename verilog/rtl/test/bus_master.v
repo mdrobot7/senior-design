@@ -14,8 +14,9 @@ module bus_master_m #(
     reg [7:0] mem [SIZE_BYTES-1:0];
     wire [`WORD] data_in = mport_i[`BUS_MI_DATA];
 
+    integer i;
+
     initial begin
-        integer i;
 
         mport_o = 0;
         for (i = 0; i < SIZE_BYTES; i++)

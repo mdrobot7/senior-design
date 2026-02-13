@@ -8,7 +8,7 @@
 `include "test/spi_chip.v"
 
 `include "bus/busarb.v"
-`include "bus/virtual_master.v"
+`include "test/bus_master.v"
 
 module spi_mem_m_unit_test;
   import svunit_pkg::svunit_testcase;
@@ -38,7 +38,7 @@ module spi_mem_m_unit_test;
     .sports_o({ sportai })
   );
 
-  virtual_master_m master(
+  bus_master_m master(
     .clk_i(clk),
     .nrst_i(nrst),
 
@@ -54,7 +54,7 @@ module spi_mem_m_unit_test;
   wire spi_dqsmo;
 
   //===================================
-  // This is the UUT that we're 
+  // This is the UUT that we're
   // running the Unit Tests on
   //===================================
   spi_mem_m #(0, MEMORY_SIZE) my_spi_mem_m(
@@ -101,7 +101,7 @@ module spi_mem_m_unit_test;
 
 
   //===================================
-  // Here we deconstruct anything we 
+  // Here we deconstruct anything we
   // need after running the Unit Tests
   //===================================
   task teardown();
