@@ -1,7 +1,9 @@
 /*
  * Simulated PKBus master.
  */
-module bus_master_m(
+module bus_master_m #(
+    parameter SIZE_BYTES = 1024
+)(
     input wire clk_i,
     input wire nrst_i,
 
@@ -9,8 +11,15 @@ module bus_master_m(
     output reg  [`BUS_MOPORT] mport_o
 );
 
+    reg [7:0] mem [SIZE_BYTES-1:0];
+    wire [`WORD] data_in = mport_i[`BUS_MI_DATA];
+
     initial begin
+        integer i;
+
         mport_o = 0;
+        for (i = 0; i < SIZE_BYTES; i++)
+            mem[i] <= 0;
     end
 
     task WRITE_BYTE;
@@ -59,7 +68,7 @@ module bus_master_m(
 
     task WRITE_STREAM;
         input [`BUS_ADDR_PORT] addr;
-        input [`BUS_ADDR_PORT] size;
+        input [`BUS_ADDR_PORT] size; // words
         input [31:0] data;
 
         integer i;
@@ -139,7 +148,7 @@ module bus_master_m(
 
     task READ_STREAM;
         input [`BUS_ADDR_PORT] addr;
-        input [`BUS_ADDR_PORT] size;
+        input [`BUS_ADDR_PORT] size; // words
 
         integer i;
     begin
@@ -156,14 +165,22 @@ module bus_master_m(
             wait(mport_i[`BUS_MI_SEQSLV]);
             wait(!mport_i[`BUS_MI_SEQSLV]);
 
-            $display("GOT DATA: 0x%h", mport_i[`BUS_MI_DATA]);
+            mem[i*4 + 0] = data_in[ 7: 0];
+            mem[i*4 + 1] = data_in[15: 8];
+            mem[i*4 + 2] = data_in[23:16];
+            mem[i*4 + 3] = data_in[31:24];
+            // $display("GOT DATA: 0x%h", mport_i[`BUS_MI_DATA]);
         end
 
         mport_o[`BUS_MO_SEQMST]  = 1;
 
         wait(!mport_i[`BUS_MI_ACK]);
 
-        $display("GOT DATA: 0x%h", mport_i[`BUS_MI_DATA]);
+        mem[(size-1)*4 + 0] = data_in[ 7: 0];
+        mem[(size-1)*4 + 1] = data_in[15: 8];
+        mem[(size-1)*4 + 2] = data_in[23:16];
+        mem[(size-1)*4 + 3] = data_in[31:24];
+        // $display("GOT DATA: 0x%h", mport_i[`BUS_MI_DATA]);
 
         mport_o[`BUS_MO_REQ]  = 0;
         mport_o[`BUS_MO_SEQMST]  = 0;
