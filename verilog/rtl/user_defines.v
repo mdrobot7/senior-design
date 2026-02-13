@@ -97,9 +97,21 @@
 `define SC_WIDTH ($clog2((`WIDTH) > (`HEIGHT) ? (`WIDTH) : (`HEIGHT)))
 
 `define WORD_WIDTH (32)
+`define WORD `WORD_WIDTH - 1:0
+
+`define COLOR_WIDTH (8)
+`define COLOR `COLOR_WIDTH - 1:0
+
+`define TEX_DIM_WIDTH (16)
+`define TEX_DIM `TEX_DIM_WIDTH - 1:0
+
 `define DECIMAL_POS (10)
 
 `define WORD_SMAX (1 << (`WORD_WIDTH - 2))
+
+`define RAST_WAVG_OUT_WIDTH (`SC_WIDTH * 2 + `WORD_WIDTH * 3)
+`define RAST_DT_OUT_WIDTH (`SC_WIDTH * 2 + `WORD_WIDTH * 3)
+`define RAST_TS_OUT_WIDTH (`COLOR_WIDTH + `SC_WIDTH * 2 + `WORD_WIDTH * 3)
 
 `define BUS_ADDR_SIZE (32)
 `define BUS_ADDR_PORT (`BUS_ADDR_SIZE - 1):0
@@ -179,7 +191,10 @@
 `define STREAM_SI_LAST(data_size) ((data_size) + 1)
 
 // addresses
-`define ADDR_DEPTH_BUFFER (100000)
+`define ADDR_FB0          (0)
+`define ADDR_FB1          (0 + 320 * 240)
+`define ADDR_DEPTH_BUFFER (0 + 320 * 240 + 320 * 240)
+// `define ADDR_DEPTH_BUFFER (4000000)
 
 // VGA
 `define VGA_RES_320x240 (2)
@@ -301,7 +316,7 @@
 `define LUI_SRC_B   (`ALU_SRC_B_WIDTH'h2)
 `define REG_SRC_B   (`ALU_SRC_B_WIDTH'h3)
 
-//decoder 
+//decoder
 //decode ctl sigs
 `define R1_USE_GLOBAL_VAL_IDX   (0)
 `define R2_USE_GLOBAL_VAL_IDX   (`R1_USE_GLOBAL_VAL_IDX + 1)
@@ -332,5 +347,23 @@
 //Core defs
 
 `define CORE_REGFILE_HEIGHT (16)
-`define CORE_OUTBOX_HEIGHT (8)
+`define CORE_MAILBOX_HEIGHT (8)
 `define STAGE_SLICE(stage, size) (((stage+1)*(size))-1):((stage)*(size))
+`define CTL_SIGS_WIDTH      (`REGFILE_WRITE_IDX + `WB_SIG_WIDTH+ 1)
+
+// Shaded vertices (sizes are temporary)
+`define SHADED_VERTEX_WIDTH (32)
+`define SHADED_VERTEX (`SHADED_VERTEX_WIDTH-1):0
+
+// fixed point
+`define FP(x) (($signed((x) * (64'b1 << `DECIMAL_POS))) & 32'hFFFFFFFF)
+
+`define FP_MUL(a, b) (($signed({ {`WORD_WIDTH{a[`WORD_WIDTH - 1]}}, (a) }) * $signed({ {`WORD_WIDTH{b[`WORD_WIDTH - 1]}}, (b) })) >>> `DECIMAL_POS)
+`define FP_DIV(a, b) ((($signed({ {`WORD_WIDTH{a[`WORD_WIDTH - 1]}}, (a) }) << `DECIMAL_POS) / $signed({ {`WORD_WIDTH{b[`WORD_WIDTH - 1]}}, (b) })))
+`define FP_INV(x) ((1 << (2 * `DECIMAL_POS)) / $signed({ {`WORD_WIDTH{x[`WORD_WIDTH - 1]}}, x }))
+
+// Wishbone reg
+`define WBREG_TYPE_REG (0)
+`define WBREG_TYPE_W1C (1) // Write 1 to clear
+`define WBREG_TYPE_W1S (2) // Write 1 to set
+`define WBREG_TYPE_W1T (3) // Write 1 to toggle

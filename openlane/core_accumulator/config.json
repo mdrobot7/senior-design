@@ -4,6 +4,7 @@
     "VERILOG_FILES": [
         "dir::../../verilog/rtl/defines.v",
         "dir::../../verilog/rtl/user_defines.v",
+        "dir::../../verilog/rtl/math/add.v",
         "dir::../../verilog/rtl/core/accumulator.v"
 
     ],
