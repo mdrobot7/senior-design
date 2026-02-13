@@ -107,6 +107,9 @@
 
 `define DECIMAL_POS (10)
 
+`define DIVIDER_WIDTH (`DECIMAL_POS + `WORD_WIDTH)
+`define DIVIDER_USERS (1)
+
 `define WORD_SMAX (1 << (`WORD_WIDTH - 2))
 
 `define RAST_WAVG_OUT_WIDTH (`SC_WIDTH * 2 + `WORD_WIDTH * 3)

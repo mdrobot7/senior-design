@@ -136,6 +136,11 @@ module rasterizer_m #(
     wire [`STREAM_MIPORT(`RAST_TS_OUT_WIDTH)] tex_streami;
     wire [`STREAM_MOPORT(`RAST_TS_OUT_WIDTH)] tex_streamo;
 
+    wire [`STREAM_SIPORT(2 * `DIVIDER_WIDTH)] bary_div_si;
+    wire [`STREAM_SOPORT(2 * `DIVIDER_WIDTH)] bary_div_so;
+    wire [`STREAM_MIPORT(`DIVIDER_WIDTH)] bary_div_mi;
+    wire [`STREAM_MOPORT(`DIVIDER_WIDTH)] bary_div_mo;
+
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin
             state <= STATE_READY;
@@ -279,7 +284,13 @@ module rasterizer_m #(
         .v1z(v1z),
         .v2x(v2x),
         .v2y(v2y),
-        .v2z(v2z)
+        .v2z(v2z),
+        
+        .div_mstream_i(bary_div_so),
+        .div_mstream_o(bary_div_si),
+
+        .div_sstream_i(bary_div_mo),
+        .div_sstream_o(bary_div_mi)
     );
 
     bary_check_pipe_m bary_check_pipe(
@@ -374,6 +385,17 @@ module rasterizer_m #(
         .mport_o(pix_mport_o),
         
         .fb_i(fb)
+    );
+
+    shared_div_rasterizer_m divider(
+        .clk_i(clk_i),
+        .nrst_i(nrst_i),
+
+        .sstreams_i({ bary_div_si }),
+        .sstreams_o({ bary_div_so }),
+        
+        .mstreams_i({ bary_div_mi }),
+        .mstreams_o({ bary_div_mo })
     );
 
 endmodule

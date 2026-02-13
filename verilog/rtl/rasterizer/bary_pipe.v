@@ -21,7 +21,13 @@ module bary_pipe_m(
     input wire signed [`WORD_WIDTH - 1:0] v1z,
     input wire signed [`WORD_WIDTH - 1:0] v2x,
     input wire signed [`WORD_WIDTH - 1:0] v2y,
-    input wire signed [`WORD_WIDTH - 1:0] v2z
+    input wire signed [`WORD_WIDTH - 1:0] v2z,
+
+    input  wire [`STREAM_MIPORT(2 * `DIVIDER_WIDTH)] div_mstream_i,
+    output wire [`STREAM_MOPORT(2 * `DIVIDER_WIDTH)] div_mstream_o,
+
+    input  wire [`STREAM_SIPORT(`DIVIDER_WIDTH)] div_sstream_i,
+    output wire [`STREAM_SOPORT(`DIVIDER_WIDTH)] div_sstream_o
 );
 
     localparam STATE_READY     = 5'b00000;
@@ -63,21 +69,15 @@ module bary_pipe_m(
     wire signed [`WORD_WIDTH - 1:0] m1y;
     mul_m #(`WORD_WIDTH) mul1( .a_i(m1a), .b_i(m1b), .y_o(m1y) );
 
-    localparam DIV_WIDTH = `DECIMAL_POS + `WORD_WIDTH;
+    wire [`STREAM_SIPORT(2 * `DIVIDER_WIDTH)] div_si;
+    wire [`STREAM_SOPORT(2 * `DIVIDER_WIDTH)] div_so;
+    wire [`STREAM_MIPORT(`DIVIDER_WIDTH)] div_mi;
+    wire [`STREAM_MOPORT(`DIVIDER_WIDTH)] div_mo;
 
-    wire [`STREAM_SIPORT(2 * DIV_WIDTH)] div_si;
-    wire [`STREAM_SOPORT(2 * DIV_WIDTH)] div_so;
-    wire [`STREAM_MIPORT(DIV_WIDTH)] div_mi;
-    wire [`STREAM_MOPORT(DIV_WIDTH)] div_mo;
-    div_pipe_rasterizer_m div_pipe(
-        .clk_i(clk_i),
-        .nrst_i(nrst_i),
-
-        .sstream_i(div_si),
-        .sstream_o(div_so),
-        .mstream_i(div_mi),
-        .mstream_o(div_mo)
-    );
+    assign div_so = div_mstream_i;
+    assign div_mstream_o = div_si;
+    assign div_mo = div_sstream_i;
+    assign div_sstream_o = div_mi;
 
     reg  d1in_valid;
     wire d1out_valid;
@@ -85,17 +85,17 @@ module bary_pipe_m(
     reg signed [`WORD_WIDTH - 1:0] d1a, d1b;
     wire signed [`WORD_WIDTH - 1:0] d1y;
 
-    wire signed [DIV_WIDTH - 1:0] d1ae, d1be;
+    wire signed [`DIVIDER_WIDTH - 1:0] d1ae, d1be;
     assign d1ae = d1a;
     assign d1be = d1b;
 
-    assign div_si[`STREAM_SI_DATA(2 * DIV_WIDTH)] = { d1ae << `DECIMAL_POS, d1be };
-    assign div_si[`STREAM_SI_LAST(2 * DIV_WIDTH)] = 0;
-    assign div_si[`STREAM_SI_VALID(2 * DIV_WIDTH)] = d1in_valid;
+    assign div_si[`STREAM_SI_DATA(2 * `DIVIDER_WIDTH)] = { d1ae << `DECIMAL_POS, d1be };
+    assign div_si[`STREAM_SI_LAST(2 * `DIVIDER_WIDTH)] = 0;
+    assign div_si[`STREAM_SI_VALID(2 * `DIVIDER_WIDTH)] = d1in_valid;
 
-    assign div_mi[`STREAM_MI_READY(DIV_WIDTH)] = d1out_ready;
-    assign d1y = div_mo[`STREAM_MO_DATA(DIV_WIDTH)];
-    assign d1out_valid = div_mo[`STREAM_MO_VALID(DIV_WIDTH)];
+    assign div_mi[`STREAM_MI_READY(`DIVIDER_WIDTH)] = d1out_ready;
+    assign d1y = div_mo[`STREAM_MO_DATA(`DIVIDER_WIDTH)];
+    assign d1out_valid = div_mo[`STREAM_MO_VALID(`DIVIDER_WIDTH)];
 
     reg [`SC_WIDTH - 1:0] posx, posy;
 
