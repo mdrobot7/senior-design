@@ -25,35 +25,35 @@ run = 1;
 wait(busy);
 run = 0;
 wait(!busy);
-clk_rst.WAIT_CYCLES(10);
+clk_rst.WAIT_CYCLES(1000);
 $display("Triangle %d", 0);
 
 tex_addr <= `ADDR_FB1;
 tex_width <= 60;
 
-// front bottom?
+// front bottom
 color = 8'd15;
-v1x = 187179;
-v1y = 98055;
-v1z = 75300;
+v0x = 187179;
+v0y = 98055;
+v0z = 75300;
 t0x = `FP(0);
 t0y = `FP(60);
-v0x = 262055;
-v0y = 88132;
-v0z = 72654;
+v1x = 262055;
+v1y = 88132;
+v1z = 72654;
 t1x = `FP(60);
-t1y = `FP(0);
+t1y = `FP(60);
 v2x = 262055;
 v2y = 157627;
 v2z = 72654;
 t2x = `FP(60);
-t2y = `FP(60);
+t2y = `FP(00);
 wait(!clk);
 run = 1;
 wait(busy);
 run = 0;
 wait(!busy);
-clk_rst.WAIT_CYCLES(10);
+clk_rst.WAIT_CYCLES(1000);
 $display("Triangle %d", 1);
 
 tex_addr <= `ADDR_FB1;
@@ -204,17 +204,17 @@ v0x = 262055;
 v0y = 88132;
 v0z = 72654;
 t0x = `FP(0);
-t0y = `FP(0);
+t0y = `FP(60);
+v2x = 280770;
+v2y = 147698;
+v2z = 75301;
+t2x = `FP(60);
+t2y = `FP(0);
 v1x = 280770;
-v1y = 147698;
+v1y = 98061;
 v1z = 75301;
 t1x = `FP(60);
-t1y = `FP(0);
-v2x = 280770;
-v2y = 98061;
-v2z = 75301;
-t2x = `FP(0);
-t2y = `FP(60);
+t1y = `FP(60);
 wait(!clk);
 run = 1;
 clk_rst.WAIT_CYCLES(10);
@@ -223,10 +223,6 @@ run = 0;
 wait(!busy);
 clk_rst.WAIT_CYCLES(1000);
 $display("Triangle %d", 7);
-
-#100000;
-
-$finish;
 
 tex_addr <= `ADDR_FB1;
 tex_width <= 60;

@@ -265,27 +265,21 @@ module rasterizer_tb();
             end
         end
 
-        for (x = 0; x < 10; x = x + 1) begin
-            for (y = 0; y < 10; y = y + 1) begin
-                if ((x % 2 == 0) ^ (y % 2 == 0)) begin
-                    spi_chip.mem[`ADDR_FB1 + (y * 10 + x) + 0] = 8'b00111000;
-                end
-                else begin
-                    spi_chip.mem[`ADDR_FB1 + (y * 10 + x) + 0] = 8'b00000111;
-                end
-            end
-        end
+        // for (x = 0; x < 60; x = x + 1) begin
+        //     for (y = 0; y < 60; y = y + 1) begin
+        //         WRITE_MEM(`ADDR_FB1 + (y * 60 + x), (x % 8 == 4) || (y % 8 == 4) ? 8'b00000111 : 8'b00111000);
 
-        for (x = 0; x < 10; x = x + 1) begin
-            for (y = 0; y < 10; y = y + 1) begin
-                if ((x % 2 == 0) ^ (y % 2 == 0)) begin
-                    spi_chip.mem[`ADDR_FB1 + 100 + (y * 10 + x) + 0] = 8'b11000000;
-                end
-                else begin
-                    spi_chip.mem[`ADDR_FB1 + 100 + (y * 10 + x) + 0] = 8'b00111111;
-                end
-            end
-        end
+        //         // WRITE_MEM(`ADDR_FB1 + (y * 60 + x), 8'b11000000);
+        //     end
+        // end
+
+        // for (x = 0; x < 60; x = x + 1) begin
+        //     for (y = 0; y < 60; y = y + 1) begin
+        //         WRITE_MEM(`ADDR_FB1 + 60 * 60 + (y * 60 + x), (x % 8 == 4) || (y % 8 == 4) ? 8'b11000000 : 8'b00111111);
+
+        //         // WRITE_MEM(`ADDR_FB1 + (y * 60 + x), 8'b11000000);
+        //     end
+        // end
 
         for (x = 0; x < 320; x = x + 1) begin
             for (y = 0; y < 240; y = y + 1) begin
