@@ -2,15 +2,17 @@
 
 `ifdef SIM
 // enable this when you want any performance
-// `define SIM_DIV
+`define SIM_DIV
 `endif
 
 module div_pipe_m #(
     parameter WIDTH = 32,
     parameter [WIDTH - 1:0] STAGE_LOCS = 0,
 
-    parameter IN_SIZE = 2 * WIDTH,
-    parameter OUT_SIZE = WIDTH
+    parameter EXTRA_WIDTH = 0,
+
+    parameter IN_SIZE = 2 * WIDTH + EXTRA_WIDTH,
+    parameter OUT_SIZE = WIDTH + EXTRA_WIDTH
 ) (
     input wire clk_i,
     input wire nrst_i,
@@ -33,7 +35,8 @@ module div_pipe_m #(
     reg  [`STREAM_MOPORT(OUT_SIZE)] temp_streamo;
 
     wire [WIDTH * 2 - 1:0] in_data;
-    assign in_data = sstream_i[`STREAM_SI_DATA(IN_SIZE)];
+    wire [EXTRA_WIDTH - 1:0] extra_data;
+    assign {extra_data, in_data} = sstream_i[`STREAM_SI_DATA(IN_SIZE)];
     
     wire signed [WIDTH - 1:0] y;
 
@@ -43,7 +46,7 @@ module div_pipe_m #(
         sstream_o[`STREAM_SO_READY(IN_SIZE)]  <= temp_streami[`STREAM_MI_READY(OUT_SIZE)];
         temp_streamo[`STREAM_MO_LAST(OUT_SIZE)]  <= sstream_i[`STREAM_SI_LAST(IN_SIZE)];
         temp_streamo[`STREAM_MO_VALID(OUT_SIZE)] <= sstream_i[`STREAM_SI_VALID(IN_SIZE)];
-        temp_streamo[`STREAM_MO_DATA(OUT_SIZE)]  <= y;
+        temp_streamo[`STREAM_MO_DATA(OUT_SIZE)]  <= { extra_data, y };
     end
 
     stream_fifo_m #(OUT_SIZE, 4) fifo(
