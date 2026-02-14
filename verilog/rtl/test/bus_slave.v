@@ -14,14 +14,13 @@ module bus_slave_m #(
     output reg bad_read_o
 );
 
-    localparam STATE_READY = 4'd0;
-    localparam STATE_READ = 4'd1;
-    localparam STATE_READ_WAIT = 4'd2;
-    localparam STATE_WRITE_ARB = 4'd3; // Need 1 cycle of waiting between ACK and write for arbiter
-    localparam STATE_WRITE_PREP = 4'd4; // Need to pull SEQSLV high for 1 cycle before a tword/stream so the master can prep its data
-    localparam STATE_WRITE = 4'd5;
-    localparam STATE_WRITE_WAIT = 4'd6;
-    localparam STATE_DONE = 4'd7;
+    localparam STATE_READY      = 0;
+    localparam STATE_ARB        = 1; // Need 1 cycle of waiting between ACK and data for arbiter
+    localparam STATE_READ       = 2;
+    localparam STATE_READ_WAIT  = 3;
+    localparam STATE_WRITE      = 4;
+    localparam STATE_WRITE_WAIT = 5;
+    localparam STATE_DONE       = 6;
     reg [3:0] state;
 
     wire [`BUS_ADDR_PORT] rel_addr;
@@ -50,15 +49,16 @@ module bus_slave_m #(
             case (state)
                 STATE_READY: begin
                     if (sport_i[`BUS_SI_REQ]) begin
-                        if (sport_i[`BUS_SI_RW] == `BUS_READ)
-                            state <= STATE_READ;
-                        else
-                            state <= STATE_WRITE_ARB;
-
                         sport_o[`BUS_SO_ACK] <= 1; // "I got a request"
-
                         stream_counter <= 0;
+                        state <= STATE_ARB;
                     end
+                end
+                STATE_ARB: begin
+                    if (sport_i[`BUS_SI_RW] == `BUS_READ)
+                        state <= STATE_READ;
+                    else
+                        state <= STATE_WRITE;
                 end
                 STATE_READ: begin
                     // Return 0 and assert bad_read_o if out of address range
@@ -122,18 +122,6 @@ module bus_slave_m #(
                         end
                     end
                     endcase
-                end
-                STATE_WRITE_ARB: begin
-                    case (sport_i[`BUS_SI_SIZE])
-                    `BUS_SIZE_BYTE, `BUS_SIZE_WORD: state <= STATE_WRITE;
-                    `BUS_SIZE_STREAM: begin
-                        sport_o[`BUS_SO_SEQSLV] <= 1;
-                        state <= STATE_WRITE_PREP;
-                    end
-                    endcase
-                end
-                STATE_WRITE_PREP: begin
-                    state <= STATE_WRITE;
                 end
                 STATE_WRITE: begin
                     case (sport_i[`BUS_SI_SIZE])
