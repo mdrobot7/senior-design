@@ -12,13 +12,13 @@ module vga_wrapper_m (
     output reg [`WORD_WIDTH-1:0] wbs_dat_o,
 
     // PKBus
-    input wire [`BUS_MIPORT] mport_i, // For pixel data only
-    output reg [`BUS_MOPORT] mport_o,
+    input  wire [`BUS_MIPORT] mport_i, // For pixel data only
+    output wire [`BUS_MOPORT] mport_o,
 
     // GPIO
-    output reg [7:0] pixel_o,
-    output reg hsync_o,
-    output reg vsync_o
+    output wire [7:0] pixel_o,
+    output wire hsync_o,
+    output wire vsync_o
 );
 
     localparam NUM_REGS = 4;
@@ -66,6 +66,8 @@ module vga_wrapper_m (
         .vsync_o(vsync_o)
     );
 
+    wire [`WORD] ctrl_reg;
+    assign {resolution, prescaler, enable} = ctrl_reg[8:0];
     wishbone_register_m #(32'h00000042, 1, `WBREG_TYPE_REG) ctrl (
         .wb_clk_i(wb_clk_i),
         .wb_rst_i(wb_rst_i),
@@ -86,10 +88,12 @@ module vga_wrapper_m (
         .enable_i(enable),
 
         .reg_i(0),
-        .reg_o({23'd0, resolution, prescaler, enable})
+        .reg_o(ctrl_reg)
     );
 
-    wishbone_register_m #(32'h14204280, 1, `WBREG_TYPE_REG) htimings (
+    wire [`WORD] htiming_reg;
+    assign {base_h_bporch, base_h_sync, base_h_fporch, base_h_active} = htiming_reg[28:0];
+    wishbone_register_m #(32'h14204280, 1, `WBREG_TYPE_REG) htiming (
         .wb_clk_i(wb_clk_i),
         .wb_rst_i(wb_rst_i),
         .wbs_stb_i(wbs_stbN[1]),
@@ -109,10 +113,12 @@ module vga_wrapper_m (
         .enable_i(enable),
 
         .reg_i(0),
-        .reg_o({3'd0, base_h_bporch, base_h_sync, base_h_fporch, base_h_active})
+        .reg_o(htiming_reg)
     );
 
-    wishbone_register_m #(32'h0006C7E0, 1, `WBREG_TYPE_REG) vtimings (
+    wire [`WORD] vtiming_reg;
+    assign {base_v_bporch, base_v_sync, base_v_fporch, base_v_active} = vtiming_reg[18:0];
+    wishbone_register_m #(32'h0006C7E0, 1, `WBREG_TYPE_REG) vtiming (
         .wb_clk_i(wb_clk_i),
         .wb_rst_i(wb_rst_i),
         .wbs_stb_i(wbs_stbN[2]),
@@ -132,9 +138,11 @@ module vga_wrapper_m (
         .enable_i(enable),
 
         .reg_i(0),
-        .reg_o({13'd0, base_v_bporch, base_v_sync, base_v_fporch, base_v_active})
+        .reg_o(vtiming_reg)
     );
 
+    wire [`WORD] fbaddr_reg;
+    assign {fb_addr} = fbaddr_reg[31:0];
     wishbone_register_m #(32'h00000000, 1, `WBREG_TYPE_REG) fbaddr (
         .wb_clk_i(wb_clk_i),
         .wb_rst_i(wb_rst_i),
@@ -155,14 +163,13 @@ module vga_wrapper_m (
         .enable_i(0),
 
         .reg_i(0),
-        .reg_o(fb_addr)
+        .reg_o(fbaddr_reg)
     );
 
     // Mux between the registers (similar to user_project_wrapper's addressing)
-    wire [`WORD_WIDTH-1:0] word_offset;
-    assign word_offset = {2'b00, (wbs_adr_i & 32'h0000000F)};
+    wire [$clog2(NUM_REGS)-1:0] word_offset = {2'b00, wbs_adr_i[31:2]};
     always @ (*) begin
-        wbs_stbN[word_offset] = wbs_stb_i;
+        wbs_stbN = wbs_stb_i << word_offset; // Only one at a time
         wbs_ack_o = wbs_ackN[word_offset];
         wbs_dat_o = wbs_datN[word_offset];
     end
