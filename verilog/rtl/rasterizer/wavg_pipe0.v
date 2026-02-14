@@ -75,6 +75,9 @@ module wavg_pipe0_m(
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin
             state <= 0;
+
+            in_data <= 0;
+            out_data <= 0;
         end
         else if (clk_i) begin
             state <= state_next;
@@ -97,7 +100,8 @@ module wavg_pipe0_m(
         sstream_o[`STREAM_SO_READY(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] <= 0;
 
         mstream_o[`STREAM_MO_DATA(2 * `SC_WIDTH + `WORD_WIDTH)]  <= out_data;
-        mstream_o[`STREAM_MO_VALID(2 * `SC_WIDTH + `WORD_WIDTH)] <= 1;
+        mstream_o[`STREAM_MO_VALID(2 * `SC_WIDTH + `WORD_WIDTH)] <= 0;
+        mstream_o[`STREAM_MO_LAST(2 * `SC_WIDTH + `WORD_WIDTH)] <= 0;
 
         state_next <= state;
 
@@ -111,6 +115,7 @@ module wavg_pipe0_m(
         av <= 0;
         aa <= 0;
         ab <= 0;
+        din_valid <= 0;
         da <= 0;
         db <= 0;
 
@@ -231,7 +236,7 @@ module wavg_pipe0_m(
 
             11: begin
                 if (mstream_i[`STREAM_MI_READY(2 * `SC_WIDTH + `WORD_WIDTH)]) begin
-                    state_next <= state + 1;
+                    state_next <= 0;
                 end
 
                 mstream_o[`STREAM_MO_VALID(2 * `SC_WIDTH + `WORD_WIDTH)] <= 1;

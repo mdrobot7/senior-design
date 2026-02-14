@@ -1,7 +1,7 @@
 // adapted from https://github.com/risclite/verilog-divider/blob/master/divfunc.v
 
 // enable this when you want any performance
-// `define SIM_DIV
+`define SIM_DIV
 
 module div_pipe_m #(
     parameter WIDTH = 32,
@@ -51,7 +51,7 @@ module div_pipe_m #(
         temp_streamo[`STREAM_MO_DATA(OUT_SIZE)]  <= { extra_data, y };
     end
 
-    stream_fifo_m #(OUT_SIZE, 4) fifo(
+    stream_fifo_m #(OUT_SIZE, 40) fifo(
         .clk_i(clk_i),
         .nrst_i(nrst_i),
 

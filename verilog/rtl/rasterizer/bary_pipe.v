@@ -121,8 +121,6 @@ module bary_pipe_m(
             init_o <= 0;
             discard_o <= 0;
 
-            d1in_valid <= 0;
-
             posx <= 0;
             posy <= 0;
 
@@ -140,8 +138,6 @@ module bary_pipe_m(
             l2 <= `WORD_SMAX;
         end
         else if (clk_i) begin
-            d1in_valid <= 0;
-
             case (state)
                 STATE_READY: begin
                     if (run_i) begin

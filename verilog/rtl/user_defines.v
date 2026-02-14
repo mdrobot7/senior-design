@@ -105,10 +105,10 @@
 `define TEX_DIM_WIDTH (16)
 `define TEX_DIM `TEX_DIM_WIDTH - 1:0
 
-`define DECIMAL_POS (10)
+`define DECIMAL_POS (12)
 
 `define DIVIDER_WIDTH (`DECIMAL_POS + `WORD_WIDTH)
-`define DIVIDER_USERS (2)
+`define DIVIDER_USERS (3)
 
 `define WORD_SMAX (1 << (`WORD_WIDTH - 2))
 

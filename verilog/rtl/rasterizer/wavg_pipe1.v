@@ -72,6 +72,11 @@ module wavg_pipe1_m(
 
         av <= 0;
         aa <= 0;
+        ab <= 0;
+        db <= 0;
+        db <= 0;
+        din_valid <= 0;
+        dout_ready <= 0;
 
         `define ADD(a, b) aa <= (a); ab <= (b); av <= 1
         `define DIV(a, b) da <= (a); db <= (b); din_valid <= 1
@@ -111,7 +116,7 @@ module wavg_pipe1_m(
                 if (dout_valid) begin
                     state_next <= state + 1;
 
-                    `ADD(ay, dy);
+                    tempi <= dy;
                 end
 
                 dout_ready <= 1;
@@ -123,7 +128,7 @@ module wavg_pipe1_m(
                 if (dout_valid) begin
                     state_next <= state + 1;
 
-                    tempi <= dy;
+                    `ADD(tempo, dy);
                 end
 
                 dout_ready <= 1;
@@ -133,23 +138,13 @@ module wavg_pipe1_m(
                 if (dout_valid) begin
                     state_next <= state + 1;
 
-                    `ADD(tempo, dy);
-                end
-
-                dout_ready <= 1;
-            end
-
-            6: begin
-                if (dout_valid) begin
-                    state_next <= state + 1;
-
                     `ADD(ay, dy);
                 end
 
                 dout_ready <= 1;
             end
 
-            7: begin
+            6: begin
                 if (din_ready) begin
                     state_next <= state + 1;
                 end
@@ -157,7 +152,7 @@ module wavg_pipe1_m(
                 `DIV(ay, interpo);
             end
 
-            8: begin
+            7: begin
                 if (dout_valid) begin
                     state_next <= state + 1;
 
@@ -167,7 +162,7 @@ module wavg_pipe1_m(
                 dout_ready <= 1;
             end
 
-            9: begin
+            8: begin
                 if (dout_valid) begin
                     state_next <= state + 1;
 
@@ -177,7 +172,7 @@ module wavg_pipe1_m(
                 dout_ready <= 1;
             end
 
-            10: begin
+            9: begin
                 if (dout_valid) begin
                     state_next <= state + 1;
 
@@ -187,7 +182,7 @@ module wavg_pipe1_m(
                 dout_ready <= 1;
             end
 
-            11: begin
+            10: begin
                 if (din_ready) begin
                     state_next <= 0;
                 end

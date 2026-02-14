@@ -141,10 +141,15 @@ module rasterizer_m #(
     wire [`STREAM_MIPORT(`DIVIDER_WIDTH)] bary_div_mi;
     wire [`STREAM_MOPORT(`DIVIDER_WIDTH)] bary_div_mo;
 
-    wire [`STREAM_SIPORT(2 * `DIVIDER_WIDTH)] wavg_div_si;
-    wire [`STREAM_SOPORT(2 * `DIVIDER_WIDTH)] wavg_div_so;
-    wire [`STREAM_MIPORT(`DIVIDER_WIDTH)] wavg_div_mi;
-    wire [`STREAM_MOPORT(`DIVIDER_WIDTH)] wavg_div_mo;
+    wire [`STREAM_SIPORT(2 * `DIVIDER_WIDTH)] wavg0_div_si;
+    wire [`STREAM_SOPORT(2 * `DIVIDER_WIDTH)] wavg0_div_so;
+    wire [`STREAM_MIPORT(`DIVIDER_WIDTH)] wavg0_div_mi;
+    wire [`STREAM_MOPORT(`DIVIDER_WIDTH)] wavg0_div_mo;
+
+    wire [`STREAM_SIPORT(2 * `DIVIDER_WIDTH)] wavg1_div_si;
+    wire [`STREAM_SOPORT(2 * `DIVIDER_WIDTH)] wavg1_div_so;
+    wire [`STREAM_MIPORT(`DIVIDER_WIDTH)] wavg1_div_mi;
+    wire [`STREAM_MOPORT(`DIVIDER_WIDTH)] wavg1_div_mo;
 
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin
@@ -332,11 +337,17 @@ module rasterizer_m #(
         .v1z(v1z),
         .v2z(v2z),
 
-        .div0_mstream_i(wavg_div_so),
-        .div0_mstream_o(wavg_div_si),
+        .div0_mstream_i(wavg0_div_so),
+        .div0_mstream_o(wavg0_div_si),
 
-        .div0_sstream_i(wavg_div_mo),
-        .div0_sstream_o(wavg_div_mi)
+        .div0_sstream_i(wavg0_div_mo),
+        .div0_sstream_o(wavg0_div_mi),
+
+        .div1_mstream_i(wavg1_div_so),
+        .div1_mstream_o(wavg1_div_si),
+
+        .div1_sstream_i(wavg1_div_mo),
+        .div1_sstream_o(wavg1_div_mi)
     );
 
     stream_fifo_m #(`RAST_WAVG_OUT_WIDTH) wavg_fifo_pipe(
@@ -402,11 +413,11 @@ module rasterizer_m #(
         .clk_i(clk_i),
         .nrst_i(nrst_i),
 
-        .sstreams_i({ wavg_div_si, bary_div_si }),
-        .sstreams_o({ wavg_div_so, bary_div_so }),
+        .sstreams_i({ bary_div_si, wavg0_div_si, wavg1_div_si }),
+        .sstreams_o({ bary_div_so, wavg0_div_so, wavg1_div_so }),
         
-        .mstreams_i({ wavg_div_mi, bary_div_mi }),
-        .mstreams_o({ wavg_div_mo, bary_div_mo })
+        .mstreams_i({ bary_div_mi, wavg0_div_mi, wavg1_div_mi }),
+        .mstreams_o({ bary_div_mo, wavg0_div_mo, wavg1_div_mo })
     );
 
 endmodule
