@@ -1,9 +1,11 @@
 {
-  "DESIGN_NAME": "vga_m",
+  "DESIGN_NAME": "vga_wrapper_m",
   "DESIGN_IS_CORE": 0,
   "VERILOG_FILES": [
       "dir::../../verilog/rtl/defines.v",
       "dir::../../verilog/rtl/user_defines.v",
+      "dir::../../verilog/rtl/wishbone_register.v",
+        "dir::../../library/wishbone_helper/verilog/rtl/wishbone_helper.v",
       "dir::../../verilog/rtl/vga.v"
   ],
   "CLOCK_PERIOD": 25,
