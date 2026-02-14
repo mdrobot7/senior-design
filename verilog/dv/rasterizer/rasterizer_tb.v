@@ -284,7 +284,7 @@ module rasterizer_tb();
         end
 
 `include "cube.v"
-// `include "quad.v"
+`include "duwe_cube.v"
 
         clk_rst.WAIT_CYCLES(10);
     
