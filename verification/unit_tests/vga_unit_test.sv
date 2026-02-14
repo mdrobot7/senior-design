@@ -63,7 +63,8 @@ module vga_unit_test;
       .clk_i(clk),
       .nrst_i(nrst),
       .sport_i(sportai),
-      .sport_o(sportao)
+      .sport_o(sportao),
+      .bad_read_o()
   );
 
   reg resolution_detected;
@@ -99,6 +100,7 @@ module vga_unit_test;
   vga_m my_vga (
     .clk_i(clk),
     .nrst_i(nrst),
+
     .enable_i(enable),
     .prescaler_i(prescaler),
     .resolution_i(resolution),
@@ -110,9 +112,13 @@ module vga_unit_test;
     .base_v_fporch_i(base_v_fporch),
     .base_v_sync_i(base_v_sync),
     .base_v_bporch_i(base_v_bporch),
+
     .mport_i(mportai),
     .mport_o(mportao),
+
     .fb_addr_i(fb_addr),
+    .word_color_i(0),
+
     .pixel_o(pixel),
     .hsync_o(hsync),
     .vsync_o(vsync)
@@ -289,8 +295,16 @@ module vga_unit_test;
       end
 
       line_double_counter = line_double_counter + 1;
-      if (line_double_counter >= res)
+      if (line_double_counter >= res) begin
         line_double_counter = 0;
+
+        // Skip to the start of the next line in the framebuffer
+        case (res)
+          `VGA_RES_320x240: mem_idx = mem_idx + (320 - 320);
+          `VGA_RES_160x120: mem_idx = mem_idx + (320 - 160);
+          `VGA_RES_80x60:   mem_idx = mem_idx + (320 - 80);
+        endcase
+      end
       else
         mem_idx = mem_idx - 640 / res; // Go back to the start of the line, double it
     end

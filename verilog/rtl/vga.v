@@ -228,14 +228,15 @@ module vga_m (
 
     wire in_active_area = base_h_counter < base_h_active_i && base_v_counter < base_v_active_i;
 
-    localparam CACHE_WIDTH = 9'd320;
+    localparam FB_LINE_WIDTH = 320;
+    localparam CACHE_WIDTH   = FB_LINE_WIDTH;
     reg [7:0] line_cache[CACHE_WIDTH-1:0]; // 320x240 resolution, cache one line
     reg [9:0] line_cache_idx;
 
-    localparam FB_READ_STATE_READY = 2'd0;
-    localparam FB_READ_STATE_PREP = 2'd1;
-    localparam FB_READ_STATE_READ = 2'd2;
-    localparam FB_READ_STATE_DONE = 2'd3;
+    localparam FB_READ_STATE_READY = 0;
+    localparam FB_READ_STATE_PREP  = 1;
+    localparam FB_READ_STATE_READ  = 2;
+    localparam FB_READ_STATE_DONE  = 3;
     reg [1:0] fb_read_state;
 
     reg [`WORD] fb_addr;
@@ -408,8 +409,8 @@ module vga_m (
 
                         mport_o[`BUS_MO_REQ] <= 0;
                         mport_o[`BUS_MO_SEQMST] <= 0;
-                        if (!word_color_i) mport_o[`BUS_MO_ADDR] <= mport_o[`BUS_MO_ADDR] + res_h_active;
-                        else mport_o[`BUS_MO_ADDR] <= mport_o[`BUS_MO_ADDR] + 4 * res_h_active;
+                        if (!word_color_i) mport_o[`BUS_MO_ADDR] <= mport_o[`BUS_MO_ADDR] + FB_LINE_WIDTH;
+                        else mport_o[`BUS_MO_ADDR] <= mport_o[`BUS_MO_ADDR] + 4 * FB_LINE_WIDTH;
                     end
                 endcase
             end
