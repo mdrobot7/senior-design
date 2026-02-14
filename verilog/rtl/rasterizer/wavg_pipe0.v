@@ -238,6 +238,10 @@ module wavg_pipe0_m(
             end
 
         endcase
+
+        `undef ADD
+        `undef MUL
+        `undef DIV
     end
 
 endmodule

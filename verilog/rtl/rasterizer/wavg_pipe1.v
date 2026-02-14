@@ -195,6 +195,10 @@ module wavg_pipe1_m(
                 `DIV(ay, interpo);
             end
         endcase
+
+        `undef ADD
+        `undef MUL
+        `undef DIV
     end
 
 endmodule
