@@ -108,7 +108,7 @@
 `define DECIMAL_POS (10)
 
 `define DIVIDER_WIDTH (`DECIMAL_POS + `WORD_WIDTH)
-`define DIVIDER_USERS (1)
+`define DIVIDER_USERS (2)
 
 `define WORD_SMAX (1 << (`WORD_WIDTH - 2))
 

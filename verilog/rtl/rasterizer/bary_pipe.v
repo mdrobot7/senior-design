@@ -80,6 +80,7 @@ module bary_pipe_m(
     assign div_sstream_o = div_mi;
 
     reg  d1in_valid;
+    wire d1in_ready;
     wire d1out_valid;
     reg  d1out_ready;
     reg signed [`WORD_WIDTH - 1:0] d1a, d1b;
@@ -92,6 +93,7 @@ module bary_pipe_m(
     assign div_si[`STREAM_SI_DATA(2 * `DIVIDER_WIDTH)] = { d1ae << `DECIMAL_POS, d1be };
     assign div_si[`STREAM_SI_LAST(2 * `DIVIDER_WIDTH)] = 0;
     assign div_si[`STREAM_SI_VALID(2 * `DIVIDER_WIDTH)] = d1in_valid;
+    assign d1in_ready = div_so[`STREAM_SO_READY(2 * `DIVIDER_WIDTH)];
 
     assign div_mi[`STREAM_MI_READY(`DIVIDER_WIDTH)] = d1out_ready;
     assign d1y = div_mo[`STREAM_MO_DATA(`DIVIDER_WIDTH)];
@@ -306,13 +308,11 @@ module bary_pipe_m(
                 end
 
                 STATE_RUN4: begin
-                    state <= STATE_RUN5;
+                    if (d1in_ready) begin
+                        state <= STATE_RUN5;
 
-                    a1a <= m1y;
-
-                    d1in_valid <= 1;
-                    d1a <= a1y;
-                    d1b <= det_t;
+                        a1a <= m1y;
+                    end
                 end
 
                 STATE_RUN5: begin
@@ -329,11 +329,9 @@ module bary_pipe_m(
                 end
 
                 STATE_RUN7: begin
-                    state <= STATE_RUN8;
-
-                    d1in_valid <= 1;
-                    d1a <= a1y;
-                    d1b <= det_t;
+                    if (d1in_ready) begin
+                        state <= STATE_RUN8;
+                    end
                 end
 
                 STATE_RUN8: begin
@@ -388,6 +386,25 @@ module bary_pipe_m(
     assign sstream_o[`STREAM_SO_READY(`SC_WIDTH * 2)] = state == STATE_AWAIT_POS;
 
     always @(*) begin
+        case (state)
+            STATE_RUN4: begin
+                d1in_valid <= 1;
+                d1a <= a1y;
+                d1b <= det_t;
+            end
+            STATE_RUN7: begin
+                d1in_valid <= 1;
+                d1a <= a1y;
+                d1b <= det_t;
+            end
+
+            default: begin
+                d1in_valid <= 0;
+                d1a <= 0;
+                d1b <= 0;
+            end
+        endcase
+
         case (state)
             STATE_RUN8, STATE_RUN9: d1out_ready <= 1;
 
