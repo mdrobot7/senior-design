@@ -139,7 +139,7 @@ module wavg_pipe0_m(
                     `MUL(v0z, l0);
                 end
 
-                `DIV(l0, v0z);
+                `DIV(l0 << `WAVG_DIV_SHIFT, v0z);
             end
 
             2: begin
@@ -151,7 +151,7 @@ module wavg_pipe0_m(
                     `MUL(v1z, l1);
                 end
 
-                `DIV(l1, v1z);
+                `DIV(l1 << `WAVG_DIV_SHIFT, v1z);
             end
 
             3: begin
@@ -163,7 +163,7 @@ module wavg_pipe0_m(
                     `MUL(v2z, l2);
                 end
 
-                `DIV(l2, v2z);
+                `DIV(l2 << `WAVG_DIV_SHIFT, v2z);
             end
 
             4: begin
@@ -183,7 +183,7 @@ module wavg_pipe0_m(
 
                 depthi <= ay;
 
-                `DIV(my, v0z);
+                `DIV(my << `WAVG_DIV_SHIFT, v0z);
             end
 
             6: begin
@@ -193,7 +193,7 @@ module wavg_pipe0_m(
                     `MUL(l2, t2x);
                 end
 
-                `DIV(my, v1z);
+                `DIV(my << `WAVG_DIV_SHIFT, v1z);
             end
 
             7: begin
@@ -203,7 +203,7 @@ module wavg_pipe0_m(
                     `MUL(l0, t0y);
                 end
 
-                `DIV(my, v2z);
+                `DIV(my << `WAVG_DIV_SHIFT, v2z);
             end
 
             8: begin
@@ -213,7 +213,7 @@ module wavg_pipe0_m(
                     `MUL(l1, t1y);
                 end
 
-                `DIV(my, v0z);
+                `DIV(my << `WAVG_DIV_SHIFT, v0z);
             end
 
             9: begin
@@ -223,7 +223,7 @@ module wavg_pipe0_m(
                     `MUL(l2, t2y);
                 end
 
-                `DIV(my, v1z);
+                `DIV(my << `WAVG_DIV_SHIFT, v1z);
             end
 
             10: begin
@@ -231,7 +231,7 @@ module wavg_pipe0_m(
                     state_next <= state + 1;
                 end
 
-                `DIV(my, v2z);
+                `DIV(my << `WAVG_DIV_SHIFT, v2z);
             end
 
             11: begin

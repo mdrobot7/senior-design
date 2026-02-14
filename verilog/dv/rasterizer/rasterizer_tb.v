@@ -133,6 +133,7 @@ module rasterizer_tb();
     reg [7:0] color;
     reg [`BUS_ADDR_PORT] tex_addr;
     reg [`TEX_DIM] tex_width;
+    reg [`TEX_DIM] tex_height;
 
     reg [31:0] t0x;
     reg [31:0] t0y;
@@ -171,6 +172,7 @@ module rasterizer_tb();
 
         .tex_addr_i(tex_addr),
         .tex_width_i(tex_width),
+        .tex_height_i(tex_height),
         .fb_i(1'b0),
 
         .t0x(t0x),
@@ -236,7 +238,8 @@ module rasterizer_tb();
         run = 0;
 
         tex_addr = `ADDR_FB1;
-        tex_width = 10;
+        tex_width = 60;
+        tex_height = 60;
 
         clk_rst.RESET();
 
@@ -267,15 +270,8 @@ module rasterizer_tb();
 
         // for (x = 0; x < 60; x = x + 1) begin
         //     for (y = 0; y < 60; y = y + 1) begin
-        //         WRITE_MEM(`ADDR_FB1 + (y * 60 + x), (x % 8 == 4) || (y % 8 == 4) ? 8'b00000111 : 8'b00111000);
-
-        //         // WRITE_MEM(`ADDR_FB1 + (y * 60 + x), 8'b11000000);
-        //     end
-        // end
-
-        // for (x = 0; x < 60; x = x + 1) begin
-        //     for (y = 0; y < 60; y = y + 1) begin
-        //         WRITE_MEM(`ADDR_FB1 + 60 * 60 + (y * 60 + x), (x % 8 == 4) || (y % 8 == 4) ? 8'b11000000 : 8'b00111111);
+        //         if (x < 2 || x >= 58 || y < 2 || y >= 58) WRITE_MEM(`ADDR_FB1 + (y * 60 + x), 8'b11000000);
+        //         else WRITE_MEM(`ADDR_FB1 + (y * 60 + x), (x % 8 == 4) || (y % 8 == 4) ? 8'b00000111 : 8'b00111000);
 
         //         // WRITE_MEM(`ADDR_FB1 + (y * 60 + x), 8'b11000000);
         //     end
@@ -287,7 +283,8 @@ module rasterizer_tb();
             end
         end
 
-`include "duwe_cube.v"
+`include "cube.v"
+// `include "quad.v"
 
         clk_rst.WAIT_CYCLES(10);
     

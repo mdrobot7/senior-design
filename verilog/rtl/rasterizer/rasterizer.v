@@ -20,6 +20,7 @@ module rasterizer_m #(
 
     input wire [`BUS_ADDR_PORT] tex_addr_i,
     input wire [`TEX_DIM] tex_width_i,
+    input wire [`TEX_DIM] tex_height_i,
     input wire fb_i,
 
     input wire [WORD_WIDTH - 1:0] t0x,
@@ -391,7 +392,8 @@ module rasterizer_m #(
         .mport_o(tex_mport_o),
 
         .tex_addr_i(tex_addr_i),
-        .tex_width_i(tex_width_i)
+        .tex_width_i(tex_width_i),
+        .tex_height_i(tex_height_i)
     );
 
     mem_write_m mem_write(
