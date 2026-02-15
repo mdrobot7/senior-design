@@ -29,7 +29,7 @@ module rasterizer_tb();
     wire [`BUS_SIPORT] sportbi;
     wire [`BUS_SOPORT] sportbo;
 
-    word_stripe_cache_m #(8, 2) word_cache(
+    word_stripe_cache_m #(16, 2) word_cache(
         .clk_i(clk),
         .nrst_i(nrst),
 
@@ -54,15 +54,15 @@ module rasterizer_tb();
     //     .mport_o(mportco)
     // );
 
-    busarb_m #(3, 1, 1) arbiter(
+    busarb_m #(3, 2, 2) arbiter(
         .clk_i(clk),
         .nrst_i(nrst),
 
         .mports_i({ mportco, mportdo, mporteo }),
         .mports_o({ mportci, mportdi, mportei }),
 
-        .sports_i({ sportao }),
-        .sports_o({ sportai })
+        .sports_i({ sportbo, sportao }),
+        .sports_o({ sportbi, sportai })
     );
 
     wire spi_clk1;
@@ -79,7 +79,7 @@ module rasterizer_tb();
     wire spi_dqsmi2;
     wire spi_dqsmo2;
 
-    spi_mem_m #(0, 4000000) spi_mem1(
+    spi_mem_m #(0, 320*240*2) spi_mem1(
         .clk_i(clk),
         .nrst_i(nrst),
 
@@ -103,29 +103,29 @@ module rasterizer_tb();
         .dqsm_i(spi_dqsmo1)
     );
 
-    // spi_mem_m #(4000000, 4000000) spi_mem2(
-    //     .clk_i(clk),
-    //     .nrst_i(nrst),
+    spi_mem_m #(320*240*2, 4000000) spi_mem2(
+        .clk_i(clk),
+        .nrst_i(nrst),
 
-    //     .sport_i({ sportbi }),
-    //     .sport_o({ sportbo }),
+        .sport_i({ sportbi }),
+        .sport_o({ sportbo }),
 
-    //     .spi_clk_o(spi_clk2),
-    //     .spi_cs_o(spi_cs2),
-    //     .spi_mosi_o(spi_mosi2),
-    //     .spi_miso_i(spi_miso2),
-    //     .spi_dqsm_i(spi_dqsmi2),
-    //     .spi_dqsm_o(spi_dqsmo2)
-    // );
+        .spi_clk_o(spi_clk2),
+        .spi_cs_o(spi_cs2),
+        .spi_mosi_o(spi_mosi2),
+        .spi_miso_i(spi_miso2),
+        .spi_dqsm_i(spi_dqsmi2),
+        .spi_dqsm_o(spi_dqsmo2)
+    );
 
-    // spi_chip_m #(5, 1, 500000) spi_chip2(
-    //     .clk_i(spi_clk2),
-    //     .cs_i(spi_cs2),
-    //     .mosi_i(spi_mosi2),
-    //     .miso_o(spi_miso2),
-    //     .dqsm_o(spi_dqsmi2),
-    //     .dqsm_i(spi_dqsmo2)
-    // );
+    spi_chip_m #(5, 1, 500000) spi_chip2(
+        .clk_i(spi_clk2),
+        .cs_i(spi_cs2),
+        .mosi_i(spi_mosi2),
+        .miso_o(spi_miso2),
+        .dqsm_o(spi_dqsmi2),
+        .dqsm_i(spi_dqsmo2)
+    );
 
     reg  run;
     wire busy;
@@ -284,7 +284,8 @@ module rasterizer_tb();
         end
 
 `include "cube.v"
-`include "duwe_cube.v"
+// `include "duwe_cube.v"
+// `include "quad.v"
 
         clk_rst.WAIT_CYCLES(10);
     
@@ -331,12 +332,12 @@ module rasterizer_tb();
         input [31:0] addr;
         input [7:0] data;
     begin
-        // if (addr < 4000000) begin
+        if (addr < 320 * 240 * 2) begin
             spi_chip1.mem[addr] = data;
-        // end
-        // else begin
-        //     spi_chip2.mem[addr - 4000000] = data;
-        // end
+        end
+        else begin
+            spi_chip2.mem[addr - 320 * 240 * 2] = data;
+        end
     end
     endtask
 
