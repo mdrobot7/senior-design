@@ -15,7 +15,7 @@ module signext_unit_test;
     svunit_testcase svunit_ut;
     string test_name = "signext_ut";
 
-    signext my_signext_m(
+    signext_m my_signext_m(
     .in_i(in),
     .ext_i(ext),
     .imm_size_i(ext_size),

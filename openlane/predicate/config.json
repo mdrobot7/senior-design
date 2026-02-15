@@ -8,7 +8,7 @@
       "dir::../../verilog/rtl/core/predicate.v"
   ],
   "ROUTING_CORES": 4,
-  "CLOCK_PERIOD": 50,
+  "CLOCK_PERIOD": 25,
   "RUN_LINTER": 0,
   "CLOCK_PORT": "clk_i",
   "CLOCK_NET": "clk_i",

@@ -44,6 +44,7 @@ OPCODE_JUMP     = 0x24`6
 OPCODE_JAL      = 0x25`6
 OPCODE_JRET     = 0x26`6
 OPCODE_HALT     = 0x27`6
+OPCODE_IN       = 0x28`6
 
 
 ; Registers and Immediates
@@ -252,6 +253,8 @@ OPCODE_HALT     = 0x27`6
 
     ; Halt
     halt => OPCODE_HALT @ 0`26
+
+    {pred: predicate} in => OPCODE_IN    @ 0`26
 }
 
 

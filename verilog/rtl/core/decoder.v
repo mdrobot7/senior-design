@@ -131,6 +131,7 @@ module decoder_m (
         //IS_CLRP
         ctl_sigs_reg[`IS_CLRP_IDX] = (opcode == `CLRP_OPCODE) ? 1 : 0;
 
+        //IS_SRP
         ctl_sigs_reg[`IS_SRP_IDX] = (opcode == `SRP_OPCODE) ? 1 : 0;
 
         //IS_LOAD
@@ -149,11 +150,22 @@ module decoder_m (
 				ctl_sigs_reg[`IS_STORE_IDX] = 0;
 		endcase
 
+        //BYTE_MEM
+        case(opcode)
+            `SB_OPCODE, `LB_OPCODE:
+                ctl_sigs_reg[`BYTE_MEM_OP_IDX] = 1;
+            default:
+                ctl_sigs_reg[`BYTE_MEM_OP_IDX] = 0;
+        endcase
+
 		//ACCUM_CLR
 		ctl_sigs_reg[`ACCUM_CLR_IDX] = (opcode == `MACCL_OPCODE) ? 1 : 0;
 
 		//IS_ACCUMULATE
 		ctl_sigs_reg[`IS_ACCUMULATE_IDX] = (opcode == `MAC_OPCODE) ? 1 : 0;
+
+        //WB_IS_IN
+        ctl_sigs_reg[`WB_IS_IN_IDX] = (opcode == `IN_OPCODE) ? 1 : 0;
 
         //WB_SIG
         case(opcode)
@@ -168,7 +180,8 @@ module decoder_m (
         //REGFILE_WRITE
 		case(opcode)
 			`OUT_OPCODE, `MAC_OPCODE, `MACCL_OPCODE, `SPEQ_OPCODE, `SPLT_OPCODE, `SPLTU_OPCODE, 
-			`CLRP_OPCODE, `SRP_OPCODE, `SB_OPCODE, `SW_OPCODE, `JUMP_OPCODE, `JRET_OPCODE, `HALT_OPCODE:
+			`CLRP_OPCODE, `SRP_OPCODE, `SB_OPCODE, `SW_OPCODE, `JUMP_OPCODE, `JRET_OPCODE, 
+            `HALT_OPCODE, `IN_OPCODE:
 				ctl_sigs_reg[`REGFILE_WRITE_IDX] = 0; //no regfile change
 			default:
 				ctl_sigs_reg[`REGFILE_WRITE_IDX] = 1;

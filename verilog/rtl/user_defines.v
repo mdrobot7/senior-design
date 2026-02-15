@@ -298,6 +298,7 @@
 `define JAL_OPCODE      (`OPCODE_WIDTH'h25)
 `define JRET_OPCODE     (`OPCODE_WIDTH'h26)
 `define HALT_OPCODE     (`OPCODE_WIDTH'h27)
+`define IN_OPCODE       (`OPCODE_WIDTH'h28)
 
 `define WB_SIG_WIDTH    2
 `define WB_EX_RESULT   (`WB_SIG_WIDTH'h0)
@@ -336,11 +337,13 @@
 //mem-acc ctl sigs
 `define IS_LOAD_IDX         (`IS_SRP_IDX + 1)
 `define IS_STORE_IDX        (`IS_LOAD_IDX + 1)
-`define ACCUM_CLR_IDX       (`IS_STORE_IDX + 1)
+`define BYTE_MEM_OP_IDX     (`IS_STORE_IDX + 1)
+`define ACCUM_CLR_IDX       (`BYTE_MEM_OP_IDX + 1)
 `define IS_ACCUMULATE_IDX   (`ACCUM_CLR_IDX + 1)
 //wb ctl sigs
-`define WB_SIG_IDX          (`IS_ACCUMULATE_IDX + `WB_SIG_WIDTH):(`IS_ACCUMULATE_IDX + 1)
-`define REGFILE_WRITE_IDX	(`IS_ACCUMULATE_IDX + `WB_SIG_WIDTH + 1)
+`define WB_IS_IN_IDX        (`IS_ACCUMULATE_IDX + 1)
+`define WB_SIG_IDX          (`WB_IS_IN_IDX + `WB_SIG_WIDTH):(`WB_IS_IN_IDX + 1)
+`define REGFILE_WRITE_IDX	(`WB_IS_IN_IDX + `WB_SIG_WIDTH + 1)
 
 `define CTL_SIGS_WIDTH      (`REGFILE_WRITE_IDX + 1)
 
@@ -349,7 +352,6 @@
 `define CORE_REGFILE_HEIGHT (16)
 `define CORE_MAILBOX_HEIGHT (8)
 `define STAGE_SLICE(stage, size) (((stage+1)*(size))-1):((stage)*(size))
-`define CTL_SIGS_WIDTH      (`REGFILE_WRITE_IDX + `WB_SIG_WIDTH+ 1)
 
 // Shaded vertices (sizes are temporary)
 `define SHADED_VERTEX_WIDTH (32)
