@@ -34,7 +34,7 @@ module core_m(
     input wire[`WORD_WIDTH*`CORE_MAILBOX_HEIGHT-1:0] inbox_i,
 
     input  wire [`BUS_MIPORT] mport_i,
-    output reg [`BUS_MOPORT] mport_o
+    output reg  [`BUS_MOPORT] mport_o
 );
     localparam NUM_STAGES = 5;
     localparam IF_STAGE =   0;
@@ -272,17 +272,6 @@ module core_m(
             endcase
         end
 
-        //mem
-        mport_o[`BUS_MO_ADDR] = piped_r2_data[`STAGE_SLICE(MEM_STAGE, `WORD_WIDTH)];
-        mport_o[`BUS_MO_DATA] = piped_alu_result[`STAGE_SLICE(MEM_STAGE, `WORD_WIDTH)];
-        mport_o[`BUS_MO_REQ] = (mem_ctl_sigs[`IS_LOAD_IDX] | mem_ctl_sigs[`IS_STORE_IDX] 
-                                | bus_state == BUS_WAIT_STATE | bus_state == BUS_TRANSACTION_STATE);
-        mport_o[`BUS_MO_SEQMST] = ~(mem_ctl_sigs[`IS_LOAD_IDX] | mem_ctl_sigs[`IS_STORE_IDX]
-                                | bus_state == BUS_WAIT_STATE | bus_state == BUS_TRANSACTION_STATE);
-        mport_o[`BUS_MO_SIZE] = (mem_ctl_sigs[`BYTE_MEM_OP_IDX] == 1) ? `BUS_SIZE_BYTE : `BUS_SIZE_WORD;
-        mport_o[`BUS_MO_RW] = (mem_ctl_sigs[`IS_STORE_IDX] == 1) ? `BUS_WRITE : `BUS_READ;
-
-
         //wb
         
         for(i = 0; i < `CORE_MAILBOX_HEIGHT; i = i + 1) begin
@@ -316,7 +305,6 @@ module core_m(
             piped_alu_result <= 0;
             piped_accum_result <= 0;
             piped_mem_result <= 0;
-            stall_o <= 0;
 
             for(i = 0; i < `CORE_MAILBOX_HEIGHT; i = i + 1) begin
                 outbox[i] <= 0;
@@ -333,7 +321,6 @@ module core_m(
                 piped_alu_result <= 0;
                 piped_accum_result <= 0;
                 piped_mem_result <= 0;
-                stall_o <= 0;
 
                 for(i = 0; i < `CORE_MAILBOX_HEIGHT; i = i + 1) begin
                     outbox[i] <= 0;
@@ -398,6 +385,8 @@ module core_m(
     //bus fsm
 
     always @(*) begin
+        next_bus_state <= bus_state;
+
         case(bus_state)
             BUS_PREP_STATE: begin
                 stall_o <= 0;
@@ -415,10 +404,22 @@ module core_m(
                 if(!mport_i[`BUS_MI_ACK])
                     next_bus_state <= BUS_PREP_STATE;
             end
-            default
+            default: begin
+                stall_o <= 0;
                 next_bus_state <= BUS_PREP_STATE;
+            end
         endcase
 
+        case (bus_state)
+            BUS_WAIT_STATE, BUS_TRANSACTION_STATE: mport_o[`BUS_MO_REQ] <= 1;
+            default: mport_o[`BUS_MO_REQ] <= 0;
+        endcase
+
+        mport_o[`BUS_MO_ADDR] <= piped_r2_data[`STAGE_SLICE(MEM_STAGE, `WORD_WIDTH)];
+        mport_o[`BUS_MO_DATA] <= piped_alu_result[`STAGE_SLICE(MEM_STAGE, `WORD_WIDTH)];
+        mport_o[`BUS_MO_SEQMST] <= 0;
+        mport_o[`BUS_MO_SIZE] <= (mem_ctl_sigs[`BYTE_MEM_OP_IDX] == 1) ? `BUS_SIZE_BYTE : `BUS_SIZE_WORD;
+        mport_o[`BUS_MO_RW] <= (mem_ctl_sigs[`IS_STORE_IDX] == 1) ? `BUS_WRITE : `BUS_READ;
     end
 
     always @(posedge clk_i, negedge nrst_i) begin

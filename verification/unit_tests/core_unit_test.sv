@@ -1,7 +1,11 @@
 `include "svunit_defines.svh"
 `include "user_defines.v"
 
+`include "test/debug_log.v"
 `include "test/clk_rst.v"
+`include "test/bus_slave.v"
+`include "test/spi_chip.v"
+
 `include "core/core.v"
 `include "core/accumulator.v"
 `include "core/alu.v"
@@ -15,8 +19,9 @@
 `include "math/mul.v"
 `include "math/add.v"
 
-`include "test/bus_slave.v"
 `include "bus/busarb.v"
+
+`include "spi_mem.v"
 
 module core_m_unit_test;
   import svunit_pkg::svunit_testcase;
@@ -80,11 +85,35 @@ module core_m_unit_test;
   localparam MEM_BASE_ADDR = 0;
   localparam MEM_SIZE = 32'h8000;
 
-  bus_slave_m #(0, MEM_SIZE) dmem (
-      .clk_i(clk),
-      .nrst_i(nrst),
-      .sport_i(sportai),
-      .sport_o(sportao)
+  wire spi_clk1;
+  wire spi_cs1;
+  wire [3:0] spi_mosi1;
+  wire [3:0] spi_miso1;
+  wire spi_dqsmi1;
+  wire spi_dqsmo1;
+
+  spi_mem_m #(MEM_BASE_ADDR, MEM_SIZE) spi_mem1(
+    .clk_i(clk),
+    .nrst_i(nrst),
+
+    .sport_i({ sportai }),
+    .sport_o({ sportao }),
+
+    .spi_clk_o(spi_clk1),
+    .spi_cs_o(spi_cs1),
+    .spi_mosi_o(spi_mosi1),
+    .spi_miso_i(spi_miso1),
+    .spi_dqsm_i(spi_dqsmi1),
+    .spi_dqsm_o(spi_dqsmo1)
+  );
+
+  spi_chip_m #(5, 1, MEM_SIZE) spi_chip1(
+    .clk_i(spi_clk1),
+    .cs_i(spi_cs1),
+    .mosi_i(spi_mosi1),
+    .miso_o(spi_miso1),
+    .dqsm_o(spi_dqsmi1),
+    .dqsm_i(spi_dqsmo1)
   );
 
 
@@ -407,8 +436,12 @@ module core_m_unit_test;
   `SVTEST(mem_test)
     integer i;
     $readmemh("mem_files/test_mem.mem", i_mem);
+
+    inst = 0;
+
     clk_rst.RESET();
     clk_rst.WAIT_CYCLES(3);
+
     for(i = 0; i < 34; i = i + 1) begin
       @(negedge clk);
       inst = i_mem[i];
@@ -417,21 +450,38 @@ module core_m_unit_test;
       end
     end
 
+
+$display("1");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[0], 32'h00000000);
+$display("2");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[1], 32'hFFFFFFFF);
+$display("3");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[2], 32'h00000002);
+$display("4");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[3], 32'hFFFFFFFD);
+$display("5");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[4], 32'h00000004);
+$display("6");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[5], 32'hFFFFFFFB);
+$display("7");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[6], 32'h00000006);
+$display("8");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[7], 32'hFFFFFFF9);
+$display("9 0x%H", my_core_m.regfile.mem[8]);
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[8], 32'hFFFFFFFF);
+$display("10 0x%H", my_core_m.regfile.mem[9]);
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[9], 32'hFFFFFFFF);
+$display("11");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[10], 32'h00000000);
+$display("12");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[11], 32'h00000000);
+$display("13");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[12], 32'h00000000);
+$display("14");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[13], 32'h00000000);
+$display("15");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[14], 32'h00000000);
+$display("16");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[15], 32'h00000000);
 
   `SVTEST_END
