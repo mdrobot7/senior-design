@@ -28,7 +28,7 @@ wait(busy);
 run = 0;
 wait(!busy);
 
-clk_rst.WAIT_CYCLES(10);
+clk_rst.WAIT_CYCLES(1000);
 
 tex_addr <= `ADDR_FB1;
 tex_width <= 60;
