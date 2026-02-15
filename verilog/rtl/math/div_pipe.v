@@ -51,7 +51,7 @@ module div_pipe_m #(
         temp_streamo[`STREAM_MO_DATA(OUT_SIZE)]  <= { extra_data, y };
     end
 
-    stream_fifo_m #(OUT_SIZE, 4) fifo(
+    stream_fifo_m #(OUT_SIZE, 40) fifo(
         .clk_i(clk_i),
         .nrst_i(nrst_i),
 

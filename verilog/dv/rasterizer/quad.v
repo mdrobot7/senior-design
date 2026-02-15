@@ -5,19 +5,19 @@ tex_width <= 60;
 
 v0x = 50 << `DECIMAL_POS;
 v0y = 50 << `DECIMAL_POS;
-v0z = 2 * 64'h80000000 / 3;
+v0z = (2 * 64'h80000000 / 3) / 1000;
 t0x = 0;
 t0y = `FP(60);
 
 v1x = 200 << `DECIMAL_POS;
 v1y = 50 << `DECIMAL_POS;
-v1z = 1 * 64'h80000000 / 3;
+v1z = (1 * 64'h80000000 / 3) / 1000;
 t1x = `FP(60);
 t1y = `FP(60);
 
 v2x = 50 << `DECIMAL_POS;
 v2y = 200 << `DECIMAL_POS;
-v2z = 1 * 64'h80000000 / 3;
+v2z = (1 * 64'h80000000 / 3) / 1000;
 t2x = 0;
 t2y = 0;
 
@@ -35,19 +35,19 @@ tex_width <= 60;
 
 v0x = 50 << `DECIMAL_POS;
 v0y = 200 << `DECIMAL_POS;
-v0z = 1 * 64'h80000000 / 3;
+v0z = (1 * 64'h80000000 / 3) / 1000;
 t0x = 0;
 t0y = 0;
 
 v1x = 200 << `DECIMAL_POS;
 v1y = 50 << `DECIMAL_POS;
-v1z = 1 * 64'h80000000 / 3;
+v1z = (1 * 64'h80000000 / 3) / 1000;
 t1x = `FP(60);
 t1y = `FP(60);
 
 v2x = 200 << `DECIMAL_POS;
 v2y = 200 << `DECIMAL_POS;
-v2z = 2 * 64'h80000000 / 3;
+v2z = (2 * 64'h80000000 / 3) / 1000;
 t2x = `FP(60);
 t2y = 0;
 
