@@ -14,7 +14,7 @@ module metadata_cache
   input wire nrst_i,
 
   input wire [`BUS_SIPORT] s_core_i,
-  output wire [`BUS_SOPORT] s_core_o,
+  output reg [`BUS_SOPORT] s_core_o,
   
   output reg [9:0] sram_addr,     // Port AD
   output reg [31:0] sram_data_o,  // Port DI
@@ -27,15 +27,11 @@ module metadata_cache
   output wire [`BUS_MOPORT] m_mem_o
 );
 
-parameter BLOCK_BITS = ($clog2(BLOCK_WORD_SIZE));
-parameter BLOCKS = (1024 / BLOCK_WORD_SIZE);
-parameter INDEX_BITS = ($clog2(BLOCKS));
-parameter OFFSET_BITS = ($clog2(BLOCK_WORD_SIZE << 2));
-parameter TAG_BITS = (32 - INDEX_BITS - OFFSET_BITS);
-
-localparam TAG_ADDR_RANGE = 31:(32 - TAG_BITS);
-localparam INDEX_ADDR_RANGE = (31-TAG_BITS):(OFFSET_BITS);
-localparam SRAM_ADDR_RANGE = 11:2;
+localparam BLOCK_BITS = ($clog2(BLOCK_WORD_SIZE));
+localparam BLOCKS = (1024 / BLOCK_WORD_SIZE);
+localparam INDEX_BITS = ($clog2(BLOCKS));
+localparam OFFSET_BITS = ($clog2(BLOCK_WORD_SIZE << 2));
+localparam TAG_BITS = (32 - INDEX_BITS - OFFSET_BITS);
 
 wire core_req_i;
 wire [31:0] data_i;
@@ -45,11 +41,6 @@ assign core_req_i = s_core_i[`BUS_SI_REQ];
 assign data_i = s_core_i[`BUS_SI_DATA];
 assign addr_i = s_core_i[`BUS_SI_ADDR];
 assign rw_i = s_core_i[`BUS_SI_RW];
-
-reg [31:0] core_data_o; // Data from SRAM to Core
-reg core_ack_o;
-assign s_core_o[`BUS_SO_DATA] = core_data_o;
-assign s_core_o[`BUS_SO_ACK] = core_ack_o;
 
 reg mem_req_o;        
 reg mem_rw;          
@@ -92,6 +83,7 @@ localparam S_DIRTY = 3'd3;
 localparam S_FILL = 3'd4;
 localparam S_MISS_1 = 3'd5;
 localparam S_MISS_2 = 3'd6;
+localparam S_ACK_LOW = 3'd7; // Unused. Use if ack needs low for additional cycle
 
 integer i;
 always @ (posedge clk_i) begin
@@ -102,17 +94,19 @@ always @ (posedge clk_i) begin
       tag[i] <= {TAG_BITS{1'b0}};
     end
     state <= S_WAIT;
-    core_ack_o <= 0;
+    s_core_o[`BUS_SO_ACK] <= 0;
     sram_en <= 0;
     mem_req_o <= 0;
     mem_seqmst_o <= 0;
     req_addr <= 0;
     req_data <= 0;
-    req_rw <= `SRAM_READ;
+    req_rw <= `BUS_READ;
     req_index <= 0;
     req_tag <= 0;
     wb_count <= 0;
     fill_count <= 0;
+    wb_done <= 0;
+    s_core_o[`BUS_SO_DATA] <= 0;
   end
   else begin
     // defaults
@@ -126,38 +120,37 @@ always @ (posedge clk_i) begin
 
     S_WAIT: begin
       if (core_req_i) begin
-        core_ack_o <= 1;
+        s_core_o[`BUS_SO_ACK] <= 1;
         req_addr <= addr_i;
-        req_rw <= rw_i;
+        req_rw <= rw_i;         // BUS READ/WRITE NOT SRAM
         req_data <= data_i;
-        req_tag <= addr_i[TAG_ADDR_RANGE];
-        req_index <= addr_i [INDEX_ADDR_RANGE];
+        req_tag <= addr_i[31:(32 - TAG_BITS)];
+        req_index <= addr_i [(31-TAG_BITS):(OFFSET_BITS)];
         // pre req from SRAM
         sram_en <= 1;
         sram_rw <= `SRAM_READ;
-        sram_addr <= addr_i[SRAM_ADDR_RANGE];
-        
+        sram_addr <= addr_i[11:2];
         state <= S_TAG;
       end
       else begin
-        core_ack_o <= 0;
+        s_core_o[`BUS_SO_ACK] <= 0;
       end
     end
 
 
     S_TAG: begin
       if (valid[req_index] && (req_tag == tag[req_index])) begin
-        if (!req_rw) begin
+        if (req_rw == `BUS_WRITE) begin
           sram_en <= 1;
           sram_rw <= `SRAM_WRITE;
-          sram_addr <= req_addr[SRAM_ADDR_RANGE];
+          sram_addr <= req_addr[11:2];
           sram_data_o <= req_data;
           state <= S_HIT;
         end
         // Read Hit, output immediately
         else begin
-          core_data_o <= sram_data_i;
-          core_ack_o <= 1;
+          s_core_o[`BUS_SO_DATA] <= sram_data_i;
+          s_core_o[`BUS_SO_ACK] <= 0;
           state <= S_WAIT;
         end
       end
@@ -174,7 +167,7 @@ always @ (posedge clk_i) begin
     // For write hit
     S_HIT: begin
       dirty[req_index] <= 1;
-      core_ack_o <= 0;
+      s_core_o[`BUS_SO_ACK] <= 0;
       state <= S_WAIT;
     end
     
@@ -215,8 +208,7 @@ always @ (posedge clk_i) begin
         if (!mem_ack_i) begin
           wb_done <= 0;
           wb_count <= 0;
-          // if write, skip Fill
-          state <= req_rw ? S_FILL : S_MISS_1;
+          state <= S_FILL;
         end
       end
     end
@@ -251,6 +243,11 @@ always @ (posedge clk_i) begin
         mem_seqmst_o <= 1;
         if (!mem_ack_i) begin
           fill_count <= 0;
+          // pre req sram
+          sram_en <= 1;
+          sram_addr <= req_addr[11:2];
+          sram_rw <= (req_rw == `BUS_READ) ? `SRAM_READ : `SRAM_WRITE;
+          sram_data_o <= req_data;
           state <= S_MISS_1;
         end
       end
@@ -258,23 +255,24 @@ always @ (posedge clk_i) begin
 
 
     S_MISS_1: begin
+      // wait one cycle for sram
       sram_en <= 1;
-      sram_addr <= req_addr[SRAM_ADDR_RANGE];
-      sram_rw <= req_rw;
+      sram_addr <= req_addr[11:2];
+      sram_rw <= (req_rw == `BUS_READ) ? `SRAM_READ : `SRAM_WRITE;
       sram_data_o <= req_data;
-      state <= S_MISS_2;
+      state <= S_MISS_2; 
     end
 
     S_MISS_2: begin
-      if (req_rw == `SRAM_READ)
-        core_data_o <= sram_data_i;
+      if (req_rw == `BUS_READ)
+        s_core_o[`BUS_SO_DATA] <= sram_data_i;
       else
         dirty[req_index] <= 1;
 
-      core_ack_o <= 0;
+      s_core_o[`BUS_SO_ACK] <= 0;
       state <= S_WAIT;
     end
-
+    
     default:
       state <= S_WAIT;
 
@@ -282,4 +280,4 @@ always @ (posedge clk_i) begin
   end
 end
 
-endmodule;
+endmodule

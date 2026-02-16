@@ -1,7 +1,7 @@
 `include "svunit_defines.svh"
 
 `include "user_defines.v"
-
+`include "test/debug_log.v"
 `include "spi_mem.v"
 
 `include "test/clk_rst.v"
