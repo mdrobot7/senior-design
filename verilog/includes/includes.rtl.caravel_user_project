@@ -14,6 +14,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Caravel user project includes
+-v $(USER_PROJECT_VERILOG)/rtl/user_defines/bus_stream.v
+-v $(USER_PROJECT_VERILOG)/rtl/user_defines/common_misc.v
+-v $(USER_PROJECT_VERILOG)/rtl/user_defines/core.v
+-v $(USER_PROJECT_VERILOG)/rtl/user_defines/rasterizer.v
+-v $(USER_PROJECT_VERILOG)/rtl/user_defines/vga.v
 -v $(USER_PROJECT_VERILOG)/rtl/user_defines.v
 -v $(USER_PROJECT_VERILOG)/rtl/user_project_wrapper.v
 
