@@ -1,10 +1,11 @@
 /*
   Metadata Cache for direct-mapped SRAM cache.
-  64-byte BLOCKS.
-  Physical SRAM is 1024x32 bit array, the cache logically treats it as 64 entries x 16 words each
+  Designed for 64-byte BLOCKS.
+  Physical SRAM is 1024x32 bit array.
   Uses Write Back Policy with Dirty bit.
-  Prioritizes low latency reads
+  Prioritizes low latency read hits. 
 */
+`include "../../ip/CF_SRAM_1024x32/hdl/beh_models/CF_SRAM_1024x32.tt_180V_25C.v"
 module metadata_cache
 #(
   parameter BLOCK_WORD_SIZE = 16
@@ -15,13 +16,6 @@ module metadata_cache
 
   input wire [`BUS_SIPORT] s_core_i,
   output reg [`BUS_SOPORT] s_core_o,
-  
-  output reg [9:0] sram_addr,     // Port AD
-  output reg [31:0] sram_data_o,  // Port DI
-  output reg sram_rw,             // 0 for write, 1 for read. Port R_WB
-  output reg sram_en,             // enable SRAM. Port EN
-  input wire [31:0] sram_data_i,  // Data out from SRAM to core. Port DO
-  // All 32 SRAM BEN bits must be set high
 
   input wire [`BUS_MIPORT] m_mem_i,
   output wire [`BUS_MOPORT] m_mem_o
@@ -83,7 +77,43 @@ localparam S_DIRTY = 3'd3;
 localparam S_FILL = 3'd4;
 localparam S_MISS_1 = 3'd5;
 localparam S_MISS_2 = 3'd6;
-localparam S_ACK_LOW = 3'd7; // Unused. Use if ack needs low for additional cycle
+
+// SRAM
+reg [9:0] sram_addr;   
+reg [31:0] sram_in_data;    // data input to sram
+reg sram_rw;                // 0 for write, 1 for read
+reg sram_en;            
+wire [31:0] sram_out_data;  // data output from sram
+
+parameter BEN = 32'hFFFFFFFF;
+parameter R_WB = 1;
+parameter WLBI = 0;
+parameter WLOFF = 0;
+parameter TM = 0;
+parameter SM = 0;
+parameter ScanInCC = 0;
+parameter ScanInDL = 0;
+parameter ScanInDR = 0;
+parameter vpwrac = 1;
+parameter vpwrpc = 1;
+  
+CF_SRAM_1024x32_macro sram (
+  .DO(sram_out_data),
+  .AD(sram_addr),
+  .DI(sram_in_data),
+  .R_WB(sram_rw),
+  .EN(sram_en),
+  .CLKin(clk_i),
+
+  .BEN(BEN),
+  .ScanInCC(ScanInCC),
+  .ScanInDL(ScanInDL),
+  .ScanInDR(ScanInDR),
+  .SM(SM),
+  .TM(TM),
+  .WLBI(WLBI),
+  .WLOFF(WLOFF)
+);
 
 integer i;
 always @ (posedge clk_i) begin
@@ -144,12 +174,12 @@ always @ (posedge clk_i) begin
           sram_en <= 1;
           sram_rw <= `SRAM_WRITE;
           sram_addr <= req_addr[11:2];
-          sram_data_o <= req_data;
+          sram_in_data <= req_data;
           state <= S_HIT;
         end
         // Read Hit, output immediately
         else begin
-          s_core_o[`BUS_SO_DATA] <= sram_data_i;
+          s_core_o[`BUS_SO_DATA] <= sram_out_data;
           s_core_o[`BUS_SO_ACK] <= 0;
           state <= S_WAIT;
         end
@@ -186,7 +216,7 @@ always @ (posedge clk_i) begin
           wb_count <= 1;
         end
         else
-          mem_data_o <= sram_data_i; 
+          mem_data_o <= sram_out_data; 
         
         if (mem_seqslv_i) begin
           if (wb_count == BLOCK_WORD_SIZE) begin
@@ -225,7 +255,7 @@ always @ (posedge clk_i) begin
         sram_en <= 1;
         sram_rw <= `SRAM_WRITE;
         sram_addr <= {req_index, fill_count[BLOCK_BITS-1:0]};
-        sram_data_o <= mem_data_i;
+        sram_in_data <= mem_data_i;
 
         if (fill_count == BLOCK_WORD_SIZE-1) begin
           mem_seqmst_o <= 1;
@@ -247,7 +277,7 @@ always @ (posedge clk_i) begin
           sram_en <= 1;
           sram_addr <= req_addr[11:2];
           sram_rw <= (req_rw == `BUS_READ) ? `SRAM_READ : `SRAM_WRITE;
-          sram_data_o <= req_data;
+          sram_in_data <= req_data;
           state <= S_MISS_1;
         end
       end
@@ -259,13 +289,13 @@ always @ (posedge clk_i) begin
       sram_en <= 1;
       sram_addr <= req_addr[11:2];
       sram_rw <= (req_rw == `BUS_READ) ? `SRAM_READ : `SRAM_WRITE;
-      sram_data_o <= req_data;
+      sram_in_data <= req_data;
       state <= S_MISS_2; 
     end
 
     S_MISS_2: begin
       if (req_rw == `BUS_READ)
-        s_core_o[`BUS_SO_DATA] <= sram_data_i;
+        s_core_o[`BUS_SO_DATA] <= sram_out_data;
       else
         dirty[req_index] <= 1;
 

@@ -21,11 +21,11 @@ module bus_unit_test;
   reg [`BUS_SIPORT] s_core_i;
   wire [`BUS_SOPORT] s_core_o;
 
-  wire [9:0] sram_addr;
-  wire [31:0] sram_data_o;
-  wire        sram_rw;
-  wire        sram_en;
-  reg  [31:0] sram_data_i;
+  // wire [9:0] sram_addr;
+  // wire [31:0] sram_data_o;
+  // wire        sram_rw;
+  // wire        sram_en;
+  // reg  [31:0] sram_data_i;
 
   wire [`BUS_MIPORT] m_mem_i;
   wire [`BUS_MOPORT] m_mem_o;
@@ -53,11 +53,11 @@ module bus_unit_test;
     .s_core_i(s_core_i),
     .s_core_o(s_core_o),
 
-    .sram_addr(sram_addr),
-    .sram_data_o(sram_data_o),
-    .sram_rw(sram_rw),
-    .sram_en(sram_en),
-    .sram_data_i(sram_data_i),
+    // .sram_addr(sram_addr),
+    // .sram_data_o(sram_data_o),
+    // .sram_rw(sram_rw),
+    // .sram_en(sram_en),
+    // .sram_data_i(sram_data_i),
 
     .m_mem_i(m_mem_i),
     .m_mem_o(m_mem_o)
@@ -164,51 +164,51 @@ module bus_unit_test;
     end
   end
 
-  // Monitor SRAM operations
-  always @(posedge clk) begin
-    if (sram_en) begin
-      if (sram_rw == `SRAM_READ) begin
-        $display("[%0t] SRAM: READ addr=%0d -> data=0x%h (next cycle)", 
-                 $time, sram_addr, sram_memory[sram_addr]);
-      end else begin
-        $display("[%0t] SRAM: WRITE addr=%0d <- data=0x%h", 
-                 $time, sram_addr, sram_data_o);
-      end
-    end
-  end
+  // // Monitor SRAM operations
+  // always @(posedge clk) begin
+  //   if (sram_en) begin
+  //     if (sram_rw == `SRAM_READ) begin
+  //       $display("[%0t] SRAM: READ addr=%0d -> data=0x%h (next cycle)", 
+  //                $time, sram_addr, sram_memory[sram_addr]);
+  //     end else begin
+  //       $display("[%0t] SRAM: WRITE addr=%0d <- data=0x%h", 
+  //                $time, sram_addr, sram_data_o);
+  //     end
+  //   end
+  // end
 
-  // Monitor final output in MISS_2
-  always @(posedge clk) begin
-    if (DUT.state == 3'd6) begin  // S_MISS_2
-      $display("[%0t] MISS_2: req_rw=%s sram_data_i=0x%h -> core_data_o=0x%h", 
-               $time,
-               (DUT.req_rw == `BUS_READ) ? "READ" : "WRITE",
-               sram_data_i,
-               DUT.s_core_o[`BUS_SO_DATA]);
-    end
-  end
+  // // Monitor final output in MISS_2
+  // always @(posedge clk) begin
+  //   if (DUT.state == 3'd6) begin  // S_MISS_2
+  //     $display("[%0t] MISS_2: req_rw=%s sram_data_i=0x%h -> core_data_o=0x%h", 
+  //              $time,
+  //              (DUT.req_rw == `BUS_READ) ? "READ" : "WRITE",
+  //              sram_data_i,
+  //              DUT.s_core_o[`BUS_SO_DATA]);
+  //   end
+  // end
 
-  // Monitor MISS_1
-  always @(posedge clk) begin
-    if (DUT.state == 3'd5) begin  // S_MISS_1
-      $display("[%0t] S_MISS_1: sram_en=%0d sram_rw=%0d sram_addr=%0d sram_data=%0h",
-              $time, sram_en, sram_rw, sram_addr, sram_data_o);
-    end
-  end
+  // // Monitor MISS_1
+  // always @(posedge clk) begin
+  //   if (DUT.state == 3'd5) begin  // S_MISS_1
+  //     $display("[%0t] S_MISS_1: sram_en=%0d sram_rw=%0d sram_addr=%0d sram_data=%0h",
+  //             $time, sram_en, sram_rw, sram_addr, sram_data_o);
+  //   end
+  // end
 
   //===================================
   // SRAM
   //===================================
-  always @(posedge clk) begin
-    if (sram_en) begin
-      if (sram_rw == `SRAM_READ) begin
-        sram_data_i <= sram_memory[sram_addr];
-      end 
-      else begin
-        sram_memory[sram_addr] <= sram_data_o;
-      end
-    end
-  end
+  // always @(posedge clk) begin
+  //   if (sram_en) begin
+  //     if (sram_rw == `SRAM_READ) begin
+  //       sram_data_i <= sram_memory[sram_addr];
+  //     end 
+  //     else begin
+  //       sram_memory[sram_addr] <= sram_data_o;
+  //     end
+  //   end
+  // end
 
   task init_memory();
     integer i;
