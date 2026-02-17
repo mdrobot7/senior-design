@@ -2,7 +2,7 @@
  * Internal file, DO NOT INCLUDE! Only include user_defines.v!
  */
 
-`define SC_WIDTH ($clog2((`WIDTH) > (`HEIGHT) ? (`WIDTH) : (`HEIGHT)))
+`define SC_WIDTH ((`WIDTH) > (`HEIGHT) ? $clog2(`WIDTH) : $clog2(`HEIGHT))
 
 `define COLOR_WIDTH (8)
 `define COLOR `COLOR_WIDTH - 1:0
