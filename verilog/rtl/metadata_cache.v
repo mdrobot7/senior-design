@@ -5,7 +5,10 @@
   Uses Write Back Policy with Dirty bit.
   Prioritizes low latency read hits. 
 */
-`include "../../ip/CF_SRAM_1024x32/hdl/beh_models/CF_SRAM_1024x32.tt_180V_25C.v"
+`default_nettype wire
+  `include "../../ip/CF_SRAM_1024x32/hdl/beh_models/CF_SRAM_1024x32.tt_180V_25C.v"
+`default_nettype none
+
 module metadata_cache
 #(
   parameter BLOCK_WORD_SIZE = 16
@@ -83,21 +86,21 @@ reg [9:0] sram_addr;
 reg [31:0] sram_in_data;    // data input to sram
 reg sram_rw;                // 0 for write, 1 for read
 reg sram_en;            
-wire [31:0] sram_out_data;  // data output from sram
+reg [31:0] sram_out_data;  // data output from sram
 
 parameter BEN = 32'hFFFFFFFF;
-parameter R_WB = 1;
-parameter WLBI = 0;
-parameter WLOFF = 0;
-parameter TM = 0;
-parameter SM = 0;
-parameter ScanInCC = 0;
-parameter ScanInDL = 0;
-parameter ScanInDR = 0;
-parameter vpwrac = 1;
-parameter vpwrpc = 1;
+parameter WLBI = 1'b0;
+parameter WLOFF = 1'b0;
+parameter TM = 1'b0;
+parameter SM = 1'b0;
+parameter ScanInCC = 1'b0;
+parameter ScanInDL = 1'b0;
+parameter ScanInDR = 1'b0;
+parameter vpwrac = 1'b1;
+parameter vpwrpc = 1'b1;
+wire ScanOutCC;
   
-CF_SRAM_1024x32_macro sram (
+CF_SRAM_1024x32_macro sram(
   .DO(sram_out_data),
   .AD(sram_addr),
   .DI(sram_in_data),
@@ -112,7 +115,10 @@ CF_SRAM_1024x32_macro sram (
   .SM(SM),
   .TM(TM),
   .WLBI(WLBI),
-  .WLOFF(WLOFF)
+  .WLOFF(WLOFF),
+  .vpwrac(vpwrac),
+  .vpwrpc(vpwrpc),
+  .ScanOutCC(ScanOutCC)
 );
 
 integer i;

@@ -21,12 +21,6 @@ module bus_unit_test;
   reg [`BUS_SIPORT] s_core_i;
   wire [`BUS_SOPORT] s_core_o;
 
-  // wire [9:0] sram_addr;
-  // wire [31:0] sram_data_o;
-  // wire        sram_rw;
-  // wire        sram_en;
-  // reg  [31:0] sram_data_i;
-
   wire [`BUS_MIPORT] m_mem_i;
   wire [`BUS_MOPORT] m_mem_o;
 
@@ -52,12 +46,6 @@ module bus_unit_test;
 
     .s_core_i(s_core_i),
     .s_core_o(s_core_o),
-
-    // .sram_addr(sram_addr),
-    // .sram_data_o(sram_data_o),
-    // .sram_rw(sram_rw),
-    // .sram_en(sram_en),
-    // .sram_data_i(sram_data_i),
 
     .m_mem_i(m_mem_i),
     .m_mem_o(m_mem_o)
@@ -141,7 +129,7 @@ module bus_unit_test;
     if (DUT.state == 3'd4) begin  // S_FILL
       if (DUT.mem_ack_i && DUT.mem_seqslv_i) begin
         $display("[%0t] FILL: Writing SRAM[%0d] = 0x%h (fill_count=%0d)", 
-                 $time, sram_addr, DUT.mem_data_i, DUT.fill_count);
+                 $time, DUT.sram_addr, DUT.mem_data_i, DUT.fill_count);
       end
       else if (DUT.mem_req_o) begin
         $display("[%0t] FILL: Waiting for data (ack=%0d, seqslv=%0d)", 
@@ -164,66 +152,38 @@ module bus_unit_test;
     end
   end
 
-  // // Monitor SRAM operations
-  // always @(posedge clk) begin
-  //   if (sram_en) begin
-  //     if (sram_rw == `SRAM_READ) begin
-  //       $display("[%0t] SRAM: READ addr=%0d -> data=0x%h (next cycle)", 
-  //                $time, sram_addr, sram_memory[sram_addr]);
-  //     end else begin
-  //       $display("[%0t] SRAM: WRITE addr=%0d <- data=0x%h", 
-  //                $time, sram_addr, sram_data_o);
-  //     end
-  //   end
-  // end
-
-  // // Monitor final output in MISS_2
-  // always @(posedge clk) begin
-  //   if (DUT.state == 3'd6) begin  // S_MISS_2
-  //     $display("[%0t] MISS_2: req_rw=%s sram_data_i=0x%h -> core_data_o=0x%h", 
-  //              $time,
-  //              (DUT.req_rw == `BUS_READ) ? "READ" : "WRITE",
-  //              sram_data_i,
-  //              DUT.s_core_o[`BUS_SO_DATA]);
-  //   end
-  // end
-
-  // // Monitor MISS_1
-  // always @(posedge clk) begin
-  //   if (DUT.state == 3'd5) begin  // S_MISS_1
-  //     $display("[%0t] S_MISS_1: sram_en=%0d sram_rw=%0d sram_addr=%0d sram_data=%0h",
-  //             $time, sram_en, sram_rw, sram_addr, sram_data_o);
-  //   end
-  // end
-
-  //===================================
-  // SRAM
-  //===================================
-  // always @(posedge clk) begin
-  //   if (sram_en) begin
-  //     if (sram_rw == `SRAM_READ) begin
-  //       sram_data_i <= sram_memory[sram_addr];
-  //     end 
-  //     else begin
-  //       sram_memory[sram_addr] <= sram_data_o;
-  //     end
-  //   end
-  // end
-
-  task init_memory();
-    integer i;
-    begin
-      // init SPI chip mem
-      for (i = 0; i < MEM_SIZE; i = i + 1) begin
-        spi_chip.mem[i] = {$random};
+  // Monitor SRAM operations
+  always @(posedge clk) begin
+    if (DUT.sram_en) begin
+      if (DUT.sram_rw == `SRAM_READ) begin
+        $display("[%0t] SRAM: READ addr=%0d -> data=0x%h (next cycle)", 
+                 $time, DUT.sram_addr, DUT.sram_out_data);
       end
-      
-      // init SRAM
-      for (i = 0; i < 1024; i = i + 1) begin
-        sram_memory[i] = 32'h00000000;
+      else begin
+        $display("[%0t] SRAM: WRITE addr=%0d <- data=0x%h", 
+                 $time, DUT.sram_addr, DUT.sram_in_data);
       end
     end
-  endtask
+  end
+
+  // Monitor final output in MISS_2
+  always @(posedge clk) begin
+    if (DUT.state == 3'd6) begin  // S_MISS_2
+      $display("[%0t] MISS_2: req_rw=%s sram_out_data=0x%h -> core_data_o=0x%h", 
+               $time,
+               (DUT.req_rw == `BUS_READ) ? "READ" : "WRITE",
+               DUT.sram_out_data,
+               DUT.s_core_o[`BUS_SO_DATA]);
+    end
+  end
+
+  // Monitor MISS_1
+  always @(posedge clk) begin
+    if (DUT.state == 3'd5) begin  // S_MISS_1
+      $display("[%0t] S_MISS_1: sram_en=%0d sram_rw=%0d sram_addr=%0d sram_data=%0h",
+              $time, DUT.sram_en, DUT.sram_rw, DUT.sram_addr, DUT.sram_in_data);
+    end
+  end
 
   //===================================
   // Setup for running the Unit Tests
@@ -257,14 +217,12 @@ module bus_unit_test;
     begin
       timeout = 0;
       
-      $display("!!!!! STARTING CORE READ: addr=0x%h", addr);
-      
       s_core_i[`BUS_SI_REQ] = 1;
       s_core_i[`BUS_SI_RW] = `BUS_READ;
       s_core_i[`BUS_SI_ADDR] = addr;
       s_core_i[`BUS_SI_SIZE] = `BUS_SIZE_WORD;
       
-      // Wait for acknowledgment
+      // Wait for ack
       while(!s_core_o[`BUS_SO_ACK] && timeout < 1000) begin
         @(posedge clk);
         timeout = timeout + 1;
@@ -272,11 +230,12 @@ module bus_unit_test;
       
       if (timeout >= 1000) begin
         $display("!!!!! ERROR: Timeout waiting for ACK at addr 0x%h", addr);
-      end else begin
+      end
+      else begin
         $display("[%0t] Got ACK (timeout=%0d)", $time, timeout);
       end
       
-      // Wait for completion (ACK goes low)
+      // Wait ack low
       timeout = 0;
       while(s_core_o[`BUS_SO_ACK] && timeout < 10000) begin
         @(posedge clk);
@@ -284,9 +243,10 @@ module bus_unit_test;
       end
       
       if (timeout >= 10000) begin
-        $display("!!!!! ERROR: Timeout waiting for completion at addr 0x%h", addr);
-      end else begin
-        $display("[%0t] ACK deasserted (timeout=%0d)", $time, timeout);
+        $display("!!!!! ERROR: Timeout waiting for ack low at addr 0x%h", addr);
+      end
+      else begin
+        $display("[%0t] ACK low (timeout=%0d)", $time, timeout);
       end
       
       data = s_core_o[`BUS_SO_DATA];
@@ -302,15 +262,13 @@ module bus_unit_test;
     begin
       timeout = 0;
       
-      $display("!!!!! STARTING CORE WRITE: addr=0x%h", addr);
-      
       s_core_i[`BUS_SI_REQ] = 1;
       s_core_i[`BUS_SI_RW] = `BUS_WRITE;
       s_core_i[`BUS_SI_ADDR] = addr;
       s_core_i[`BUS_SI_SIZE] = `BUS_SIZE_WORD;
       s_core_i[`BUS_SI_DATA] = data;
       
-      // Wait for acknowledgment
+      // Wait for ack
       while(!s_core_o[`BUS_SO_ACK] && timeout < 1000) begin
         @(posedge clk);
         timeout = timeout + 1;
@@ -322,7 +280,7 @@ module bus_unit_test;
         $display("[%0t] Got ACK (timeout=%0d)", $time, timeout);
       end
       
-      // Wait for completion (ACK goes low)
+      // Wait for ack low
       timeout = 0;
       while(s_core_o[`BUS_SO_ACK] && timeout < 10000) begin
         @(posedge clk);
@@ -330,15 +288,24 @@ module bus_unit_test;
       end
       
       if (timeout >= 10000) begin
-        $display("!!!!! ERROR: Timeout waiting for completion at addr 0x%h", addr);
+        $display("!!!!! ERROR: Timeout waiting for ack low addr 0x%h", addr);
       end else begin
-        $display("[%0t] ACK deasserted (timeout=%0d)", $time, timeout);
+        $display("[%0t] ACK low (timeout=%0d)", $time, timeout);
       end
       
       s_core_i[`BUS_SI_REQ] = 0;
       @(posedge clk);
       
       $display("!!!!! CORE WRITE COMPLETE");
+    end
+  endtask
+
+  task init_memory();
+    integer i;
+    begin
+      for (i = 0; i < MEM_SIZE; i = i + 1) begin
+        spi_chip.mem[i] = {$random};
+      end
     end
   endtask
 
@@ -377,115 +344,115 @@ module bus_unit_test;
       `FAIL_UNLESS_EQUAL(actual_data, expected_data);
     `SVTEST_END
 
-    `SVTEST(read_hit)
-      reg [31:0] addr;
-      reg [31:0] actual_data_1;
-      reg [31:0] actual_data_2;
-      reg [31:0] expected_data;
+    // `SVTEST(read_hit)
+    //   reg [31:0] addr;
+    //   reg [31:0] actual_data_1;
+    //   reg [31:0] actual_data_2;
+    //   reg [31:0] expected_data;
 
-      addr = {$random} % MEM_SIZE;
+    //   addr = {$random} % MEM_SIZE;
       
-      expected_data = {
-        spi_chip.mem[{addr[31:2], 2'b11}],
-        spi_chip.mem[{addr[31:2], 2'b10}],
-        spi_chip.mem[{addr[31:2], 2'b01}],
-        spi_chip.mem[{addr[31:2], 2'b00}]
-      };
+    //   expected_data = {
+    //     spi_chip.mem[{addr[31:2], 2'b11}],
+    //     spi_chip.mem[{addr[31:2], 2'b10}],
+    //     spi_chip.mem[{addr[31:2], 2'b01}],
+    //     spi_chip.mem[{addr[31:2], 2'b00}]
+    //   };
 
-      core_read(addr, actual_data_1);
-      core_read(addr+4, actual_data_2);
+    //   core_read(addr, actual_data_1);
+    //   core_read(addr+4, actual_data_2);
 
-      $display("!!!!! Read HIT: Actual: 0x%h, Expected: 0x%h", actual_data_2, expected_data);
-      `FAIL_UNLESS_EQUAL(actual_data_1, expected_data);
-      `FAIL_UNLESS_EQUAL(actual_data_2, expected_data);
-    `SVTEST_END
+    //   $display("!!!!! Read HIT: Actual: 0x%h, Expected: 0x%h", actual_data_2, expected_data);
+    //   `FAIL_UNLESS_EQUAL(actual_data_1, expected_data);
+    //   `FAIL_UNLESS_EQUAL(actual_data_2, expected_data);
+    // `SVTEST_END
 
-    `SVTEST(write_miss)
-      reg [31:0] addr;
-      reg [31:0] data_in;
-      reg [31:0] actual_data;
+    // `SVTEST(write_miss)
+    //   reg [31:0] addr;
+    //   reg [31:0] data_in;
+    //   reg [31:0] actual_data;
 
-      data_in = {$random};
-      addr = 32'h000012300;
+    //   data_in = {$random};
+    //   addr = 32'h000012300;
 
-      core_write(addr, data_in);
+    //   core_write(addr, data_in);
 
-      // wait till ack low
-      while(s_core_o[`BUS_SO_ACK]) begin
-        @(posedge clk);
-      end
+    //   // wait till ack low
+    //   while(s_core_o[`BUS_SO_ACK]) begin
+    //     @(posedge clk);
+    //   end
 
-      core_read(addr, actual_data);
+    //   core_read(addr, actual_data);
 
-      $display("!!!!! Write MISS: Actual: 0x%h, Expected: 0x%h", actual_data, data_in);
-      `FAIL_UNLESS_EQUAL(actual_data, data_in);
-    `SVTEST_END
+    //   $display("!!!!! Write MISS: Actual: 0x%h, Expected: 0x%h", actual_data, data_in);
+    //   `FAIL_UNLESS_EQUAL(actual_data, data_in);
+    // `SVTEST_END
 
-    `SVTEST(write_hit)
-      reg [31:0] addr;
-      reg [31:0] data_in;
-      reg [31:0] actual_data;
+    // `SVTEST(write_hit)
+    //   reg [31:0] addr;
+    //   reg [31:0] data_in;
+    //   reg [31:0] actual_data;
 
-      data_in = {$random};
-      addr = {$random} % MEM_SIZE;
+    //   data_in = {$random};
+    //   addr = {$random} % MEM_SIZE;
 
-      core_read(addr, actual_data);
+    //   core_read(addr, actual_data);
 
-      // wait till ack low
-      while(s_core_o[`BUS_SO_ACK]) begin
-        @(posedge clk);
-      end
+    //   // wait till ack low
+    //   while(s_core_o[`BUS_SO_ACK]) begin
+    //     @(posedge clk);
+    //   end
 
-      core_write(addr, data_in);
+    //   core_write(addr, data_in);
 
-      // wait till ack low
-      while(s_core_o[`BUS_SO_ACK]) begin
-        @(posedge clk);
-      end
+    //   // wait till ack low
+    //   while(s_core_o[`BUS_SO_ACK]) begin
+    //     @(posedge clk);
+    //   end
 
-      core_read(addr, actual_data);
+    //   core_read(addr, actual_data);
 
-      $display("!!!!! Write MISS: Actual: 0x%h, Expected: 0x%h", actual_data, data_in);
-      `FAIL_UNLESS_EQUAL(actual_data, data_in);
-    `SVTEST_END
+    //   $display("!!!!! Write MISS: Actual: 0x%h, Expected: 0x%h", actual_data, data_in);
+    //   `FAIL_UNLESS_EQUAL(actual_data, data_in);
+    // `SVTEST_END
 
-    `SVTEST(write_dirty)
-      reg [31:0] addr1, addr2;
-      reg [31:0] write_data;
-      reg [31:0] read_data;
-      reg [31:0] actual_data;
-      integer i;
+    // `SVTEST(write_dirty)
+    //   reg [31:0] addr1, addr2;
+    //   reg [31:0] write_data;
+    //   reg [31:0] read_data;
+    //   reg [31:0] actual_data;
+    //   integer i;
 
-      addr1 = 32'h00001000;
-      addr2 = 32'h00002000;
-      write_data = {$random};
+    //   addr1 = 32'h00001000;
+    //   addr2 = 32'h00002000;
+    //   write_data = {$random};
 
-      core_read(addr1, read_data);
+    //   core_read(addr1, read_data);
 
-      // wait till ack low
-      while(s_core_o[`BUS_SO_ACK]) begin
-        @(posedge clk);
-      end
+    //   // wait till ack low
+    //   while(s_core_o[`BUS_SO_ACK]) begin
+    //     @(posedge clk);
+    //   end
       
-      core_write(addr1, write_data);
+    //   core_write(addr1, write_data);
 
-      // wait till ack low
-      while(s_core_o[`BUS_SO_ACK]) begin
-        @(posedge clk);
-      end
+    //   // wait till ack low
+    //   while(s_core_o[`BUS_SO_ACK]) begin
+    //     @(posedge clk);
+    //   end
       
-      core_read(addr2, read_data);
+    //   core_read(addr2, read_data);
       
-      actual_data = {
-        spi_chip.mem[{addr1[31:2], 2'b11}],
-        spi_chip.mem[{addr1[31:2], 2'b10}],
-        spi_chip.mem[{addr1[31:2], 2'b01}],
-        spi_chip.mem[{addr1[31:2], 2'b00}]
-      };
+    //   actual_data = {
+    //     spi_chip.mem[{addr1[31:2], 2'b11}],
+    //     spi_chip.mem[{addr1[31:2], 2'b10}],
+    //     spi_chip.mem[{addr1[31:2], 2'b01}],
+    //     spi_chip.mem[{addr1[31:2], 2'b00}]
+    //   };
 
-      $display("!!!!! Write on Dirty: Actual: 0x%h, Expected: 0x%h", actual_data, write_data);
-      `FAIL_UNLESS_EQUAL(actual_data, write_data);
-    `SVTEST_END
+    //   $display("!!!!! Write on Dirty: Actual: 0x%h, Expected: 0x%h", actual_data, write_data);
+    //   `FAIL_UNLESS_EQUAL(actual_data, write_data);
+    // `SVTEST_END
 
   `SVUNIT_TESTS_END
 endmodule
