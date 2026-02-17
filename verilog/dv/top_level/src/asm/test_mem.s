@@ -35,11 +35,26 @@ clrp (111)
 () addi $r6, $r6, 6
 () addi $r7, $r7, -7
 
+
+; single store as a test, 
+() sw $r1, 32[$r0]
+() nop
+() nop
+() nop
+() lw $r1, 32[$r0]
+() nop
+() nop
+() nop
+
+
 ; Store
 () sw $r1, 0[$r0]
-() sb $r1, 4[$r0]
-(001) sw $r1, 8[$r0]
-(001) sb $r1, 12[$r0] ; 28
+() sw $r2, 4[$r0]
+() sb $r7, 8[$r0]
+(001) sw $r1, 12[$r0]
+(001) sb $r1, 16[$r0]
+
+; Load
 () lw $r8, 0[$r0]
 () lb $r9, 4[$r0];
 (001) lw $r10, 8[$r0]

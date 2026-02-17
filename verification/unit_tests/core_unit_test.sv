@@ -46,6 +46,12 @@ module core_m_unit_test;
   wire [`BUS_SIPORT] sportai;
   wire [`BUS_SOPORT] sportao;
 
+  wire[`BUS_ADDR_PORT] maddr = mportao[`BUS_MO_ADDR];
+  wire[`BUS_DATA_PORT] mdata = mportao[`BUS_MO_DATA];
+  wire mrw = mportao[`BUS_MO_RW];
+  wire mreq = mportao[`BUS_MO_REQ];
+
+
   //===================================
   // This is the UUT that we're 
   // running the Unit Tests on
@@ -87,10 +93,11 @@ module core_m_unit_test;
 
   wire spi_clk1;
   wire spi_cs1;
-  wire [3:0] spi_mosi1;
+  wire [3:0] spi_mosi1, spi_sio_en;
   wire [3:0] spi_miso1;
   wire spi_dqsmi1;
   wire spi_dqsmo1;
+  wire spi_dqsm_en;
 
   spi_mem_m #(MEM_BASE_ADDR, MEM_SIZE) spi_mem1(
     .clk_i(clk),
@@ -104,7 +111,9 @@ module core_m_unit_test;
     .spi_mosi_o(spi_mosi1),
     .spi_miso_i(spi_miso1),
     .spi_dqsm_i(spi_dqsmi1),
-    .spi_dqsm_o(spi_dqsmo1)
+    .spi_dqsm_o(spi_dqsmo1),
+    .spi_dqsm_en_o(spi_dqsm_en),
+    .spi_sio_en_o(spi_sio_en)
   );
 
   spi_chip_m #(5, 1, MEM_SIZE) spi_chip1(
@@ -442,46 +451,52 @@ module core_m_unit_test;
     clk_rst.RESET();
     clk_rst.WAIT_CYCLES(3);
 
-    for(i = 0; i < 34; i = i + 1) begin
+    for(i = 0; i < 50; i = i + 1) begin
       @(negedge clk);
-      inst = i_mem[i];
       if(stallo) begin
         @(negedge stallo);
+        @(negedge clk);
       end
+      inst = i_mem[i];
     end
 
+    for(i = 0; i < 36; i = i + 1) begin
+      $display("mem[%d] = 0x%h", i, spi_chip1.mem[i]);
+    end
 
-$display("1");
+        //SPI CHIP mem check
+        `FAIL_UNLESS_EQUAL(spi_chip1.mem[0], 8'hFF);
+        `FAIL_UNLESS_EQUAL(spi_chip1.mem[1], 8'hFF);
+        `FAIL_UNLESS_EQUAL(spi_chip1.mem[2], 8'hFF);
+        `FAIL_UNLESS_EQUAL(spi_chip1.mem[3], 8'hFF);
+        `FAIL_UNLESS_EQUAL(spi_chip1.mem[4], 8'h02);
+        `FAIL_UNLESS_EQUAL(spi_chip1.mem[5], 8'h00);
+        `FAIL_UNLESS_EQUAL(spi_chip1.mem[6], 8'h00);
+        `FAIL_UNLESS_EQUAL(spi_chip1.mem[7], 8'h00);
+        `FAIL_UNLESS_EQUAL(spi_chip1.mem[8], 8'hF9);
+        `FAIL_UNLESS_EQUAL(spi_chip1.mem[32], 8'hFF);
+        `FAIL_UNLESS_EQUAL(spi_chip1.mem[33], 8'hFF);
+        `FAIL_UNLESS_EQUAL(spi_chip1.mem[34], 8'hFF);
+        `FAIL_UNLESS_EQUAL(spi_chip1.mem[35], 8'hFF);
+        
+        //regfile check
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[0], 32'h00000000);
-$display("2");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[1], 32'hFFFFFFFF);
-$display("3");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[2], 32'h00000002);
-$display("4");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[3], 32'hFFFFFFFD);
-$display("5");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[4], 32'h00000004);
-$display("6");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[5], 32'hFFFFFFFB);
-$display("7");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[6], 32'h00000006);
-$display("8");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[7], 32'hFFFFFFF9);
 $display("9 0x%H", my_core_m.regfile.mem[8]);
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[8], 32'hFFFFFFFF);
 $display("10 0x%H", my_core_m.regfile.mem[9]);
-        `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[9], 32'hFFFFFFFF);
-$display("11");
+        `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[9], 32'h00000002);
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[10], 32'h00000000);
-$display("12");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[11], 32'h00000000);
-$display("13");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[12], 32'h00000000);
-$display("14");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[13], 32'h00000000);
-$display("15");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[14], 32'h00000000);
-$display("16");
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[15], 32'h00000000);
 
   `SVTEST_END

@@ -46,6 +46,7 @@ module core_m(
     localparam BUS_PREP_STATE = 0;
     localparam BUS_WAIT_STATE = 1;
     localparam BUS_TRANSACTION_STATE = 2;
+    localparam BUS_BACK2BACK_STATE = 3;
     reg[1:0] bus_state;
     reg[1:0] next_bus_state;
 
@@ -70,6 +71,7 @@ module core_m(
     wire[`CTL_SIGS_WIDTH-1:0] decoder_output;
     wire[`CTL_SIGS_WIDTH-1:0] dec_ctl_sigs;
     wire[`WORD_WIDTH-1:0] dec_inst;
+    wire[`REG_DEST_WIDTH-1:0] dec_r2_addr;
     wire[`WORD_WIDTH-1:0] dec_global_r1_data;
     wire[`WORD_WIDTH-1:0] dec_global_r2_data;
     wire[`WORD_WIDTH-1:0] regfile_r1_data;
@@ -119,6 +121,7 @@ module core_m(
     wire[`WORD_WIDTH-1:0] fwd_a_data;
     wire[`WORD_WIDTH-1:0] fwd_b_data;
     reg[`REG_SOURCE_WIDTH-1:0] fwd_r1_addr;
+    reg[`REG_SOURCE_WIDTH-1:0] fwd_r2_addr;
 
     //decode modules
     decoder_m decoder (
@@ -133,7 +136,7 @@ module core_m(
         .wr_data_i(wb_data),
         .wr_addr_i(wb_addr),
         .r1_addr_i(dec_inst[`R1_LOCAL_IDX]),
-        .r2_addr_i(dec_inst[`R2_LOCAL_IDX]),
+        .r2_addr_i(dec_r2_addr),
 
         .r1_data_o(regfile_r1_data),
         .r2_data_o(regfile_r2_data),
@@ -187,7 +190,7 @@ module core_m(
     //forwarding module
     forward_m forward(
         .ex_r1_addr(fwd_r1_addr),
-        .ex_r2_addr(ex_inst[`R2_IDX]),
+        .ex_r2_addr(fwd_r2_addr),
 
         .wb_dest_addr({2'b0, wb_inst[`REG_DEST_IDX]}),
         .wb_data(wb_data),
@@ -209,6 +212,7 @@ module core_m(
     assign dec_inst = piped_inst[`STAGE_SLICE(DEC_STAGE, `WORD_WIDTH)];
     assign dec_global_r1_data = piped_r1_data[`STAGE_SLICE(DEC_STAGE, `WORD_WIDTH)];
     assign dec_global_r2_data = piped_r2_data[`STAGE_SLICE(DEC_STAGE, `WORD_WIDTH)];
+    assign dec_r2_addr = (dec_ctl_sigs[`IS_STORE_IDX]) ? dec_inst[`REG_DEST_IDX] : dec_inst[`R2_LOCAL_IDX];
     assign dec_r1_data = (dec_ctl_sigs[`R1_USE_GLOBAL_VAL_IDX] == 1) ? dec_global_r1_data : regfile_r1_data;
     assign dec_r2_data = (dec_ctl_sigs[`R2_USE_GLOBAL_VAL_IDX] == 1) ? dec_global_r2_data : regfile_r2_data;    
     
@@ -292,6 +296,11 @@ module core_m(
             default:
                 fwd_r1_addr = ex_inst[`R1_IDX];
         endcase
+
+        if(ex_ctl_sigs[`IS_STORE_IDX] | ex_ctl_sigs[`IS_LOAD_IDX])
+            fwd_r2_addr = {2'b0, ex_inst[`REG_DEST_IDX]};
+        else
+            fwd_r2_addr = ex_inst[`R2_IDX];
     end
 
     always @ (posedge clk_i, negedge nrst_i) begin
@@ -342,7 +351,7 @@ module core_m(
 
                     piped_r2_data[`STAGE_SLICE(DEC_STAGE, `WORD_WIDTH)] <= global_r2_data_i;
                     piped_r2_data[`STAGE_SLICE(EX_STAGE, `WORD_WIDTH)] <= dec_r2_data;
-                    piped_r2_data[`STAGE_SLICE(MEM_STAGE, `WORD_WIDTH)] <= piped_r2_data[`STAGE_SLICE(EX_STAGE, `WORD_WIDTH)];
+                    piped_r2_data[`STAGE_SLICE(MEM_STAGE, `WORD_WIDTH)] <= ex_r2_data;
 
                     //decode signal pipelines
 
@@ -388,21 +397,31 @@ module core_m(
         next_bus_state <= bus_state;
 
         case(bus_state)
-            BUS_PREP_STATE: begin
+            BUS_PREP_STATE: begin //prepare for a bus transaction
                 stall_o <= 0;
                 if(ex_ctl_sigs[`IS_LOAD_IDX] | ex_ctl_sigs[`IS_STORE_IDX]) begin
                     next_bus_state <= BUS_WAIT_STATE;
                 end
             end
-            BUS_WAIT_STATE: begin
+            BUS_WAIT_STATE: begin //wait for the slave to ack
                 stall_o <= 1;
                 if(mport_i[`BUS_MI_ACK])
                     next_bus_state <= BUS_TRANSACTION_STATE;
             end
-            BUS_TRANSACTION_STATE: begin
+            BUS_TRANSACTION_STATE: begin //begin transfer data and wait for slave to unack
                 stall_o <= 1;
-                if(!mport_i[`BUS_MI_ACK])
-                    next_bus_state <= BUS_PREP_STATE;
+                if(!mport_i[`BUS_MI_ACK]) begin
+                    if(ex_ctl_sigs[`IS_LOAD_IDX] | ex_ctl_sigs[`IS_STORE_IDX])
+                        next_bus_state <= BUS_BACK2BACK_STATE;
+                    else
+                        next_bus_state <= BUS_PREP_STATE;
+
+                end
+            end
+            BUS_BACK2BACK_STATE: begin //handle back to back transactions
+                stall_o <= 0;
+                next_bus_state <= BUS_WAIT_STATE;
+
             end
             default: begin
                 stall_o <= 0;
@@ -415,8 +434,8 @@ module core_m(
             default: mport_o[`BUS_MO_REQ] <= 0;
         endcase
 
-        mport_o[`BUS_MO_ADDR] <= piped_r2_data[`STAGE_SLICE(MEM_STAGE, `WORD_WIDTH)];
-        mport_o[`BUS_MO_DATA] <= piped_alu_result[`STAGE_SLICE(MEM_STAGE, `WORD_WIDTH)];
+        mport_o[`BUS_MO_ADDR] <= piped_alu_result[`STAGE_SLICE(MEM_STAGE, `WORD_WIDTH)];
+        mport_o[`BUS_MO_DATA] <= piped_r2_data[`STAGE_SLICE(MEM_STAGE, `WORD_WIDTH)];
         mport_o[`BUS_MO_SEQMST] <= 0;
         mport_o[`BUS_MO_SIZE] <= (mem_ctl_sigs[`BYTE_MEM_OP_IDX] == 1) ? `BUS_SIZE_BYTE : `BUS_SIZE_WORD;
         mport_o[`BUS_MO_RW] <= (mem_ctl_sigs[`IS_STORE_IDX] == 1) ? `BUS_WRITE : `BUS_READ;
