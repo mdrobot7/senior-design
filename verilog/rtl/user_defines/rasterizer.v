@@ -1,0 +1,28 @@
+/*
+ * Internal file, DO NOT INCLUDE! Only include user_defines.v!
+ */
+
+`define SC_WIDTH ($clog2((`WIDTH) > (`HEIGHT) ? (`WIDTH) : (`HEIGHT)))
+
+`define COLOR_WIDTH (8)
+`define COLOR `COLOR_WIDTH - 1:0
+
+`define TEX_DIM_WIDTH (16)
+`define TEX_DIM `TEX_DIM_WIDTH - 1:0
+
+`define WORD_SMAX (1 << (`WORD_WIDTH - 2))
+
+`define DIVIDER_WIDTH (`DECIMAL_POS + `WORD_WIDTH)
+`define DIVIDER_USERS (3)
+
+`define RAST_WAVG_OUT_WIDTH (`SC_WIDTH * 2 + `WORD_WIDTH * 3)
+`define RAST_DT_OUT_WIDTH (`SC_WIDTH * 2 + `WORD_WIDTH * 3)
+`define RAST_TS_OUT_WIDTH (`COLOR_WIDTH + `SC_WIDTH * 2 + `WORD_WIDTH * 3)
+
+`define WAVG_DIV_SHIFT (6)
+
+// Shaded vertices (sizes are temporary)
+`define SHADED_VERTEX_WIDTH (32)
+`define SHADED_VERTEX (`SHADED_VERTEX_WIDTH-1):0
+
+`define VERTEX_ORDER_TARGET_CACHE `NUM_CORES
