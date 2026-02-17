@@ -20,6 +20,7 @@ module rasterizer_m #(
 
     input wire [`BUS_ADDR_PORT] tex_addr_i,
     input wire [`TEX_DIM] tex_width_i,
+    input wire [`TEX_DIM] tex_height_i,
     input wire fb_i,
 
     input wire [WORD_WIDTH - 1:0] t0x,
@@ -135,6 +136,21 @@ module rasterizer_m #(
 
     wire [`STREAM_MIPORT(`RAST_TS_OUT_WIDTH)] tex_streami;
     wire [`STREAM_MOPORT(`RAST_TS_OUT_WIDTH)] tex_streamo;
+
+    wire [`STREAM_SIPORT(2 * `DIVIDER_WIDTH)] bary_div_si;
+    wire [`STREAM_SOPORT(2 * `DIVIDER_WIDTH)] bary_div_so;
+    wire [`STREAM_MIPORT(`DIVIDER_WIDTH)] bary_div_mi;
+    wire [`STREAM_MOPORT(`DIVIDER_WIDTH)] bary_div_mo;
+
+    wire [`STREAM_SIPORT(2 * `DIVIDER_WIDTH)] wavg0_div_si;
+    wire [`STREAM_SOPORT(2 * `DIVIDER_WIDTH)] wavg0_div_so;
+    wire [`STREAM_MIPORT(`DIVIDER_WIDTH)] wavg0_div_mi;
+    wire [`STREAM_MOPORT(`DIVIDER_WIDTH)] wavg0_div_mo;
+
+    wire [`STREAM_SIPORT(2 * `DIVIDER_WIDTH)] wavg1_div_si;
+    wire [`STREAM_SOPORT(2 * `DIVIDER_WIDTH)] wavg1_div_so;
+    wire [`STREAM_MIPORT(`DIVIDER_WIDTH)] wavg1_div_mi;
+    wire [`STREAM_MOPORT(`DIVIDER_WIDTH)] wavg1_div_mo;
 
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin
@@ -279,7 +295,13 @@ module rasterizer_m #(
         .v1z(v1z),
         .v2x(v2x),
         .v2y(v2y),
-        .v2z(v2z)
+        .v2z(v2z),
+        
+        .div_mstream_i(bary_div_so),
+        .div_mstream_o(bary_div_si),
+
+        .div_sstream_i(bary_div_mo),
+        .div_sstream_o(bary_div_mi)
     );
 
     bary_check_pipe_m bary_check_pipe(
@@ -314,7 +336,19 @@ module rasterizer_m #(
 
         .v0z(v0z),
         .v1z(v1z),
-        .v2z(v2z)
+        .v2z(v2z),
+
+        .div0_mstream_i(wavg0_div_so),
+        .div0_mstream_o(wavg0_div_si),
+
+        .div0_sstream_i(wavg0_div_mo),
+        .div0_sstream_o(wavg0_div_mi),
+
+        .div1_mstream_i(wavg1_div_so),
+        .div1_mstream_o(wavg1_div_si),
+
+        .div1_sstream_i(wavg1_div_mo),
+        .div1_sstream_o(wavg1_div_mi)
     );
 
     stream_fifo_m #(`RAST_WAVG_OUT_WIDTH) wavg_fifo_pipe(
@@ -358,7 +392,8 @@ module rasterizer_m #(
         .mport_o(tex_mport_o),
 
         .tex_addr_i(tex_addr_i),
-        .tex_width_i(tex_width_i)
+        .tex_width_i(tex_width_i),
+        .tex_height_i(tex_height_i)
     );
 
     mem_write_m mem_write(
@@ -374,6 +409,17 @@ module rasterizer_m #(
         .mport_o(pix_mport_o),
         
         .fb_i(fb)
+    );
+
+    shared_div_rasterizer_m divider(
+        .clk_i(clk_i),
+        .nrst_i(nrst_i),
+
+        .sstreams_i({ bary_div_si, wavg0_div_si, wavg1_div_si }),
+        .sstreams_o({ bary_div_so, wavg0_div_so, wavg1_div_so }),
+        
+        .mstreams_i({ bary_div_mi, wavg0_div_mi, wavg1_div_mi }),
+        .mstreams_o({ bary_div_mo, wavg0_div_mo, wavg1_div_mo })
     );
 
 endmodule

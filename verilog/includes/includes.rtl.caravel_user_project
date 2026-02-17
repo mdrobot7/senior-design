@@ -14,11 +14,18 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Caravel user project includes
+-v $(USER_PROJECT_VERILOG)/rtl/user_defines/bus_stream.v
+-v $(USER_PROJECT_VERILOG)/rtl/user_defines/common_misc.v
+-v $(USER_PROJECT_VERILOG)/rtl/user_defines/core.v
+-v $(USER_PROJECT_VERILOG)/rtl/user_defines/rasterizer.v
+-v $(USER_PROJECT_VERILOG)/rtl/user_defines/vga.v
 -v $(USER_PROJECT_VERILOG)/rtl/user_defines.v
 -v $(USER_PROJECT_VERILOG)/rtl/user_project_wrapper.v
 
 -v $(USER_PROJECT_VERILOG)/../library/wishbone_helper/verilog/rtl/wishbone_helper.v
 
+-v $(USER_PROJECT_VERILOG)/rtl/test/bus_master.v
+-v $(USER_PROJECT_VERILOG)/rtl/test/bus_slave.v
 -v $(USER_PROJECT_VERILOG)/rtl/test/debug_log_config.v
 -v $(USER_PROJECT_VERILOG)/rtl/test/debug_log.v
 -v $(USER_PROJECT_VERILOG)/rtl/test/virtual_vga.v
@@ -29,10 +36,8 @@
 -v $(USER_PROJECT_VERILOG)/rtl/test/clk_rst.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/bus/busarb.v
--v $(USER_PROJECT_VERILOG)/rtl/bus/busslave.v
 -v $(USER_PROJECT_VERILOG)/rtl/bus/word_stripe_cache.v
 -v $(USER_PROJECT_VERILOG)/rtl/bus/byte_stripe_cache.v
--v $(USER_PROJECT_VERILOG)/rtl/bus/virtual_master.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/core/alu.v
 -v $(USER_PROJECT_VERILOG)/rtl/core/core.v
@@ -50,11 +55,16 @@
 -v $(USER_PROJECT_VERILOG)/rtl/math/inv.v
 -v $(USER_PROJECT_VERILOG)/rtl/math/div_pipe.v
 -v $(USER_PROJECT_VERILOG)/rtl/math/div_pipe_rasterizer.v
+-v $(USER_PROJECT_VERILOG)/rtl/math/shared_div.v
+-v $(USER_PROJECT_VERILOG)/rtl/math/shared_div_rasterizer.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/rasterizer.v
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/bary_pipe.v
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/bary_check_pipe.v
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/wavg_pipe.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/wavg_pipe0.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/wavg_pipe1.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/wavg_pipe2.v
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/depth_test.v
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/tex_sample.v
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/mem_write.v

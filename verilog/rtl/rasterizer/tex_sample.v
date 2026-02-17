@@ -12,7 +12,8 @@ module tex_sample_m(
     output reg  [`BUS_MOPORT] mport_o,
 
     input  wire [`BUS_ADDR_PORT] tex_addr_i,
-    input  wire [`TEX_DIM] tex_width_i
+    input  wire [`TEX_DIM] tex_width_i,
+    input  wire [`TEX_DIM] tex_height_i
 );
 
     `DL_DEFINE(logger, "tex_sample_m", `DL_MAGENTA, 1);
@@ -20,6 +21,7 @@ module tex_sample_m(
     reg out_ready;
     reg [`COLOR] color;
     reg [`SC_WIDTH - 1:0] posx, posy;
+    reg [`WORD_WIDTH - 1:0] _tx, _ty;
     reg [`WORD_WIDTH - 1:0] tx, ty;
     reg [`WORD_WIDTH - 1:0] depth;
 
@@ -49,6 +51,12 @@ module tex_sample_m(
                         state <= 1;
 
                         { posx, posy, tx, ty, depth } = sstream_i[`STREAM_SI_DATA(`RAST_DT_OUT_WIDTH)];
+
+                        if (_tx > tex_width_i) tx = tex_width_i - 1;
+                        if (_tx < 0) tx = 0;
+
+                        if (_ty > tex_height_i) ty = tex_height_i - 1;
+                        if (_ty < 0) tx = 0;
 
                         addr <= tex_addr_i + tx;
                     end

@@ -1,10 +1,14 @@
+`ifdef SVUNIT
+  `include "test/debug_log.v"
+`endif
+
 module spi_chip_m #(
     parameter LATENCY_COUNT = 7,
     parameter PRE_CYCLES = 1,
     parameter SIZE = 1024
 ) (
     input  wire       clk_i,
-    
+
     input  wire       cs_i,
     input  wire [3:0] mosi_i,
     output reg  [3:0] miso_o,
@@ -77,7 +81,7 @@ module spi_chip_m #(
             begin : LATENCY
                 integer latency;
                 reg collision;
-                
+
                 collision = {$random} % 2;
 
                 latency = LATENCY_COUNT - 3;
@@ -109,7 +113,7 @@ module spi_chip_m #(
                     wait(clk_i);
                     #delay;
                     dqsm_o = 1;
-                    
+
                     wait(!clk_i);
                     #delay;
                     dqsm_o = 0;
@@ -129,7 +133,7 @@ module spi_chip_m #(
                     dqsm_o = 0;
 
                     miso_o = mem[addr][3:0];
-                    
+
                     wait(clk_i || cs_i);
                     #delay;
                     dqsm_o = 1;

@@ -63,7 +63,8 @@ module vga_unit_test;
       .clk_i(clk),
       .nrst_i(nrst),
       .sport_i(sportai),
-      .sport_o(sportao)
+      .sport_o(sportao),
+      .bad_read_o()
   );
 
   reg resolution_detected;
@@ -94,11 +95,12 @@ module vga_unit_test;
   reg enable;
   reg [3:0] prescaler;
   reg [3:0] resolution;
-  reg fb;
+  reg [`WORD] fb_addr;
 
-  vga_m #(FB0_ADDR, FB1_ADDR) my_vga (
+  vga_m my_vga (
     .clk_i(clk),
     .nrst_i(nrst),
+
     .enable_i(enable),
     .prescaler_i(prescaler),
     .resolution_i(resolution),
@@ -110,9 +112,13 @@ module vga_unit_test;
     .base_v_fporch_i(base_v_fporch),
     .base_v_sync_i(base_v_sync),
     .base_v_bporch_i(base_v_bporch),
+
     .mport_i(mportai),
     .mport_o(mportao),
-    .fb_i(fb),
+
+    .fb_addr_i(fb_addr),
+    .word_color_i(0),
+
     .pixel_o(pixel),
     .hsync_o(hsync),
     .vsync_o(vsync)
@@ -187,7 +193,7 @@ module vga_unit_test;
   `SVTEST(test_320x240_fb0)
     prescaler = 1;
     resolution = `VGA_RES_320x240;
-    fb = 0;
+    fb_addr = FB0_ADDR;
     clk_rst_slow.WAIT_CYCLES(1);
     enable = 1;
     test_fb(0, `VGA_RES_320x240);
@@ -196,7 +202,7 @@ module vga_unit_test;
   `SVTEST(test_160x120_fb0)
     prescaler = 1;
     resolution = `VGA_RES_160x120;
-    fb = 0;
+    fb_addr = FB0_ADDR;
     clk_rst_slow.WAIT_CYCLES(1);
     enable = 1;
     test_fb(0, `VGA_RES_160x120);
@@ -205,7 +211,7 @@ module vga_unit_test;
   `SVTEST(test_80x60_fb0)
     prescaler = 1;
     resolution = `VGA_RES_80x60;
-    fb = 0;
+    fb_addr = FB0_ADDR;
     clk_rst_slow.WAIT_CYCLES(1);
     enable = 1;
     test_fb(0, `VGA_RES_80x60);
@@ -214,7 +220,7 @@ module vga_unit_test;
   `SVTEST(test_320x240_fb1)
     prescaler = 1;
     resolution = `VGA_RES_320x240;
-    fb = 1;
+    fb_addr = FB1_ADDR;
     clk_rst_slow.WAIT_CYCLES(1);
     enable = 1;
     test_fb(1, `VGA_RES_320x240);
@@ -223,7 +229,7 @@ module vga_unit_test;
   `SVTEST(test_160x120_fb1)
     prescaler = 1;
     resolution = `VGA_RES_160x120;
-    fb = 1;
+    fb_addr = FB1_ADDR;
     clk_rst_slow.WAIT_CYCLES(1);
     enable = 1;
     test_fb(1, `VGA_RES_160x120);
@@ -232,7 +238,7 @@ module vga_unit_test;
   `SVTEST(test_80x60_fb1)
     prescaler = 1;
     resolution = `VGA_RES_80x60;
-    fb = 1;
+    fb_addr = FB1_ADDR;
     clk_rst_slow.WAIT_CYCLES(1);
     enable = 1;
     test_fb(1, `VGA_RES_80x60);
@@ -241,7 +247,7 @@ module vga_unit_test;
   `SVTEST(test_320x240_fb0_prescaled)
     prescaler = 5;
     resolution = `VGA_RES_320x240;
-    fb = 0;
+    fb_addr = FB0_ADDR;
     clk_fast_sel = 1; // clk_fast is 5x faster
     clk_rst_fast.WAIT_CYCLES(3); // TB quirk: VSYNC/HSYNC have to be perfectly in
                                  // phase with clk_slow, so delay a little. Won't
@@ -289,8 +295,16 @@ module vga_unit_test;
       end
 
       line_double_counter = line_double_counter + 1;
-      if (line_double_counter >= res)
+      if (line_double_counter >= res) begin
         line_double_counter = 0;
+
+        // Skip to the start of the next line in the framebuffer
+        case (res)
+          `VGA_RES_320x240: mem_idx = mem_idx + (320 - 320);
+          `VGA_RES_160x120: mem_idx = mem_idx + (320 - 160);
+          `VGA_RES_80x60:   mem_idx = mem_idx + (320 - 80);
+        endcase
+      end
       else
         mem_idx = mem_idx - 640 / res; // Go back to the start of the line, double it
     end

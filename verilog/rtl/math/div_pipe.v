@@ -1,16 +1,16 @@
 // adapted from https://github.com/risclite/verilog-divider/blob/master/divfunc.v
 
-`ifdef SIM
 // enable this when you want any performance
-// `define SIM_DIV
-`endif
+`define SIM_DIV
 
 module div_pipe_m #(
     parameter WIDTH = 32,
     parameter [WIDTH - 1:0] STAGE_LOCS = 0,
 
-    parameter IN_SIZE = 2 * WIDTH,
-    parameter OUT_SIZE = WIDTH
+    parameter EXTRA_WIDTH = 0,
+
+    parameter IN_SIZE = 2 * WIDTH + EXTRA_WIDTH,
+    parameter OUT_SIZE = WIDTH + EXTRA_WIDTH
 ) (
     input wire clk_i,
     input wire nrst_i,
@@ -33,20 +33,25 @@ module div_pipe_m #(
     reg  [`STREAM_MOPORT(OUT_SIZE)] temp_streamo;
 
     wire [WIDTH * 2 - 1:0] in_data;
-    assign in_data = sstream_i[`STREAM_SI_DATA(IN_SIZE)];
+    wire [EXTRA_WIDTH - 1:0] extra_data;
+    assign {extra_data, in_data} = sstream_i[`STREAM_SI_DATA(IN_SIZE)];
+
+    wire signed [WIDTH - 1:0] a, b;
+    assign a = in_data[1 * WIDTH+:WIDTH];
+    assign b = in_data[0 * WIDTH+:WIDTH];
     
     wire signed [WIDTH - 1:0] y;
 
-    assign y = in_data[1 * WIDTH+:WIDTH] / in_data[0 * WIDTH+:WIDTH];
+    assign y = a / b;
 
     always @(*) begin
         sstream_o[`STREAM_SO_READY(IN_SIZE)]  <= temp_streami[`STREAM_MI_READY(OUT_SIZE)];
         temp_streamo[`STREAM_MO_LAST(OUT_SIZE)]  <= sstream_i[`STREAM_SI_LAST(IN_SIZE)];
         temp_streamo[`STREAM_MO_VALID(OUT_SIZE)] <= sstream_i[`STREAM_SI_VALID(IN_SIZE)];
-        temp_streamo[`STREAM_MO_DATA(OUT_SIZE)]  <= y;
+        temp_streamo[`STREAM_MO_DATA(OUT_SIZE)]  <= { extra_data, y };
     end
 
-    stream_fifo_m #(OUT_SIZE, 4) fifo(
+    stream_fifo_m #(OUT_SIZE, 40) fifo(
         .clk_i(clk_i),
         .nrst_i(nrst_i),
 
@@ -60,7 +65,8 @@ module div_pipe_m #(
 `else
 
     wire [WIDTH * 2 - 1:0] in_data;
-    assign in_data = sstream_i[`STREAM_SI_DATA(IN_SIZE)];
+    wire [EXTRA_WIDTH - 1:0] in_extra;
+    assign { in_extra, in_data } = sstream_i[`STREAM_SI_DATA(IN_SIZE)];
 
     wire signed [WIDTH - 1:0] a, b;
     assign a = in_data[1 * WIDTH+:WIDTH];
@@ -72,6 +78,7 @@ module div_pipe_m #(
     reg [WIDTH - 1:0] dividend [WIDTH:0];
     reg [WIDTH - 1:0] divisor  [WIDTH:0];
     reg [WIDTH - 1:0] quotient [WIDTH:0];
+    reg [EXTRA_WIDTH - 1:0] extra [WIDTH:0];
 
     always @(*) begin
         negate[0]       <= (a < 0) ^ (b < 0);
@@ -85,6 +92,8 @@ module div_pipe_m #(
         else       divisor[0]      <= b;
         
         quotient[0]     <= 0;
+
+        extra[0] <= in_extra;
     end
 
     always @(*) begin
@@ -93,10 +102,10 @@ module div_pipe_m #(
         mstream_o[`STREAM_MO_VALID(OUT_SIZE)] <= present[WIDTH];
 
         if (negate[WIDTH]) begin
-            mstream_o[`STREAM_MO_DATA(OUT_SIZE)]  <= -quotient[WIDTH];
+            mstream_o[`STREAM_MO_DATA(OUT_SIZE)]  <= { extra[WIDTH], -quotient[WIDTH] };
         end
         else begin
-            mstream_o[`STREAM_MO_DATA(OUT_SIZE)]  <= quotient[WIDTH];
+            mstream_o[`STREAM_MO_DATA(OUT_SIZE)]  <= { extra[WIDTH], quotient[WIDTH] };
         end
 
         mstream_o[`STREAM_MO_LAST(OUT_SIZE)]  <= 0;
@@ -127,6 +136,7 @@ module div_pipe_m #(
                         dividend[i + 1] <= 0;
                         divisor[i + 1]  <= 0;
                         quotient[i + 1] <= 0;
+                        extra[i + 1] <= 0;
                     end
                     else if (clk_i) begin
                         if (ready[i + 1]) begin
@@ -135,6 +145,7 @@ module div_pipe_m #(
                             dividend[i + 1] <= d;
                             divisor[i + 1]  <= divisor[i];
                             quotient[i + 1] <= quotient[i] | (q << (WIDTH - i - 1));
+                            extra[i + 1] <= extra[i];
                         end
                     end
                 end
@@ -146,6 +157,7 @@ module div_pipe_m #(
                     dividend[i + 1] <= d;
                     divisor[i + 1]  <= divisor[i];
                     quotient[i + 1] <= quotient[i] | (q << (WIDTH - i - 1));
+                    extra[i + 1] <= extra[i];
                 end
             end
 
