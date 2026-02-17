@@ -17,6 +17,7 @@
 -v $(USER_PROJECT_VERILOG)/rtl/user_defines/bus_stream.v
 -v $(USER_PROJECT_VERILOG)/rtl/user_defines/common_misc.v
 -v $(USER_PROJECT_VERILOG)/rtl/user_defines/core.v
+-v $(USER_PROJECT_VERILOG)/rtl/user_defines/core_controller.v
 -v $(USER_PROJECT_VERILOG)/rtl/user_defines/rasterizer.v
 -v $(USER_PROJECT_VERILOG)/rtl/user_defines/vga.v
 -v $(USER_PROJECT_VERILOG)/rtl/user_defines.v
