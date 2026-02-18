@@ -35,13 +35,13 @@ def run_cmd(cmd, project_root):
         ok = proc.returncode == 0
     return ok
 
-p = argparse.ArgumentParser(description="Area optimizer: maximize density then minimize die area.")
-p.add_argument("modulename", help="openlane design name")
+p = argparse.ArgumentParser(description="Area optimizer")
+p.add_argument("modulename", help="openlane directory name")
 p.add_argument("-a", "--area", type=int, metavar="N", default=None,
                 help="best guess area in μm²; start optimization from this area and work down")
 p.add_argument("-r", "--rect", action="store_true",default=False, 
-                help="try rectangular dimensions once an optimal square area has been found")
-p.add_argument("-d", "--density", metavar="N", type=float, default=None,
+                help="try rectangular dimensions once an optimal square area has been found") 
+p.add_argument("-d", "--density", metavar="N", type=float, default=None, 
                 help="set a known target density, will skip target density optimization")
 p.add_argument("-s", "--start-density", metavar="N", type=float, default=None,
                 help="starting density for search")
@@ -73,7 +73,6 @@ cmd = f"bash -c 'source /local/toolchain/activate 2>/dev/null || true; cd {proje
 density_interval = 0.05
 max_density = 1.0
 
-
 with open(config_path, 'r') as f:
     config_data = json.load(f)
 
@@ -81,6 +80,7 @@ with open(config_path, 'r') as f:
 synth_candidates = ["AREA 0", "AREA 1", "AREA 2", "AREA 3"]
 chosen_synth = None
 
+#Checks if synth strat is area or delay
 if synth_strat is not None:
     parsed_index = None
     is_area = synth_strat.startswith("AREA ")
@@ -94,7 +94,7 @@ if synth_strat is not None:
             except ValueError:
                 parsed_index = None
     
-    # If AREA 0-3: try starting from that index, fallback to next AREA candidates
+# Try AREA synth strats
     if is_area and parsed_index is not None and 0 <= parsed_index <= 3:
         start_index = parsed_index
         print(f"Starting SYNTH_STRATEGY search from {synth_strat}")
@@ -130,6 +130,7 @@ if synth_strat is not None:
             print(f"SYNTH_STRATEGY {synth_strat} failed; config does not synthesize.")
             sys.exit(1)
 else:
+    #not given a starting start so will start from 0
     print("No SYNTH_STRATEGY override provided trying AREA 0, AREA 1, AREA 2, AREA 3.")
     for strategy in synth_candidates:
         print(f"Trying SYNTH_STRATEGY = {strategy}")
@@ -140,16 +141,15 @@ else:
 
         if ok:
             chosen_synth = strategy
-            print(f"SYNTH_STRATEGY {strategy} works; using it for optimization.\n")
+            print(f"SYNTH_STRATEGY {strategy} works\n")
             break
         else:
-            print(f"SYNTH_STRATEGY {strategy} failed, trying next.\n")
+            print(f"SYNTH_STRATEGY {strategy} failed.\n")
 
     if chosen_synth is None:
-        print("None of AREA 0–AREA 3 synthesized successfully. Check your config (area may be too small).")
+        print("None of AREA 0-AREA 3 synthesized successfully.")
         sys.exit(1)
 
-# ensure config_data has the chosen strategy
 config_data["SYNTH_STRATEGY"] = chosen_synth
 
 base_density_lo = start_density if start_density is not None else config_data["PL_TARGET_DENSITY"]
