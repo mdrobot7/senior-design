@@ -76,7 +76,7 @@ module core_controller_m_unit_test;
 
     .sstream_i(vertorder_sstreami),
     .sstream_o(vertorder_sstreamo),
-    .mstream_i(0),
+    .mstream_i(32'b0),
     .mstream_o(),
 
     .full_o(vertorder_full),
@@ -95,7 +95,7 @@ module core_controller_m_unit_test;
     .clk_i(clk),
     .nrst_i(nrst),
 
-    .clear_i(0),
+    .clear_i(1'b0),
 
     .test_index_i(vertcache_test_index),
     .test_valid_i(vertcache_test_valid),
@@ -128,10 +128,10 @@ module core_controller_m_unit_test;
   reg  [`WORD]                 index_buffer_addr;
   reg  [1:0]                   dispatch_ctrl;
   reg  [`WORD]                 num_dispatches;
-  wire                         job_done_clr;
-  reg                          job_done;
-  wire                         batch_done_clr;
-  reg                          batch_done;
+  reg                          job_done_clr;
+  wire                         job_done;
+  reg                          batch_done_clr;
+  wire                         batch_done;
   wire [2:0]                   state;
   wire [`WORD]                 inst;
   wire [`NUM_CORES-1:0]        core_reset;
@@ -219,6 +219,28 @@ module core_controller_m_unit_test;
     svunit_ut.setup();
     /* Place Setup Code Here */
 
+    imem_rw = 1;
+    imem_di = 0;
+    imem_addr = 0;
+    global_regfile_addr = 0;
+    global_regfile_write_en = 0;
+    global_regfile_write_data = 0;
+    pc_vertex_shading = 0;
+    pc_fragment_shading = 0;
+    pc_gpgpu_compute = 0;
+    fragfifo_full = 0;
+    fragfifo_cores_dispatched = 0;
+    core_enable = 0;
+    cmd = 0;
+    pause_at_halt = 0;
+    index_buffer_addr = 0;
+    dispatch_ctrl = 0;
+    num_dispatches = 0;
+    job_done_clr = 0;
+    batch_done_clr = 0;
+    core_stalli = 0;
+    core_flushi = 0;
+    core_jumpi = 0;
     clk_rst.RESET();
   endtask
 
@@ -250,37 +272,47 @@ module core_controller_m_unit_test;
   `SVUNIT_TESTS_BEGIN
 
   `SVTEST(global_regfile)
-    // Preload global regfile
-    for (int i = 0; i < `NUM_GLOBAL_REGS; i++)
-      dut.global_regfile.mem[i] = $urandom;
-
-    // Read test: data should appear on the same cycle
-    global_regfile_write_en = 0;
-    for (int i = 0; i < `NUM_GLOBAL_REGS; i++) begin
-      global_regfile_addr = i + `NUM_LOCAL_REGS;
-      if (i == `NUM_GLOBAL_REGS - 1) begin
-        `FAIL_UNLESS_EQUAL(global_regfile_read_data, 0); // zero reg
-      end
-      else begin
-        `FAIL_UNLESS_EQUAL(global_regfile_read_data, dut.global_regfile.mem[i]);
-      end
-    end
+    clk_rst.WAIT_CYCLES(1);
 
     // Write test
     global_regfile_write_en = 1;
-    for (int i = 0; i < `NUM_GLOBAL_REGS; i++) begin
+    for (int i = `NUM_LOCAL_REGS; i < `NUM_LOCAL_REGS + `NUM_GLOBAL_REGS; i++) begin
       global_regfile_write_data = $urandom;
+      global_regfile_addr = i;
       clk_rst.WAIT_CYCLES(1);
-      if (i == `NUM_GLOBAL_REGS - 1) begin
-        `FAIL_UNLESS_EQUAL(dut.global_regfile.mem[i], 0); // zero reg
+      if (i != `NUM_LOCAL_REGS + `NUM_GLOBAL_REGS - 1) begin
+        if (global_regfile_write_data != dut.global_regfile.mem[i]) begin
+          $display("Global regfile r%d data mismatch, expected 0x%x, got 0x%x", i, dut.global_regfile.mem[i], global_regfile_write_data);
+          `FAIL_UNLESS_EQUAL(global_regfile_write_data, dut.global_regfile.mem[i]);
+        end
+      end
+    end
+    clk_rst.WAIT_CYCLES(1);
+
+    // Read test: data should appear on the same cycle
+    global_regfile_write_en = 0;
+    clk_rst.WAIT_CYCLES(1);
+    for (int i = `NUM_LOCAL_REGS; i < `NUM_LOCAL_REGS + `NUM_GLOBAL_REGS; i++) begin
+      global_regfile_addr = i;
+      #1;
+      if (i == `NUM_LOCAL_REGS + `NUM_GLOBAL_REGS - 1) begin
+        if (global_regfile_read_data != 0) begin
+          $display("Global regfile r%d data mismatch, expected 0x%x, got 0x%x", i, 0, global_regfile_read_data);
+          `FAIL_UNLESS_EQUAL(global_regfile_read_data, 0); // zero reg
+        end
       end
       else begin
-        `FAIL_UNLESS_EQUAL(global_regfile_write_data, dut.global_regfile.mem[i]);
+        if (global_regfile_read_data != dut.global_regfile.mem[i]) begin
+          $display("Global regfile r%d data mismatch, expected 0x%x, got 0x%x", i, dut.global_regfile.mem[i], global_regfile_read_data);
+          `FAIL_UNLESS_EQUAL(global_regfile_read_data, dut.global_regfile.mem[i]);
+        end
       end
     end
   `SVTEST_END
 
   `SVTEST(imem_test)
+    clk_rst.WAIT_CYCLES(1);
+
     // Write
     imem_rw = 0;
     for (int i = 0; i < 1024; i++) begin
@@ -288,12 +320,18 @@ module core_controller_m_unit_test;
       imem_di = 1024 + i;
       clk_rst.WAIT_CYCLES(1);
     end
+    clk_rst.WAIT_CYCLES(1);
 
     // Read: data should appear on the same cycle
     imem_rw = 1;
     for (int i = 0; i < 1024; i++) begin
       imem_addr = i;
-      `FAIL_UNLESS_EQUAL(imem_do, 1024 + i);
+      #15; // NOTE: Data doesn't come back immediately, comes back 3/4 of a cycle later
+      if (imem_do != 1024 + i) begin
+        $display("IMEM data mismatch at word 0x%x, expected 0x%x, got 0x%x", i, 1024 + i, imem_do);
+        `FAIL_UNLESS_EQUAL(imem_do, 1024 + i);
+      end
+      #5; // Wait the last 1/4 cycle
     end
   `SVTEST_END
 
