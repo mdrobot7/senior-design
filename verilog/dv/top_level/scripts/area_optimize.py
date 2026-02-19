@@ -7,7 +7,6 @@ import os
 import subprocess
 
 optimizer = "area_optimizer.py"
-# optimizer = "test_print.py"
 
 os.chdir("area_optimization")
 subprocess.run(["cp", f"{optimizer}", "../../../../.."])
