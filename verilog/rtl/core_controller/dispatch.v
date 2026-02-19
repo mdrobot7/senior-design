@@ -25,8 +25,8 @@ module dispatch_m #(
   input  wire         vertcache_test_found_i,
 
   // Vertex order buffer
-  input wire [`STREAM_SIPORT(`NUM_CORES_WIDTH)] vertorder_sstream_i,
-  output reg [`STREAM_SOPORT(`NUM_CORES_WIDTH)] vertorder_sstream_o,
+  input wire [`STREAM_SOPORT(`NUM_CORES_WIDTH)] vertorder_sstreamo_i,
+  output reg [`STREAM_SIPORT(`NUM_CORES_WIDTH)] vertorder_sstreami_o,
   input wire                                    vertorder_full_i,
 
   // Index fetcher
@@ -88,11 +88,6 @@ module dispatch_m #(
     .mstream_o(index_fetch_mstreamo)
   );
 
-  assign model_done_o           = dispatch_indices_i
-                                  ? index_fetch_model_done
-                                  : (thread_id == num_dispatches_i);
-  assign vertcache_test_index_o = index_fetch_mstreamo[`STREAM_MO_DATA(`WORD_WIDTH)];
-
   reg [3:0] state;
 
   reg [`WORD] thread_id;
@@ -102,15 +97,19 @@ module dispatch_m #(
   wire core_stall              = ~(1 << core_idx);
   wire core_stall_undispatched = {`NUM_CORES{1'b1}} << core_idx; // Handle partial dispatch by stalling cores without jobs
 
+  assign model_done_o           = dispatch_indices_i
+                                  ? index_fetch_model_done
+                                  : (thread_id == num_dispatches_i);
+  assign vertcache_test_index_o = index_fetch_mstreamo[`STREAM_MO_DATA(`WORD_WIDTH)];
+
   always @(posedge clk_i, negedge nrst_i) begin
     if (nrst_i) begin
       mport_o <= 0;
       vertcache_test_valid_o <= 0;
-      vertorder_sstream_o <= 0;
+      vertorder_sstreami_o <= 0;
       thread_id_o <= 0;
       core_stall_o <= {`NUM_CORES{1'b1}};
       dispatch_done_o <= 0;
-      model_done_o <= 0;
 
       index_fetch_mstreami <= 0;
       state <= STATE_DISABLED;
@@ -146,13 +145,13 @@ module dispatch_m #(
             if (!vertcache_test_found_i) begin
               // Dispatch to core
               thread_id_o <= index_fetch_mstreamo[`STREAM_MO_DATA(`WORD_WIDTH)];
-              vertorder_sstream_o[`STREAM_MO_DATA(`NUM_CORES_WIDTH)] <= core_idx;
+              vertorder_sstreami_o[`STREAM_SI_DATA(`NUM_CORES_WIDTH)] <= core_idx;
               core_stall_o <= core_stall;
               core_idx <= core_idx + 1;
             end
             else begin
               // Grab from cache
-              vertorder_sstream_o[`STREAM_MO_DATA(`NUM_CORES_WIDTH)] <= `NUM_CORES;
+              vertorder_sstreami_o[`STREAM_SI_DATA(`NUM_CORES_WIDTH)] <= `NUM_CORES;
               core_stall_o <= {`NUM_CORES{1'b1}};
             end
           end

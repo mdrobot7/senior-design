@@ -42,7 +42,7 @@ module index_fetch_m #(
   reg  [`STREAM_SIPORT(`WORD_WIDTH)] sstreami;
   wire [`STREAM_SOPORT(`WORD_WIDTH)] sstreamo;
   wire                               fifo_full  = !sstreamo[`STREAM_SO_READY(`WORD_WIDTH)];
-  wire                               fifo_empty = mstreamo[`STREAM_MO_VALID(`WORD_WIDTH)];
+  wire                               fifo_empty = mstream_o[`STREAM_MO_VALID(`WORD_WIDTH)];
   stream_fifo_m #(
       `WORD_WIDTH,
       CACHE_LEN_WORDS

@@ -40,8 +40,8 @@ module core_controller_wrapper_m #(
   input  wire         vertcache_test_found_i,
 
   // Vertex order buffer
-  input  wire [`STREAM_SIPORT(`NUM_CORES_WIDTH)] vertorder_sstream_i,
-  output wire [`STREAM_SOPORT(`NUM_CORES_WIDTH)] vertorder_sstream_o,
+  input  wire [`STREAM_SOPORT(`NUM_CORES_WIDTH)] vertorder_sstreamo_i,
+  output wire [`STREAM_SIPORT(`NUM_CORES_WIDTH)] vertorder_sstreami_o,
   input  wire                                    vertorder_full_i,
   input  wire                                    vertorder_empty_i,
 
@@ -72,15 +72,14 @@ module core_controller_wrapper_m #(
   wire                         imem_rw;
   wire [`WORD]                 imem_do;
   wire [`WORD]                 imem_di;
-  wire [`IMEM_ADDR_WIDTH-1:0]   imem_addr;
-  wire [`REG_SOURCE_WIDTH-1:0] global_regfile_write_addr;
-  wire [`REG_SOURCE_WIDTH-1:0] global_regfile_read_addr;
+  wire [`IMEM_ADDR_WIDTH-1:0]  imem_addr;
+  wire [`REG_SOURCE_WIDTH-1:0] global_regfile_addr;
   wire                         global_regfile_write_en;
   wire [`WORD]                 global_regfile_write_data;
   wire [`WORD]                 global_regfile_read_data;
-  wire [`IMEM_ADDR_WIDTH-1:0]   pc_vertex_shading;
-  wire [`IMEM_ADDR_WIDTH-1:0]   pc_fragment_shading;
-  wire [`IMEM_ADDR_WIDTH-1:0]   pc_gpgpu_compute;
+  wire [`IMEM_ADDR_WIDTH-1:0]  pc_vertex_shading;
+  wire [`IMEM_ADDR_WIDTH-1:0]  pc_fragment_shading;
+  wire [`IMEM_ADDR_WIDTH-1:0]  pc_gpgpu_compute;
   wire [`NUM_CORES-1:0]        core_enable;
   wire [1:0]                   cmd;
   wire                         pause_at_halt;
@@ -109,8 +108,7 @@ module core_controller_wrapper_m #(
     .imem_di_i(imem_di),
     .imem_addr_i(imem_addr),
 
-    .global_regfile_write_addr_i(global_regfile_write_addr),
-    .global_regfile_read_addr_i(global_regfile_read_addr),
+    .global_regfile_addr_i(global_regfile_addr),
     .global_regfile_write_en_i(global_regfile_write_en),
     .global_regfile_write_data_i(global_regfile_write_data),
     .global_regfile_read_data_o(global_regfile_read_data),
@@ -126,8 +124,8 @@ module core_controller_wrapper_m #(
     .vertcache_test_valid_o(vertcache_test_valid_o),
     .vertcache_test_found_i(vertcache_test_found_i),
 
-    .vertorder_sstream_i(vertorder_sstream_i),
-    .vertorder_sstream_o(vertorder_sstream_o),
+    .vertorder_sstreamo_i(vertorder_sstreamo_i),
+    .vertorder_sstreami_o(vertorder_sstreami_o),
     .vertorder_full_i(vertorder_full_i),
     .vertorder_empty_i(vertorder_empty_i),
 
@@ -140,10 +138,10 @@ module core_controller_wrapper_m #(
     .index_buffer_addr_i(index_buffer_addr),
     .dispatch_ctrl_i(dispatch_ctrl),
     .num_dispatches_i(num_dispatches),
+    .job_done_clr_i(job_done_clr),
+    .job_done_o(job_done),
     .batch_done_clr_i(batch_done_clr),
-    .job_done_o(batch_done),
-    .model_done_clr_i(model_done_clr),
-    .batch_done_o(model_done),
+    .batch_done_o(batch_done),
     .state_o(cc_state),
 
     .inst_o(inst_o),
@@ -158,7 +156,7 @@ module core_controller_wrapper_m #(
     .global_regfile_rs2_data_o(global_regfile_rs2_data_o)
   );
 
-  wire core_controller_enabled = (state ? 1 : 0);
+  wire core_controller_enabled = (cc_state ? 1 : 0);
 
   wire [`WORD] ctrl_reg;
   assign {pause_at_halt, dispatch_ctrl, cmd} = ctrl_reg[3:0];
@@ -397,7 +395,7 @@ module core_controller_wrapper_m #(
   );
 
   wire [`WORD] jobs_reg;
-  assign jobs = jobs_reg;
+  assign num_dispatches = jobs_reg;
   wishbone_register_m #(32'h00000000, 1, `WBREG_TYPE_REG) jobs (
     .wb_clk_i(wb_clk_i),
     .wb_rst_i(wb_rst_i),
@@ -421,12 +419,26 @@ module core_controller_wrapper_m #(
     .reg_o(jobs_reg)
   );
 
-  // Global regfile
+  // Global regfile defs
   wire global_regs_wb_we;
   wire global_regs_wb_ack;
   wire global_regs_wb_stb                      = (wbs_stbN & ({`NUM_GLOBAL_REGS{1'b1}} << NUM_CONTROL_REGS));
-  assign wbs_ackN[NUM_REGS-1:NUM_CONTROL_REGS] = global_regs_wb_ack;
-  assign wbs_datN[NUM_REGS-1:NUM_CONTROL_REGS] = global_regfile_read_data_o;
+
+  // Mux between the registers (similar to user_project_wrapper's addressing)
+  wire [$clog2(NUM_REGS)-1:0] word_offset = {2'b00, wbs_adr_i[31:2]};
+  always @ (*) begin
+    wbs_stbN = wbs_stb_control_i << word_offset; // Only one at a time
+    if (word_offset >= NUM_CONTROL_REGS) begin
+      wbs_ack_control_o = global_regs_wb_ack;
+      wbs_dat_control_o = global_regfile_read_data;
+    end
+    else begin
+      wbs_ack_control_o = wbs_ackN[word_offset];
+      wbs_dat_control_o = wbs_datN[word_offset];
+    end
+  end
+
+  // Global regfile
   lib_wishbone_helper global_regs_wb_helper (
     .wb_clk_i(wb_clk_i),
     .wbs_we_i(wbs_we_i),
@@ -437,18 +449,9 @@ module core_controller_wrapper_m #(
     .wbs_ack_o(global_regs_wb_ack)
   );
 
-  assign global_regfile_addr_i     = (word_offset - NUM_CONTROL_REGS + `NUM_LOCAL_REGS);
+  assign global_regfile_addr       = (word_offset - NUM_CONTROL_REGS + `NUM_LOCAL_REGS);
   assign global_regfile_write_en   = global_regs_wb_we;
   assign global_regfile_write_data = wbs_dat_i;
-
-  // Mux between the registers (similar to user_project_wrapper's addressing)
-  wire [$clog2(NUM_REGS)-1:0] word_offset = {2'b00, wbs_adr_i[31:2]};
-  always @ (*) begin
-    wbs_stbN = wbs_stb_control_i << word_offset; // Only one at a time
-    wbs_ack_control_o = wbs_ackN[word_offset];
-    wbs_dat_control_o = wbs_datN[word_offset];
-  end
-
 
   // IMEM (handled separately from config registers, but still included here
   // so everything's in one place)
@@ -519,8 +522,8 @@ module core_controller_m #(
   input  wire         vertcache_test_found_i,
 
   // Vertex order buffer
-  input  wire [`STREAM_SIPORT(`NUM_CORES_WIDTH)] vertorder_sstream_i,
-  output wire [`STREAM_SOPORT(`NUM_CORES_WIDTH)] vertorder_sstream_o,
+  input  wire [`STREAM_SOPORT(`NUM_CORES_WIDTH)] vertorder_sstreamo_i,
+  output wire [`STREAM_SIPORT(`NUM_CORES_WIDTH)] vertorder_sstreami_o,
   input  wire                                    vertorder_full_i,
   input  wire                                    vertorder_empty_i,
 
@@ -535,21 +538,21 @@ module core_controller_m #(
   input  wire [`WORD]          index_buffer_addr_i,
   input  wire [1:0]            dispatch_ctrl_i,
   input  wire [`WORD]          num_dispatches_i,    // Number of jobs (indices or ints) to dispatch
+  input  wire                  job_done_clr_i,      // 1: clear job done flag
+  output  reg                  job_done_o,          // 1: finished a shader program (i.e. reached a halt)
   input  wire                  batch_done_clr_i,    // 1: clear batch done flag
-  output  reg                  job_done_o,        // 1: finished a shader program (i.e. reached a halt)
-  input  wire                  model_done_clr_i,    // 1: clear model done flag
   output  reg                  batch_done_o,        // 1: finished num_dispatches_i jobs.
   output wire [2:0]            state_o,
 
   // Shader core interface
-  output wire [`WORD]           inst_o,
-  output wire [`NUM_CORES-1:0]  core_reset_o, // Core soft reset
+  output reg  [`WORD]           inst_o,
+  output reg  [`NUM_CORES-1:0]  core_reset_o, // Core soft reset
   input  wire [`NUM_CORES-1:0]  core_stall_i,
-  output wire [`NUM_CORES-1:0]  core_stall_o, // Per-core stall control
+  output reg  [`NUM_CORES-1:0]  core_stall_o, // Per-core stall control
   input  wire [`NUM_CORES-1:0]  core_flush_i,
-  output wire                   core_flush_o, // Flushes all stages on all cores
+  output reg                    core_flush_o, // Flushes all stages on all cores
   input  wire [`NUM_CORES-1:0]  core_jump_i,
-  output wire                   core_jump_o,  // Flushes decode on all cores
+  output reg                    core_jump_o,  // Flushes decode on all cores
   output wire [`WORD]           global_regfile_rs1_data_o,
   output wire [`WORD]           global_regfile_rs2_data_o
 );
@@ -575,34 +578,54 @@ module core_controller_m #(
   localparam STATE_PAUSED           = 5; // Manual pause by management core or step-through
   localparam STATE_HALTING          = 6; // Used for pause on halt and when a model finishes
 
+  reg [2:0] state;
+  reg [2:0] cur_prog;
+  reg [2:0] next_prog;
+
+  reg last_cmd_step; // 1: last command was a step
+
+  // PC, in *words*
+  reg [`IMEM_ADDR_WIDTH-1:0] pc;
+
+  // Call stack
+  reg [CALL_STACK_LEN-1:0]  call_stack[`IMEM_ADDR_WIDTH-1:0];
+  reg [CALL_STACK_BITS-1:0] call_stack_idx;
+
+  // Tracking jumps and halts through the core pipeline
+  reg  [1:0]                  halt_counter;
+  reg  [`JUMP_WIDTH-1:0]      jump_offsets [JUMP_STAGE-1:0];
+  reg  [JUMP_STAGE-1:0]       jump_type;
+  wire [`IMEM_ADDR_WIDTH-1:0] jump_jal_offset = pc + jump_offsets[1][22:2]; // Add word offset, not byte offset
+  wire [`IMEM_ADDR_WIDTH-1:0] jret_offset     = pc + call_stack[call_stack_idx][22:2];
+
   // IMEM
-  wire [`WORD_WIDTH-1:0] imem_do;
-  wire                   imem_addr = (state == STATE_STOPPED) ? imem_addr_i : pc; // In *words*
-  wire                   imem_rw   = (state == STATE_STOPPED) ? imem_rw_i   : 1;
+  wire [`WORD_WIDTH-1:0]      imem_do;
+  wire [`IMEM_ADDR_WIDTH-1:0] imem_addr = (state == STATE_STOPPED) ? imem_addr_i : pc; // In *words*
+  wire                        imem_rw   = (state == STATE_STOPPED) ? imem_rw_i   : 1;
 `ifndef FPGA
-  CF_SRAM_1024x32_macro #(`WORD_WIDTH, `IMEM_ADDR_WIDTH) imem (
+  CF_SRAM_1024x32_macro imem (
+`ifdef USE_POWER_PINS
+    .vpwrac(vpwrac),
+    .vpwrpc(vpwrpc),
+`endif
+
     .CLKin(clk_i),
     .DO(imem_do),
     .DI(imem_di_i),
     .BEN(32'hFFFFFFFF), // Write mask
     .AD(imem_addr),
-    .EN(1),
+    .EN(1'b1),
     .R_WB(imem_rw),
 
     // Test signals
-    .WLBI(0),
-    .WLOFF(0),
-    .TM(0),
-    .SM(0),
-    .ScanInCC(0),
-    .ScanInDL(0),
-    .ScanInDR(0),
-    .ScanOutCC(),
-
-`ifdef USE_POWER_PINS
-    .vpwrac(vpwrac),
-    .vpwrpc(vpwrpc)
-`endif
+    .WLBI(1'b0),
+    .WLOFF(1'b0),
+    .TM(1'b0),
+    .SM(1'b0),
+    .ScanInCC(1'b0),
+    .ScanInDL(1'b0),
+    .ScanInDR(1'b0),
+    .ScanOutCC()
   );
 `else
   (* ram_style = "block" *) reg [`WORD] imem [1023:0];
@@ -625,46 +648,6 @@ module core_controller_m #(
   wire [`REG_SOURCE_WIDTH-1:0] inst_rs2         = imem_do[`R2_IDX];
   wire [`JUMP_WIDTH-1:0]       inst_jump_offset = imem_do[`JUMP_IDX];
 
-  // Tracking jumps and halts through the core pipeline
-  reg  [1:0]                  halt_counter;
-  reg  [`JUMP_WIDTH-1:0]      jump_offsets [JUMP_STAGE-1:0];
-  reg  [JUMP_STAGE-1:0]       jump_type;
-  wire [`IMEM_ADDR_WIDTH-1:0] jump_jal_offset = pc + jump_offsets[1][22:2]; // Add word offset, not byte offset
-  wire [`IMEM_ADDR_WIDTH-1:0] jret_offset     = pc + call_stack[call_stack_idx][22:2];
-
-  // PC, in *words*
-  reg [`IMEM_ADDR_WIDTH-1:0] pc;
-
-  // Call stack
-  reg [CALL_STACK_LEN-1:0]  call_stack[`IMEM_ADDR_WIDTH-1:0];
-  reg [CALL_STACK_BITS-1:0] call_stack_idx;
-
-  // Global regfile
-  wire                         global_regfile_write_en    = (state == STATE_STOPPED)     ? global_regfile_write_en_i  : 0;
-  wire [`REG_SOURCE_WIDTH-1:0] global_regfile_r1_addr     = (state == STATE_STOPPED)     ? global_regfile_read_addr_i : inst_rs1;
-  wire [`WORD_WIDTH-1:0]       global_regfile_r1_data;
-  assign                       global_regfile_read_data_o = (state == STATE_STOPPED)     ? global_regfile_r1_data     : 0;
-  assign                       global_regfile_rs1_data_o  = (state == STATE_DISPATCHING) ? dispatch_thread_id         : global_regfile_r1_data;
-  regfile_m #(
-    `WORD_WIDTH,
-    `NUM_GLOBAL_REGS,
-    `NUM_LOCAL_REGS,
-    1,
-    `REG_SOURCE_WIDTH
-  ) global_regfile (
-    .clk_i(clk_i),
-    .nrst_i(nrst_i),
-
-    .wr_en_i(global_regfile_write_en),
-    .wr_addr_i(global_regfile_write_addr_i),
-    .wr_data_i(global_regfile_write_data_i),
-
-    .r1_addr_i(global_regfile_r1_addr),  // Muxed between the shader cores and wishbone interface
-    .r2_addr_i(inst_rs2),
-    .r1_data_o(global_regfile_r1_data),  // Muxed between the shader cores and wishbone interface
-    .r2_data_o(global_regfile_rs2_data_o)
-  );
-
   // Dispatch
   wire         dispatch_index_fetch_enable = (state != STATE_STOPPED);
   wire         dispatch_reset              = (state == STATE_STOPPED);
@@ -672,7 +655,7 @@ module core_controller_m #(
   wire         dispatch_indices            = (dispatch_ctrl_i == DISPATCH_CTRL_INDEX);
   wire [`WORD] dispatch_thread_id;
   wire [`WORD] dispatch_inst;
-  wire [`WORD] dispatch_core_stall;
+  wire [`NUM_CORES-1:0] dispatch_core_stall;
   wire         dispatch_done;
   wire         dispatch_model_done;
   dispatch_m #(
@@ -688,8 +671,8 @@ module core_controller_m #(
     .vertcache_test_valid_o(vertcache_test_valid_o),
     .vertcache_test_found_i(vertcache_test_found_i),
 
-    .vertorder_sstream_i(vertorder_sstream_i),
-    .vertorder_sstream_o(vertorder_sstream_o),
+    .vertorder_sstreamo_i(vertorder_sstreamo_i),
+    .vertorder_sstreami_o(vertorder_sstreami_o),
     .vertorder_full_i(vertorder_full_i),
 
     .index_buffer_addr_i(index_buffer_addr_i),
@@ -709,14 +692,38 @@ module core_controller_m #(
     .model_done_o(dispatch_model_done)
   );
 
+  // Global regfile
+  wire                         global_regfile_write_en    = (state == STATE_STOPPED)     ? global_regfile_write_en_i  : 0;
+  wire [`REG_SOURCE_WIDTH-1:0] global_regfile_r1_addr     = (state == STATE_STOPPED)     ? global_regfile_addr_i : inst_rs1;
+  wire [`WORD_WIDTH-1:0]       global_regfile_r1_data;
+  assign                       global_regfile_read_data_o = (state == STATE_STOPPED)     ? global_regfile_r1_data     : 0;
+  assign                       global_regfile_rs1_data_o  = (state == STATE_DISPATCHING) ? dispatch_thread_id         : global_regfile_r1_data;
+  regfile_m #(
+    `WORD_WIDTH,
+    `NUM_GLOBAL_REGS,
+    `NUM_LOCAL_REGS,
+    1,
+    `REG_SOURCE_WIDTH
+  ) global_regfile (
+    .clk_i(clk_i),
+    .nrst_i(nrst_i),
+
+    .wr_en_i(global_regfile_write_en),
+    .wr_addr_i(global_regfile_addr_i),
+    .wr_data_i(global_regfile_write_data_i),
+
+    .r1_addr_i(global_regfile_r1_addr),  // Muxed between the shader cores and wishbone interface
+    .r2_addr_i(inst_rs2),
+    .r1_data_o(global_regfile_r1_data),  // Muxed between the shader cores and wishbone interface
+    .r2_data_o(global_regfile_rs2_data_o),
+
+    .inbox_write_i(1'b0),
+    .inbox_i({`WORD_WIDTH * `CORE_MAILBOX_HEIGHT{1'b0}}),
+    .outbox_o()
+  );
+
   assign imem_do_o = (state == STATE_STOPPED) ? imem_do : 0;
   assign state_o  = state;
-
-  reg  [2:0] state;
-  reg  [2:0] cur_prog;
-  wire [2:0] next_prog;
-
-  reg last_cmd_step; // 1: last command was a step
 
   wire is_rasterization = (dispatch_ctrl_i != DISPATCH_CTRL_INDEX);
   wire should_dispatch  = (dispatch_ctrl_i != DISPATCH_CTRL_DISABLE && next_prog != STATE_FRAGMENT_SHADING);
@@ -729,7 +736,7 @@ module core_controller_m #(
       batch_done_o <= 0;
 
       halt_counter <= 0;
-      for (i = 0; i < JUMP_IDX; i++)
+      for (i = 0; i < JUMP_STAGE; i++)
         jump_offsets[i] <= 0;
       jump_type <= 0;
 
@@ -746,15 +753,15 @@ module core_controller_m #(
       last_cmd_step <= 0;
     end
     else if (clk_i) begin
-      if (batch_done_clr_i)
+      if (job_done_clr_i)
         job_done_o <= 0;
-      if (model_done_clr_i)
+      if (batch_done_clr_i)
         batch_done_o <= 0;
 
       case (state)
         STATE_STOPPED: begin
-          if (cmd_i == CORE_CTRL_CMD_RUN || cmd_i == CORE_CTRL_CMD_STEP) begin
-            last_cmd_step = (cmd_i == CORE_CTRL_CMD_STEP);
+          if (cmd_i == `CORE_CTRL_CMD_RUN || cmd_i == `CORE_CTRL_CMD_STEP) begin
+            last_cmd_step = (cmd_i == `CORE_CTRL_CMD_STEP);
 
             if (is_rasterization) begin
               cur_prog <= STATE_VERTEX_SHADING;
@@ -790,9 +797,9 @@ module core_controller_m #(
         end
         STATE_VERTEX_SHADING, STATE_FRAGMENT_SHADING, STATE_GPGPU_COMPUTE: begin
           case (cmd_i)
-            CORE_CTRL_CMD_STOP:  state <= STATE_STOPPED;
-            CORE_CTRL_CMD_PAUSE: state <= STATE_PAUSED;
-            CORE_CTRL_CMD_RUN, CORE_CTRL_CMD_STEP: begin
+            `CORE_CTRL_CMD_STOP:  state <= STATE_STOPPED;
+            `CORE_CTRL_CMD_PAUSE: state <= STATE_PAUSED;
+            `CORE_CTRL_CMD_RUN, `CORE_CTRL_CMD_STEP: begin
               if (!core_stall_i && last_cmd_step) begin
                 pc <= pc + 1;
 
@@ -800,7 +807,7 @@ module core_controller_m #(
                   last_cmd_step <= 0;
 
                 // Handle halt and program switchover
-                if (inst_opcode == OPCODE_HALT) begin
+                if (inst_opcode == `HALT_OPCODE) begin
                   job_done_o <= 1;
                   cur_prog <= next_prog;
                   if (pause_at_halt_i || next_prog == STATE_STOPPED)
@@ -815,9 +822,9 @@ module core_controller_m #(
                 // from any core. If jal, push to call stack.
                 jump_offsets[1] <= jump_offsets[0];
                 jump_type[1] <= jump_type[0];
-                if (inst_opcode == OPCODE_JUMP || inst_opcode == OPCODE_JAL) begin
+                if (inst_opcode == `JUMP_OPCODE || inst_opcode == `JAL_OPCODE) begin
                   jump_offsets[0] <= inst_jump_offset;
-                  jump_type[0] <= (inst_opcode == OPCODE_JAL) ? JUMP_TYPE_JAL : JUMP_TYPE_JUMP;
+                  jump_type[0] <= (inst_opcode == `JAL_OPCODE) ? JUMP_TYPE_JAL : JUMP_TYPE_JUMP;
                 end
                 if (core_jump_i) begin
                   if (jump_type[1] == JUMP_TYPE_JAL && call_stack_idx != CALL_STACK_LEN - 1) begin
@@ -831,7 +838,7 @@ module core_controller_m #(
                 end
 
                 // Handle jret: Jump immediately, jret can't be predicated
-                if (inst_opcode == OPCODE_JRET && call_stack_idx != 0) begin
+                if (inst_opcode == `JRET_OPCODE && call_stack_idx != 0) begin
                   // Call stack underflow is a nop
                   pc <= call_stack[call_stack_idx];
                   call_stack_idx <= call_stack_idx - 1;
@@ -842,11 +849,11 @@ module core_controller_m #(
         end
         STATE_PAUSED: begin
           case (cmd_i)
-            CORE_CTRL_CMD_RUN, CORE_CTRL_CMD_STEP: begin
-              last_cmd_step <= (cmd_i == CORE_CTRL_CMD_STEP);
+            `CORE_CTRL_CMD_RUN, `CORE_CTRL_CMD_STEP: begin
+              last_cmd_step <= (cmd_i == `CORE_CTRL_CMD_STEP);
               state <= cur_prog;
             end
-            CORE_CTRL_CMD_STOP: begin
+            `CORE_CTRL_CMD_STOP: begin
               state <= STATE_STOPPED;
             end
           endcase
@@ -857,7 +864,7 @@ module core_controller_m #(
             if (dispatch_model_done)
               batch_done_o <= 1;
             if (pause_at_halt_i) begin
-              if (cmd_i == CORE_CTRL_CMD_RUN || cmd_i == CORE_CTRL_CMD_STEP)
+              if (cmd_i == `CORE_CTRL_CMD_RUN || cmd_i == `CORE_CTRL_CMD_STEP)
                 state <= (should_dispatch ? STATE_DISPATCHING : next_prog);
             end
             else
@@ -865,7 +872,7 @@ module core_controller_m #(
           end
           else
             halt_counter <= halt_counter + 1;
-          if (cmd_i == CORE_CTRL_CMD_STOP)
+          if (cmd_i == `CORE_CTRL_CMD_STOP)
             state <= STATE_STOPPED;
         end
       endcase
