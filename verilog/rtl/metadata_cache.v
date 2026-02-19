@@ -83,10 +83,10 @@ localparam S_MISS_2 = 3'd6;
 
 // SRAM
 reg [9:0] sram_addr;   
-reg [31:0] sram_in_data;    // data input to sram
-reg sram_rw;                // 0 for write, 1 for read
+reg [31:0] sram_in_data;  // data input to sram
+reg sram_rw;              // 0 for write, 1 for read
 reg sram_en;            
-reg [31:0] sram_out_data;  // data output from sram
+reg [31:0] sram_out_data; // data output from sram
 
 parameter BEN = 32'hFFFFFFFF;
 parameter WLBI = 1'b0;
@@ -134,6 +134,7 @@ always @ (posedge clk_i) begin
     sram_en <= 0;
     mem_req_o <= 0;
     mem_seqmst_o <= 0;
+    mem_rw <= `BUS_READ;
     req_addr <= 0;
     req_data <= 0;
     req_rw <= `BUS_READ;
@@ -143,14 +144,15 @@ always @ (posedge clk_i) begin
     fill_count <= 0;
     wb_done <= 0;
     s_core_o[`BUS_SO_DATA] <= 0;
+    sram_rw <= `SRAM_READ;
   end
   else begin
     // defaults
-    mem_req_o <= 0;
-    mem_rw <= `BUS_READ;
-    mem_seqmst_o <= 0;
-    sram_en <= 0;
-    sram_rw <= `SRAM_READ;
+    // mem_req_o <= 0;
+    // mem_rw <= `BUS_READ;
+    // mem_seqmst_o <= 0;
+    // sram_en <= 0;
+    // sram_rw <= `SRAM_READ;
 
     case (state) 
 
@@ -207,7 +209,6 @@ always @ (posedge clk_i) begin
       state <= S_WAIT;
     end
     
-
     S_DIRTY: begin
       // write back to mem
       mem_req_o <= 1;

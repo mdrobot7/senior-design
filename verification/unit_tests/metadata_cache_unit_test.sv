@@ -7,6 +7,7 @@
 `include "test/clk_rst.v"
 `include "test/spi_chip.v"
 
+`timescale 1ns/1ns
 module bus_unit_test;
   import svunit_pkg::svunit_testcase;
 
@@ -85,7 +86,6 @@ module bus_unit_test;
     .dqsm_o(spi_dqsmi),
     .dqsm_i(spi_dqsmo)
   );
-
 
   //===================================
   // Build
