@@ -19,7 +19,7 @@ module core_controller_wrapper_m #(
   // Wishbone (control registers)
   input wire wbs_stb_control_i,
   output reg wbs_ack_control_o,
-  output reg [`WORD_WIDTH-1:0] wbs_dat_imem_o,
+  output reg [`WORD_WIDTH-1:0] wbs_dat_control_o,
 
   // Wishbone (IMEM)
   input wire wbs_stb_imem_i,
@@ -27,8 +27,8 @@ module core_controller_wrapper_m #(
   output reg [`WORD_WIDTH-1:0] wbs_dat_imem_o,
 
   // IRQs
-  output reg irq_jobdone_o;
-  output reg irq_batchdone_o;
+  output reg irq_jobdone_o,
+  output reg irq_batchdone_o,
 
   // PKBus
   input wire [`BUS_MIPORT] mport_i,
@@ -72,15 +72,15 @@ module core_controller_wrapper_m #(
   wire                         imem_rw;
   wire [`WORD]                 imem_do;
   wire [`WORD]                 imem_di;
-  wire [IMEM_ADDR_WIDTH-1:0]   imem_addr;
+  wire [`IMEM_ADDR_WIDTH-1:0]   imem_addr;
   wire [`REG_SOURCE_WIDTH-1:0] global_regfile_write_addr;
   wire [`REG_SOURCE_WIDTH-1:0] global_regfile_read_addr;
   wire                         global_regfile_write_en;
   wire [`WORD]                 global_regfile_write_data;
   wire [`WORD]                 global_regfile_read_data;
-  wire [IMEM_ADDR_WIDTH-1:0]   pc_vertex_shading;
-  wire [IMEM_ADDR_WIDTH-1:0]   pc_fragment_shading;
-  wire [IMEM_ADDR_WIDTH-1:0]   pc_gpgpu_compute;
+  wire [`IMEM_ADDR_WIDTH-1:0]   pc_vertex_shading;
+  wire [`IMEM_ADDR_WIDTH-1:0]   pc_fragment_shading;
+  wire [`IMEM_ADDR_WIDTH-1:0]   pc_gpgpu_compute;
   wire [`NUM_CORES-1:0]        core_enable;
   wire [1:0]                   cmd;
   wire                         pause_at_halt;
@@ -91,7 +91,7 @@ module core_controller_wrapper_m #(
   reg                          job_done;
   wire                         batch_done_clr;
   reg                          batch_done;
-  wire [2:0]                   state;
+  wire [2:0]                   cc_state;
   core_controller_m #(
     .INDEX_FETCH_CACHE_LEN_WORDS(INDEX_FETCH_CACHE_LEN_WORDS),
     .CALL_STACK_LEN(CALL_STACK_LEN)
@@ -144,7 +144,7 @@ module core_controller_wrapper_m #(
     .job_done_o(batch_done),
     .model_done_clr_i(model_done_clr),
     .batch_done_o(model_done),
-    .state_o(state),
+    .state_o(cc_state),
 
     .inst_o(inst_o),
     .core_reset_o(core_reset_o),
@@ -204,7 +204,7 @@ module core_controller_wrapper_m #(
     .enable_prot_i(0),
     .enable_i(0),
 
-    .reg_i({29'0, state}),
+    .reg_i({29'h0, cc_state}),
     .reg_o()
   );
 
@@ -292,7 +292,7 @@ module core_controller_wrapper_m #(
     .enable_prot_i(32'hFFFFFFFC),
     .enable_i(core_controller_enabled),
 
-    .reg_i({30'0, batch_done, job_done}),
+    .reg_i({30'h0, batch_done, job_done}),
     .reg_o(intflag_reg)
   );
 
@@ -434,7 +434,7 @@ module core_controller_wrapper_m #(
     .wbs_cyc_i(wbs_cyc_i),
     .wbs_sel_i(wbs_sel_i),
     .wbs_effective_we_o(global_regs_wb_we),
-    .wbs_ack_o(global_regs_wb_ack),
+    .wbs_ack_o(global_regs_wb_ack)
   );
 
   assign global_regfile_addr_i     = (word_offset - NUM_CONTROL_REGS + `NUM_LOCAL_REGS);
@@ -460,7 +460,7 @@ module core_controller_wrapper_m #(
     .wbs_cyc_i(wbs_cyc_i),
     .wbs_sel_i(wbs_sel_i),
     .wbs_effective_we_o(imem_wb_we),
-    .wbs_ack_o(wbs_ack_imem_o),
+    .wbs_ack_o(wbs_ack_imem_o)
   );
 
   assign imem_rw        = !imem_wb_we;
@@ -496,7 +496,7 @@ module core_controller_m #(
   input  wire                       imem_rw_i, // 1 = read, 0 = write
   output wire [`WORD]               imem_do_o,
   input  wire [`WORD]               imem_di_i,
-  input  wire [IMEM_ADDR_WIDTH-1:0] imem_addr_i,
+  input  wire [`IMEM_ADDR_WIDTH-1:0] imem_addr_i,
 
   // Global regfile
   input  wire [`REG_SOURCE_WIDTH-1:0] global_regfile_addr_i,
@@ -505,9 +505,9 @@ module core_controller_m #(
   output wire [`WORD]                 global_regfile_read_data_o,
 
   // PCs
-  input wire [IMEM_ADDR_WIDTH-1:0] pc_vertex_shading_i,
-  input wire [IMEM_ADDR_WIDTH-1:0] pc_fragment_shading_i,
-  input wire [IMEM_ADDR_WIDTH-1:0] pc_gpgpu_compute_i,
+  input wire [`IMEM_ADDR_WIDTH-1:0] pc_vertex_shading_i,
+  input wire [`IMEM_ADDR_WIDTH-1:0] pc_fragment_shading_i,
+  input wire [`IMEM_ADDR_WIDTH-1:0] pc_gpgpu_compute_i,
 
   // PKBus
   input  wire [`BUS_MIPORT] mport_i,
@@ -556,8 +556,6 @@ module core_controller_m #(
 
   localparam CALL_STACK_BITS = $clog2(CALL_STACK_LEN);
 
-  localparam IMEM_ADDR_WIDTH = 10;
-  localparam IMEM_ADDR_MAX   = (1 << IMEM_ADDR_MAX) - 1;
   localparam INST_NOP        = 32'h08000000;
 
   localparam DISPATCH_CTRL_DISABLE = 0;
@@ -582,7 +580,7 @@ module core_controller_m #(
   wire                   imem_addr = (state == STATE_STOPPED) ? imem_addr_i : pc; // In *words*
   wire                   imem_rw   = (state == STATE_STOPPED) ? imem_rw_i   : 1;
 `ifndef FPGA
-  sram_ip_wrapper imem(`WORD_WIDTH, IMEM_ADDR_WIDTH) (
+  CF_SRAM_1024x32_macro #(`WORD_WIDTH, `IMEM_ADDR_WIDTH) imem (
     .CLKin(clk_i),
     .DO(imem_do),
     .DI(imem_di_i),
@@ -629,13 +627,13 @@ module core_controller_m #(
 
   // Tracking jumps and halts through the core pipeline
   reg  [1:0]                  halt_counter;
-  reg  [`JUMP_WIDTH-1:0]      jump_offsets [JUMP_STAGE];
+  reg  [`JUMP_WIDTH-1:0]      jump_offsets [JUMP_STAGE-1:0];
   reg  [JUMP_STAGE-1:0]       jump_type;
   wire [`IMEM_ADDR_WIDTH-1:0] jump_jal_offset = pc + jump_offsets[1][22:2]; // Add word offset, not byte offset
   wire [`IMEM_ADDR_WIDTH-1:0] jret_offset     = pc + call_stack[call_stack_idx][22:2];
 
   // PC, in *words*
-  reg [IMEM_ADDR_WIDTH-1:0] pc;
+  reg [`IMEM_ADDR_WIDTH-1:0] pc;
 
   // Call stack
   reg [CALL_STACK_LEN-1:0]  call_stack[`IMEM_ADDR_WIDTH-1:0];
@@ -647,7 +645,13 @@ module core_controller_m #(
   wire [`WORD_WIDTH-1:0]       global_regfile_r1_data;
   assign                       global_regfile_read_data_o = (state == STATE_STOPPED)     ? global_regfile_r1_data     : 0;
   assign                       global_regfile_rs1_data_o  = (state == STATE_DISPATCHING) ? dispatch_thread_id         : global_regfile_r1_data;
-  regfile_m global_regfile(`WORD_WIDTH, `NUM_GLOBAL_REGS, `NUM_LOCAL_REGS`, 1, `REG_SOURCE_WIDTH) (
+  regfile_m #(
+    `WORD_WIDTH,
+    `NUM_GLOBAL_REGS,
+    `NUM_LOCAL_REGS,
+    1,
+    `REG_SOURCE_WIDTH
+  ) global_regfile (
     .clk_i(clk_i),
     .nrst_i(nrst_i),
 
@@ -672,8 +676,8 @@ module core_controller_m #(
   wire         dispatch_done;
   wire         dispatch_model_done;
   dispatch_m #(
-    INDEX_BUFFER_ADDR
-  ) (
+    INDEX_FETCH_CACHE_LEN_WORDS
+  ) dispatch (
     .clk_i(clk_i),
     .nrst_i(nrst_i),
 
@@ -702,7 +706,7 @@ module core_controller_m #(
     .core_stall_o(dispatch_core_stall),
 
     .dispatch_done_o(dispatch_done),
-    .model_done_o(dispatch_model_done),
+    .model_done_o(dispatch_model_done)
   );
 
   assign imem_do_o = (state == STATE_STOPPED) ? imem_do : 0;
@@ -747,7 +751,7 @@ module core_controller_m #(
       if (model_done_clr_i)
         batch_done_o <= 0;
 
-      case (state) begin
+      case (state)
         STATE_STOPPED: begin
           if (cmd_i == CORE_CTRL_CMD_RUN || cmd_i == CORE_CTRL_CMD_STEP) begin
             last_cmd_step = (cmd_i == CORE_CTRL_CMD_STEP);
@@ -771,7 +775,7 @@ module core_controller_m #(
         end
         STATE_DISPATCHING: begin
           if (dispatch_done) begin
-            case (next_prog) begin
+            case (next_prog)
               STATE_VERTEX_SHADING:
                 pc <= pc_vertex_shading_i;
               STATE_FRAGMENT_SHADING:
@@ -783,14 +787,11 @@ module core_controller_m #(
             dispatch_enable <= 0;
             state <= next_prog;
           end
+        end
         STATE_VERTEX_SHADING, STATE_FRAGMENT_SHADING, STATE_GPGPU_COMPUTE: begin
-          case (cmd_i) begin
-            CORE_CTRL_CMD_STOP: begin
-              state <= STATE_STOPPED;
-            end
-            CORE_CTRL_CMD_PAUSE: begin
-              state <= STATE_PAUSED;
-            end
+          case (cmd_i)
+            CORE_CTRL_CMD_STOP:  state <= STATE_STOPPED;
+            CORE_CTRL_CMD_PAUSE: state <= STATE_PAUSED;
             CORE_CTRL_CMD_RUN, CORE_CTRL_CMD_STEP: begin
               if (!core_stall_i && last_cmd_step) begin
                 pc <= pc + 1;
@@ -840,7 +841,7 @@ module core_controller_m #(
           endcase
         end
         STATE_PAUSED: begin
-          case (cmd_i) begin
+          case (cmd_i)
             CORE_CTRL_CMD_RUN, CORE_CTRL_CMD_STEP: begin
               last_cmd_step <= (cmd_i == CORE_CTRL_CMD_STEP);
               state <= cur_prog;
@@ -848,7 +849,7 @@ module core_controller_m #(
             CORE_CTRL_CMD_STOP: begin
               state <= STATE_STOPPED;
             end
-          end
+          endcase
         end
         STATE_HALTING: begin
           if (halt_counter == HALT_STAGE - 1) begin
@@ -897,19 +898,20 @@ module core_controller_m #(
     core_jump_o  = (core_jump_o  ? 1 : 0);
 
     // Next program selection
-    if (cur_prog == STATE_GPGPU_COMPUTE)
+    if (cur_prog == STATE_GPGPU_COMPUTE) begin
       if (dispatch_model_done)
         next_prog = STATE_STOPPED;
       else
         next_prog = STATE_GPGPU_COMPUTE;
     end
-    else if (cur_prog == STATE_VERTEX_SHADING)
+    else if (cur_prog == STATE_VERTEX_SHADING) begin
       if (fragfifo_cores_dispatched_i == `NUM_CORES - 1 ||
           fragfifo_full_i ||
           dispatch_model_done)
         next_prog = STATE_FRAGMENT_SHADING;
       else
         next_prog = STATE_VERTEX_SHADING;
+    end
     else if (cur_prog == STATE_FRAGMENT_SHADING) begin
       if ((!fragfifo_cores_dispatched_i || vertorder_empty_i) && !dispatch_model_done)
         next_prog = STATE_VERTEX_SHADING;

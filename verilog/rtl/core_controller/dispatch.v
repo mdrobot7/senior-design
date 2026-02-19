@@ -25,9 +25,9 @@ module dispatch_m #(
   input  wire         vertcache_test_found_i,
 
   // Vertex order buffer
-  input wire [`STREAM_SIPORT(INDEX_WIDTH)] vertorder_sstream_i,
-  output reg [`STREAM_SOPORT(INDEX_WIDTH)] vertorder_sstream_o,
-  input wire                               vertorder_full_i,
+  input wire [`STREAM_SIPORT(`NUM_CORES_WIDTH)] vertorder_sstream_i,
+  output reg [`STREAM_SOPORT(`NUM_CORES_WIDTH)] vertorder_sstream_o,
+  input wire                                    vertorder_full_i,
 
   // Index fetcher
   input wire [`WORD] index_buffer_addr_i,
@@ -53,22 +53,22 @@ module dispatch_m #(
   localparam STATE_DISPATCH_DONE       = 3;
   localparam STATE_MODEL_DONE          = 4;
 
-  localparam THREAD_ID_REG       = 0;  // $tid, $r0
-  localparam THREAD_ID_DUMMY_REG = 16; // $g0, $r16
-  localparam ZERO_REG            = 63; // $zero, $r63
+  localparam THREAD_ID_REG       = `REG_DEST_WIDTH'd0;  // $tid, $r0
+  localparam THREAD_ID_DUMMY_REG = `REG_SOURCE_WIDTH'd16; // $g0, $r16
+  localparam ZERO_REG            = `REG_SOURCE_WIDTH'd63; // $zero, $r63
 
   // inst_o = (000) add $tid, $g0, $zero
-  assign inst_o = {`OPCODE_WIDTH'`OPCODE_ADD,
+  assign inst_o = {`ADD_OPCODE,
                    `PREDICATE_BITS_WIDTH'b0,
-                   `REG_DEST_WIDTH'THREAD_ID_REG,
-                   `REG_SOURCE_WIDTH'THREAD_ID_DUMMY_REG,
-                   `REG_SOURCE_WIDTH'ZERO_REG,
-                   7'0};
+                   THREAD_ID_REG,
+                   THREAD_ID_DUMMY_REG,
+                   ZERO_REG,
+                   7'b0};
 
   wire                               index_fetch_model_done;
   reg  [`STREAM_MIPORT(`WORD_WIDTH)] index_fetch_mstreami;
   wire [`STREAM_MOPORT(`WORD_WIDTH)] index_fetch_mstreamo;
-  wire                               index_fetch_empty = index_fetch_mstreamo[`STREAM_MO_VALID];
+  wire                               index_fetch_empty = index_fetch_mstreamo[`STREAM_MO_VALID(`WORD_WIDTH)];
   index_fetch_m #(
     INDEX_FETCH_CACHE_LEN_WORDS
   ) index_fetch (
@@ -123,7 +123,7 @@ module dispatch_m #(
           if (reset_dispatch_i)
             thread_id <= 0;
 
-          if (enable_i)
+          if (enable_i) begin
             core_idx <= 0;
             core_stall_o <= {`NUM_CORES{1'b1}};
             if (dispatch_indices_i) begin
@@ -150,10 +150,11 @@ module dispatch_m #(
               core_stall_o <= core_stall;
               core_idx <= core_idx + 1;
             end
-            else
+            else begin
               // Grab from cache
               vertorder_sstream_o[`STREAM_MO_DATA(`NUM_CORES_WIDTH)] <= `NUM_CORES;
               core_stall_o <= {`NUM_CORES{1'b1}};
+            end
           end
 
           if (core_idx == `NUM_CORES - 1 || vertorder_full_i) begin
@@ -171,7 +172,7 @@ module dispatch_m #(
             state <= STATE_MODEL_DONE;
           end
         end
-        case STATE_DISPATCHING_INTS: begin
+        STATE_DISPATCHING_INTS: begin
           // Fill in $tid with increasing numbers
           if (core_idx == `NUM_CORES - 1) begin
             core_stall_o <= core_stall_undispatched;
@@ -184,6 +185,7 @@ module dispatch_m #(
             core_idx <= 0;
             dispatch_done_o <= 1;
             state <= STATE_MODEL_DONE;
+          end
           else if (!core_enable_i[core_idx])
             core_idx <= core_idx + 1; // Skip disabled cores
           else begin
@@ -193,13 +195,13 @@ module dispatch_m #(
             core_idx <= core_idx + 1;
           end
         end
-        case STATE_DISPATCH_DONE: begin
+        STATE_DISPATCH_DONE: begin
           if (!enable_i) begin
             dispatch_done_o <= 0;
             state <= STATE_DISABLED;
           end
         end
-        case STATE_MODEL_DONE: begin
+        STATE_MODEL_DONE: begin
           if (reset_dispatch_i && !enable_i) begin
             dispatch_done_o <= 0;
             thread_id <= 0;

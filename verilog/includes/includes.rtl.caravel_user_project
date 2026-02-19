@@ -47,6 +47,10 @@
 -v $(USER_PROJECT_VERILOG)/rtl/core/signext.v
 -v $(USER_PROJECT_VERILOG)/rtl/core/predicate.v
 
+-v $(USER_PROJECT_VERILOG)/rtl/core_controller/core_controller.v
+-v $(USER_PROJECT_VERILOG)/rtl/core_controller/dispatch.v
+-v $(USER_PROJECT_VERILOG)/rtl/core_controller/index_fetch.v
+
 -v $(USER_PROJECT_VERILOG)/rtl/stream/stream_fifo.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/math/add.v
