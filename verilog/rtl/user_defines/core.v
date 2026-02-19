@@ -49,6 +49,8 @@
 `define R2_LOCAL_IDX            10:7
 `define SHIFT_WIDTH             5
 `define SHIFT_IDX               4:0
+`define JUMP_WIDTH              23
+`define JUMP_IDX                22:0
 
 `define ADD_OPCODE      (`OPCODE_WIDTH'h00)
 `define ADDI_OPCODE     (`OPCODE_WIDTH'h01)

@@ -297,10 +297,6 @@ module core_m_unit_test;
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[14], 32'hFFFFFC18);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[15], 32'h55559090);
 
-    for(i = 0; i < 8; i = i + 1) begin
-      $display("buffer[%d] = 0x%h", i, outbox_slave.buffer[i]);
-    end
-
     `FAIL_UNLESS_EQUAL(outbox_slave.buffer[0], -32'd1);
     `FAIL_UNLESS_EQUAL(outbox_slave.buffer[1], 32'd2);
     `FAIL_UNLESS_EQUAL(outbox_slave.buffer[2], -32'h3);
@@ -504,38 +500,80 @@ module core_m_unit_test;
       inst = i_mem[i];
     end
 
-        //SPI CHIP mem check
-        `FAIL_UNLESS_EQUAL(spi_chip1.mem[0], 8'hFF);
-        `FAIL_UNLESS_EQUAL(spi_chip1.mem[1], 8'hFF);
-        `FAIL_UNLESS_EQUAL(spi_chip1.mem[2], 8'hFF);
-        `FAIL_UNLESS_EQUAL(spi_chip1.mem[3], 8'hFF);
-        `FAIL_UNLESS_EQUAL(spi_chip1.mem[4], 8'h02);
-        `FAIL_UNLESS_EQUAL(spi_chip1.mem[5], 8'h00);
-        `FAIL_UNLESS_EQUAL(spi_chip1.mem[6], 8'h00);
-        `FAIL_UNLESS_EQUAL(spi_chip1.mem[7], 8'h00);
-        `FAIL_UNLESS_EQUAL(spi_chip1.mem[8], 8'hF9);
-        `FAIL_UNLESS_EQUAL(spi_chip1.mem[32], 8'hFF);
-        `FAIL_UNLESS_EQUAL(spi_chip1.mem[33], 8'hFF);
-        `FAIL_UNLESS_EQUAL(spi_chip1.mem[34], 8'hFF);
-        `FAIL_UNLESS_EQUAL(spi_chip1.mem[35], 8'hFF);
+    //SPI CHIP mem check
+    `FAIL_UNLESS_EQUAL(spi_chip1.mem[0], 8'hFF);
+    `FAIL_UNLESS_EQUAL(spi_chip1.mem[1], 8'hFF);
+    `FAIL_UNLESS_EQUAL(spi_chip1.mem[2], 8'hFF);
+    `FAIL_UNLESS_EQUAL(spi_chip1.mem[3], 8'hFF);
+    `FAIL_UNLESS_EQUAL(spi_chip1.mem[4], 8'h02);
+    `FAIL_UNLESS_EQUAL(spi_chip1.mem[5], 8'h00);
+    `FAIL_UNLESS_EQUAL(spi_chip1.mem[6], 8'h00);
+    `FAIL_UNLESS_EQUAL(spi_chip1.mem[7], 8'h00);
+    `FAIL_UNLESS_EQUAL(spi_chip1.mem[8], 8'hF9);
+    `FAIL_UNLESS_EQUAL(spi_chip1.mem[32], 8'hFF);
+    `FAIL_UNLESS_EQUAL(spi_chip1.mem[33], 8'hFF);
+    `FAIL_UNLESS_EQUAL(spi_chip1.mem[34], 8'hFF);
+    `FAIL_UNLESS_EQUAL(spi_chip1.mem[35], 8'hFF);
         
-        //regfile check
-        `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[0], 32'h00000000);
-        `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[1], 32'hFFFFFFFF);
-        `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[2], 32'h00000002);
-        `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[3], 32'hFFFFFFFD);
-        `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[4], 32'h00000004);
-        `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[5], 32'hFFFFFFFB);
-        `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[6], 32'h00000006);
-        `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[7], 32'hFFFFFFF9);
-        `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[8], 32'hFFFFFFFF);
-        `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[9], 32'h00000002);
-        `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[10], 32'h00000000);
-        `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[11], 32'h00000000);
-        `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[12], 32'h00000000);
-        `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[13], 32'h00000000);
-        `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[14], 32'h00000000);
-        `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[15], 32'h00000000);
+    //regfile check
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[0], 32'h00000000);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[1], 32'hFFFFFFFF);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[2], 32'h00000002);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[3], 32'hFFFFFFFD);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[4], 32'h00000004);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[5], 32'hFFFFFFFB);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[6], 32'h00000006);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[7], 32'hFFFFFFF9);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[8], 32'hFFFFFFFF);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[9], 32'h00000002);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[10], 32'h00000000);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[11], 32'h00000000);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[12], 32'h00000000);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[13], 32'h00000000);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[14], 32'h00000000);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[15], 32'h00000000);
+
+  `SVTEST_END
+
+  `SVTEST(mem_alternating)
+    integer i;
+    $readmemh("mem_files/test_mem_alternating.mem", i_mem);
+
+    inst = 0;
+
+    clk_rst.RESET();
+    clk_rst.WAIT_CYCLES(3);
+
+    for(i = 0; i < 47; i = i + 1) begin
+      @(negedge clk);
+      if(stallo) begin
+        @(negedge stallo);
+        @(negedge clk);
+      end
+      inst = i_mem[i];
+    end
+
+    wait(my_core_m.wb_inst == i_mem[46]); //halt
+
+    for(i = 0; i < 16; i = i + 1) begin
+      $display("mem[%d] = 0x%h", i, my_core_m.regfile.mem[i]);
+    end
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[0], 32'h00000008);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[1], 32'h00000010);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[2], 32'h00000002);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[3], 32'hFFFFFFFD);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[4], 32'h00000004);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[5], 32'h00000009);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[6], 32'h00000006);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[7], 32'hFFFFFFF9);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[8], 32'h00000010);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[9], 32'h00000002);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[10], 32'h00000004);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[11], 32'h12345678);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[12], 32'h00000078);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[13], 32'h00000056);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[14], 32'h00000034);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[15], 32'h00000012);
 
   `SVTEST_END
 
