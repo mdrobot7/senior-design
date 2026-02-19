@@ -62,6 +62,7 @@ class Instruction:
         JAL     = 0x25
         JRET    = 0x26
         HALT    = 0x27
+        IN      = 0x28
 
         OPCODE_TO_STRING = {
             ADD:     "add",
@@ -104,6 +105,7 @@ class Instruction:
             JAL:     "jal",
             JRET:    "jret",
             HALT:    "halt",
+            IN:      "in",
         }
 
         OPCODE_TO_TYPE = {
@@ -147,6 +149,7 @@ class Instruction:
             JAL:    "J",
             JRET:   "R",
             HALT:   "R",
+            IN:     "R",
         }
 
         def __init__(self) -> None:
@@ -347,6 +350,8 @@ class Instruction:
                 print("0x{new_pc-4:08X}: WARNING: jret from empty call stack!")
         elif self.opcode == self.Opcode.HALT:
             return (False, new_pc)
+        elif self.opcode == self.Opcode.IN:
+            print("TODO: in")
         else:
             raise self.OpcodeError(f"0x{new_pc-4:08X}: Unknown opcode 0x{self.opcode:08X}")
 

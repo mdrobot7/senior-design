@@ -5,6 +5,8 @@
 `include "test/clk_rst.v"
 `include "test/bus_slave.v"
 `include "test/spi_chip.v"
+`include "test/stream_slave.v"
+`include "test/stream_master.v"
 
 `include "core/core.v"
 `include "core/accumulator.v"
@@ -31,12 +33,14 @@ module core_m_unit_test;
 
   wire clk, nrst;
   clk_rst_m clk_rst(.clk_o(clk), .nrst_o(nrst));
-  reg stall, flush_dec_stage, nsync_rst, inbox_write;
+  reg stall, flush_dec_stage, nsync_rst;
   reg[`WORD_WIDTH-1:0] inst, global_r1_data, global_r2_data;
-  reg[`WORD_WIDTH*`CORE_MAILBOX_HEIGHT-1:0] inbox;
-  wire[`WORD_WIDTH*`CORE_MAILBOX_HEIGHT-1:0] outbox;
+  reg[`STREAM_SIPORT(`MAILBOX_STREAM_SIZE)] inbox_sstreami;
+  wire[`STREAM_SOPORT(`MAILBOX_STREAM_SIZE)] inbox_sstreamo;
+  reg[`STREAM_MIPORT(`MAILBOX_STREAM_SIZE)] outbox_mstreami;
+  wire[`STREAM_MOPORT(`MAILBOX_STREAM_SIZE)] outbox_mstreamo;
   reg[`WORD_WIDTH-1:0] i_mem [0:127];
-
+  reg[`WORD_WIDTH-1:0] outbox;
 
   wire jump_request, stallo;
 
@@ -69,9 +73,10 @@ module core_m_unit_test;
     .stall_o(stallo),
     .nsync_rst_i(nsync_rst),
 
-    .outbox_o(outbox),
-    .inbox_write_i(inbox_write),
-    .inbox_i(inbox),
+    .inbox_sstream_i(inbox_sstreami),
+    .inbox_sstream_o(inbox_sstreamo),
+    .outbox_mstream_i(outbox_mstreami),
+    .outbox_mstream_o(outbox_mstreamo),
 
     .mport_i(mportai),
     .mport_o(mportao)
@@ -126,6 +131,21 @@ module core_m_unit_test;
   );
 
 
+  stream_slave_m #(.SIZE(`MAILBOX_STREAM_SIZE), .BUFFER_SIZE(`CORE_MAILBOX_HEIGHT)) outbox_slave (
+    .clk_i(clk),
+    .sstream_o(outbox_mstreami),
+    .sstream_i(outbox_mstreamo)
+  );
+
+  stream_master_m #(`MAILBOX_STREAM_SIZE) inbox_master (
+    .clk_i(clk),
+    .mstream_i(inbox_sstreamo),
+    .mstream_o(inbox_sstreami)
+  );
+
+
+
+
   //===================================
   // Build
   //===================================
@@ -144,9 +164,8 @@ module core_m_unit_test;
     global_r2_data = 0;
     stall = 0;
     flush_dec_stage = 0;
-    inbox_write = 0;
-    inbox = 0;
     nsync_rst = 1;
+    outbox <= 0;
     clk_rst.RESET();
     clk_rst.WAIT_CYCLES(3);
   endtask
@@ -182,12 +201,15 @@ module core_m_unit_test;
     integer i;
     //values from test_core.s
     $readmemh("mem_files/test_cores.mem", i_mem);
-    @(negedge clk);
     for(i = 0; i < 17; i = i + 1) begin
+      @(negedge clk);
+      if(stallo) begin
+        outbox_slave.READ(outbox);
+        @(negedge stallo);
+        @(negedge clk);
+      end
       inst = i_mem[i];
-      clk_rst.WAIT_CYCLES(1);
     end
-    inst = i_mem[0]; //pseudo nop for now
     clk_rst.WAIT_CYCLES(5);
 
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[0], 32'd0);
@@ -207,9 +229,14 @@ module core_m_unit_test;
     clk_rst.WAIT_CYCLES(3);
     @(negedge clk);
 
-    for(i = 0; i < 55; i = i + 1) begin
+    for(i = 0; i < 54; i = i + 1) begin
+      @(negedge clk);
+      if(stallo) begin
+        outbox_slave.READ(outbox);
+        @(negedge stallo);
+        @(negedge clk);
+      end
       inst = i_mem[i];
-      clk_rst.WAIT_CYCLES(1);
     end
     clk_rst.WAIT_CYCLES(5);
 
@@ -220,6 +247,7 @@ module core_m_unit_test;
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[4], 32'd4);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[5], -32'd5);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[6], 32'd6);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[7], -32'h7);
     
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[8], 32'h5);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[9], 32'h1000);
@@ -230,25 +258,23 @@ module core_m_unit_test;
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[14], 32'hFFFFFC18);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[15], 32'hFFFFFFFF);
 
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[0], -32'd1);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[1], 32'd2);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[2], -32'h3);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[3], 32'h4);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[4], -32'h5);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[5], 32'h6);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[6], -32'h7);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[7], 32'h5);
-
   `SVTEST_END
 
   `SVTEST(test_lui_lli)
     integer i;
     $readmemh("mem_files/test_cores.mem", i_mem);
     clk_rst.RESET();
+    outbox_slave.buffer_head = 0;
+    outbox_slave.buffer_size = 0;
     clk_rst.WAIT_CYCLES(3);
 
     for(i = 0; i < 59; i = i + 1) begin
       @(negedge clk);
+      if(stallo) begin
+        outbox_slave.READ(outbox);
+        @(negedge stallo);
+        @(negedge clk);
+      end
       inst = i_mem[i];
     end
     clk_rst.WAIT_CYCLES(5);
@@ -271,14 +297,19 @@ module core_m_unit_test;
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[14], 32'hFFFFFC18);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[15], 32'h55559090);
 
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[0], -32'd1);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[1], 32'd2);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[2], -32'h3);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[3], 32'h4);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[4], -32'h5);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[5], 32'h6);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[6], -32'h7);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[7], 32'h5);
+    for(i = 0; i < 8; i = i + 1) begin
+      $display("buffer[%d] = 0x%h", i, outbox_slave.buffer[i]);
+    end
+
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer[0], -32'd1);
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer[1], 32'd2);
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer[2], -32'h3);
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer[3], 32'h4);
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer[4], -32'h5);
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer[5], 32'h6);
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer[6], -32'h7);
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer[7], 32'h5);
+
   `SVTEST_END
 
     `SVTEST(test_macops)
@@ -289,6 +320,11 @@ module core_m_unit_test;
 
     for(i = 0; i < 78; i = i + 1) begin
       @(negedge clk);
+      if(stallo) begin
+        outbox_slave.READ(outbox);
+        @(negedge stallo);
+        @(negedge clk);
+      end
       inst = i_mem[i];
     end
     clk_rst.WAIT_CYCLES(5);
@@ -312,14 +348,14 @@ module core_m_unit_test;
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[14], 32'h002C5E5A);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[15], 32'h00000000);
 
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[0], -32'd1);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[1], 32'd2);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[2], -32'h3);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[3], 32'h4);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[4], -32'h5);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[5], 32'h6);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[6], -32'h7);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[7], 32'h5);
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer[0], -32'd1);
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer[1], 32'd2);
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer[2], -32'h3);
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer[3], 32'h4);
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer[4], -32'h5);
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer[5], 32'h6);
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer[6], -32'h7);
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer[7], 32'h5);
   `SVTEST_END
 
   `SVTEST(test_predication)
@@ -330,6 +366,10 @@ module core_m_unit_test;
 
     for(i = 0; i < 103; i = i + 1) begin
       @(negedge clk);
+      if(stallo) begin
+        @(negedge stallo);
+        @(negedge clk);
+      end
       inst = i_mem[i];
     end
     clk_rst.WAIT_CYCLES(5);
@@ -353,14 +393,14 @@ module core_m_unit_test;
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[14], 32'h1);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[15], 32'hFFFFFFFF);
 
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[0], -32'd1);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[1], 32'd2);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[2], -32'h3);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[3], 32'h4);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[4], -32'h5);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[5], 32'h6);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[6], -32'h7);
-    `FAIL_UNLESS_EQUAL(my_core_m.outbox[7], 32'h5);
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer[0], -32'd1);
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer[1], 32'd2);
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer[2], -32'h3);
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer[3], 32'h4);
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer[4], -32'h5);
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer[5], 32'h6);
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer[6], -32'h7);
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer[7], 32'h5);
   `SVTEST_END
 
   `SVTEST(jumping)
@@ -371,6 +411,10 @@ module core_m_unit_test;
     //clear all regs and seed some values
     for(i = 0; i < 25; i = i + 1) begin
       @(negedge clk);
+      if(stallo) begin
+        @(negedge stallo);
+        @(negedge clk);
+      end
       inst = i_mem[i];
     end
 
@@ -460,10 +504,6 @@ module core_m_unit_test;
       inst = i_mem[i];
     end
 
-    for(i = 0; i < 36; i = i + 1) begin
-      $display("mem[%d] = 0x%h", i, spi_chip1.mem[i]);
-    end
-
         //SPI CHIP mem check
         `FAIL_UNLESS_EQUAL(spi_chip1.mem[0], 8'hFF);
         `FAIL_UNLESS_EQUAL(spi_chip1.mem[1], 8'hFF);
@@ -488,9 +528,7 @@ module core_m_unit_test;
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[5], 32'hFFFFFFFB);
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[6], 32'h00000006);
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[7], 32'hFFFFFFF9);
-$display("9 0x%H", my_core_m.regfile.mem[8]);
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[8], 32'hFFFFFFFF);
-$display("10 0x%H", my_core_m.regfile.mem[9]);
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[9], 32'h00000002);
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[10], 32'h00000000);
         `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[11], 32'h00000000);

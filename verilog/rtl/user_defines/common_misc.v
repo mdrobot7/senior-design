@@ -8,7 +8,7 @@
 `define WORD_WIDTH (32)
 `define WORD `WORD_WIDTH - 1:0
 
-`define DECIMAL_POS (16)
+`define DECIMAL_POS (10)
 
 `define NUM_CORES (6)
 `define NUM_CORES_WIDTH ($clog2(`NUM_CORES))
