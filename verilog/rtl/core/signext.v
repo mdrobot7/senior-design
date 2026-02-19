@@ -7,7 +7,7 @@
     imm_ext_o    : extended output
 */
     
-module signext (
+module signext_m (
     input  wire [`WORD_WIDTH-10:0]        in_i,
     input  wire                           ext_i,
     input  wire[`IMM_CTL_SIZE-1:0]        imm_size_i,

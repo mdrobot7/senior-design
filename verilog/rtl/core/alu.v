@@ -17,7 +17,6 @@ module alu_m (
 
     wire[`WORD_WIDTH-1:0] sum;
     wire[`WORD_WIDTH-1:0] product;
-    wire[`WORD_WIDTH-1:0] quotient;
     wire[`WORD_WIDTH-1:0] slt;
     wire[`WORD_WIDTH-1:0] sltu;
     wire[`WORD_WIDTH-1:0] seq;

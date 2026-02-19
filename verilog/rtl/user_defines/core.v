@@ -41,9 +41,12 @@
 `define PREDICATE_IDX           25:23
 `define REG_DEST_WIDTH          4
 `define REG_DEST_IDX            22:19
+`define PREDICATE_DATA_IDX      21:19
 `define REG_SOURCE_WIDTH        6
 `define R1_IDX                  18:13
+`define R1_LOCAL_IDX            16:13
 `define R2_IDX                  12:7
+`define R2_LOCAL_IDX            10:7
 `define SHIFT_WIDTH             5
 `define SHIFT_IDX               4:0
 `define JUMP_WIDTH              23
@@ -89,11 +92,25 @@
 `define JAL_OPCODE      (`OPCODE_WIDTH'h25)
 `define JRET_OPCODE     (`OPCODE_WIDTH'h26)
 `define HALT_OPCODE     (`OPCODE_WIDTH'h27)
+`define IN_OPCODE       (`OPCODE_WIDTH'h28)
 
 `define WB_SIG_WIDTH    2
 `define WB_EX_RESULT   (`WB_SIG_WIDTH'h0)
 `define WB_MEM_RESULT   (`WB_SIG_WIDTH'h1)
 `define WB_MAC_RESULT   (`WB_SIG_WIDTH'h2)
+
+`define ALU_SRC_A_WIDTH 2
+`define PC_SRC_A    (`ALU_SRC_A_WIDTH'h0)
+`define LLI_SRC_A   (`ALU_SRC_A_WIDTH'h1)
+`define LUI_SRC_A   (`ALU_SRC_A_WIDTH'h2)
+`define REG_SRC_A   (`ALU_SRC_A_WIDTH'h3)
+
+`define ALU_SRC_B_WIDTH 2
+`define IMM_SRC_B   (`ALU_SRC_B_WIDTH'h0)
+`define LLI_SRC_B   (`ALU_SRC_B_WIDTH'h1)
+`define LUI_SRC_B   (`ALU_SRC_B_WIDTH'h2)
+`define REG_SRC_B   (`ALU_SRC_B_WIDTH'h3)
+
 //decoder
 //decode ctl sigs
 `define R1_USE_GLOBAL_VAL_IDX   (0)
@@ -102,23 +119,33 @@
 `define SIGN_EXT_IDX            (`R2_USE_GLOBAL_VAL_IDX + `IMM_CTL_SIZE + 1)
 `define OUT_IDX                 (`SIGN_EXT_IDX + 1)
 //ex ctl sigs
-`define USE_IMM_IDX         (`OUT_IDX + 1)
-`define USE_PC_IDX          (`USE_IMM_IDX + 1)
-`define USE_ALU_RESULT_IDX  (`USE_PC_IDX + 1)
-`define ALU_CTL_IDX         (`USE_IMM_IDX + `ALU_CTL_SIZE):(`USE_ALU_RESULT_IDX + 1)
-`define IS_PREDICABLE_IDX   (`USE_IMM_IDX + `ALU_CTL_SIZE + 1)
-`define PREDICATE_WRITE_IDX (`IS_PREDICABLE_IDX + 1)
-
-`define PREDICATE_WRITE_BITS_IDX    (`PREDICATE_WRITE_IDX + `PREDICATE_BITS_WIDTH):(`PREDICATE_WRITE_IDX + 1)
+`define ALU_SRC_A_IDX           (`OUT_IDX + `ALU_SRC_A_WIDTH):(`OUT_IDX + 1)
+`define ALU_SRC_B_IDX           (`OUT_IDX + `ALU_SRC_A_WIDTH + `ALU_SRC_B_WIDTH):(`OUT_IDX + `ALU_SRC_A_WIDTH + 1)
+`define USE_ALU_RESULT_IDX      (`OUT_IDX + `ALU_SRC_A_WIDTH + `ALU_SRC_B_WIDTH + 1)
+`define ALU_CTL_IDX             (`USE_ALU_RESULT_IDX + `ALU_CTL_SIZE):(`USE_ALU_RESULT_IDX + 1)
+`define IS_PREDICABLE_IDX       (`USE_ALU_RESULT_IDX + `ALU_CTL_SIZE + 1)
+`define PREDICATE_WRITE_IDX     (`IS_PREDICABLE_IDX + 1)
+`define PREDICATE_ALU_OP_IDX    (`PREDICATE_WRITE_IDX + 1)
+`define IS_CLRP_IDX             (`PREDICATE_ALU_OP_IDX + 1)
+`define IS_SRP_IDX              (`IS_CLRP_IDX + 1)
 //mem-acc ctl sigs
-`define IS_LOAD_IDX         (`PREDICATE_WRITE_IDX + `PREDICATE_BITS_WIDTH + 1)
+`define IS_LOAD_IDX         (`IS_SRP_IDX + 1)
 `define IS_STORE_IDX        (`IS_LOAD_IDX + 1)
-`define ACCUM_CLR_IDX       (`IS_STORE_IDX + 1)
+`define BYTE_MEM_OP_IDX     (`IS_STORE_IDX + 1)
+`define ACCUM_CLR_IDX       (`BYTE_MEM_OP_IDX + 1)
 `define IS_ACCUMULATE_IDX   (`ACCUM_CLR_IDX + 1)
 //wb ctl sigs
-`define REGFILE_WRITE_IDX	(`IS_ACCUMULATE_IDX + 1)
-`define WB_SIG_IDX          (`REGFILE_WRITE_IDX + `WB_SIG_WIDTH):(`REGFILE_WRITE_IDX + 1)
+`define WB_IS_IN_IDX        (`IS_ACCUMULATE_IDX + 1)
+`define WB_SIG_IDX          (`WB_IS_IN_IDX + `WB_SIG_WIDTH):(`WB_IS_IN_IDX + 1)
+`define REGFILE_WRITE_IDX	(`WB_IS_IN_IDX + `WB_SIG_WIDTH + 1)
 
-`define CTL_SIGS_WIDTH      (`REGFILE_WRITE_IDX + `WB_SIG_WIDTH+ 1)
+`define CTL_SIGS_WIDTH      (`REGFILE_WRITE_IDX + 1)
 
+//Core defs
+
+`define CORE_REGFILE_HEIGHT (16)
 `define CORE_MAILBOX_HEIGHT (8)
+`define MAILBOX_STREAM_SIZE (`WORD_WIDTH)
+`define MAILBOX_STREAM_CYCLES ((`WORD_WIDTH*`CORE_MAILBOX_HEIGHT) /  `MAILBOX_STREAM_SIZE)
+`define OUTBOX_COUNTER_WIDTH ($clog2(`MAILBOX_STREAM_CYCLES))
+`define STAGE_SLICE(stage, size) (((stage+1)*(size))-1):((stage)*(size))

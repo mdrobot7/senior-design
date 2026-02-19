@@ -43,22 +43,30 @@ module decoder_m (
         //OUT
         ctl_sigs_reg[`OUT_IDX] = (opcode == `OUT_OPCODE) ? 1 : 0;
 
-        //USE_IMM
-        case(opcode)
-            `ADDI_OPCODE, `MULI_OPCODE, `ANDI_OPCODE, `ORI_OPCODE, `XORI_OPCODE, `SLL_OPCODE, 
-            `SRL_OPCODE, `SRA_OPCODE, `LUI_OPCODE, `LLI_OPCODE, `LW_OPCODE, `LB_OPCODE, `SW_OPCODE,
-            `SB_OPCODE, `JUMP_OPCODE, `JAL_OPCODE:
-                ctl_sigs_reg[`USE_IMM_IDX] = 1; //use imm
-            default:
-                ctl_sigs_reg[`USE_IMM_IDX] = 0; //dont use imm
-        endcase
-
-        //USE_PC
+        //ALU_SRC_A
         case(opcode)
             `JUMP_OPCODE, `JAL_OPCODE:
-                ctl_sigs_reg[`USE_PC_IDX] = 1; //PC into alu input a
+                ctl_sigs_reg[`ALU_SRC_A_IDX] = `PC_SRC_A;
+            `LLI_OPCODE:
+                ctl_sigs_reg[`ALU_SRC_A_IDX] = `LLI_SRC_A;
+            `LUI_OPCODE:
+                ctl_sigs_reg[`ALU_SRC_A_IDX] = `LUI_SRC_A;
             default:
-                ctl_sigs_reg[`USE_PC_IDX] = 0; //regfile value into a
+                ctl_sigs_reg[`ALU_SRC_A_IDX] = `REG_SRC_A;
+        endcase
+
+        //ALU_SRC_B
+        case(opcode)
+            `ADDI_OPCODE, `MULI_OPCODE, `ANDI_OPCODE, `ORI_OPCODE, `XORI_OPCODE, `SLL_OPCODE, 
+            `SRL_OPCODE, `SRA_OPCODE, `LW_OPCODE, `LB_OPCODE, `SW_OPCODE,
+            `SB_OPCODE, `JUMP_OPCODE, `JAL_OPCODE:
+                ctl_sigs_reg[`ALU_SRC_B_IDX] = `IMM_SRC_B; //use imm
+            `LLI_OPCODE:
+                ctl_sigs_reg[`ALU_SRC_B_IDX] = `LLI_SRC_B;
+            `LUI_OPCODE:
+                ctl_sigs_reg[`ALU_SRC_B_IDX] = `LUI_SRC_B;
+            default:
+                ctl_sigs_reg[`ALU_SRC_B_IDX] = `REG_SRC_B; //dont use imm
         endcase
 
         //USE_ALU
@@ -112,8 +120,19 @@ module decoder_m (
                 ctl_sigs_reg[`PREDICATE_WRITE_IDX] = 0; //cannot update predicate status
         endcase
 
-        //PREDICATE_WRITE_BITS
-        ctl_sigs_reg[`PREDICATE_WRITE_BITS_IDX] = instruction_i[`PREDICATE_IDX];
+        //PREDICATE_ALU_OP
+        case(opcode)
+            `SPEQ_OPCODE, `SPLT_OPCODE, `SPLTU_OPCODE:
+                ctl_sigs_reg[`PREDICATE_ALU_OP_IDX] = 1; //ALU providing predicate data
+            default:
+                ctl_sigs_reg[`PREDICATE_ALU_OP_IDX] = 0; // data is written thru alu with ALU_NOP_CTL
+        endcase
+
+        //IS_CLRP
+        ctl_sigs_reg[`IS_CLRP_IDX] = (opcode == `CLRP_OPCODE) ? 1 : 0;
+
+        //IS_SRP
+        ctl_sigs_reg[`IS_SRP_IDX] = (opcode == `SRP_OPCODE) ? 1 : 0;
 
         //IS_LOAD
 		case(opcode)
@@ -131,20 +150,22 @@ module decoder_m (
 				ctl_sigs_reg[`IS_STORE_IDX] = 0;
 		endcase
 
+        //BYTE_MEM
+        case(opcode)
+            `SB_OPCODE, `LB_OPCODE:
+                ctl_sigs_reg[`BYTE_MEM_OP_IDX] = 1;
+            default:
+                ctl_sigs_reg[`BYTE_MEM_OP_IDX] = 0;
+        endcase
+
 		//ACCUM_CLR
 		ctl_sigs_reg[`ACCUM_CLR_IDX] = (opcode == `MACCL_OPCODE) ? 1 : 0;
 
 		//IS_ACCUMULATE
 		ctl_sigs_reg[`IS_ACCUMULATE_IDX] = (opcode == `MAC_OPCODE) ? 1 : 0;
 
-		//REGFILE_WRITE
-		case(opcode)
-			`OUT_OPCODE, `MAC_OPCODE, `MACCL_OPCODE, `SPEQ_OPCODE, `SPLT_OPCODE, `SPLTU_OPCODE, 
-			`CLRP_OPCODE, `SRP_OPCODE, `SB_OPCODE, `SW_OPCODE, `JUMP_OPCODE, `JRET_OPCODE, `HALT_OPCODE:
-				ctl_sigs_reg[`REGFILE_WRITE_IDX] = 0; //no regfile change
-			default:
-				ctl_sigs_reg[`REGFILE_WRITE_IDX] = 1;
-		endcase
+        //WB_IS_IN
+        ctl_sigs_reg[`WB_IS_IN_IDX] = (opcode == `IN_OPCODE) ? 1 : 0;
 
         //WB_SIG
         case(opcode)
@@ -155,5 +176,15 @@ module decoder_m (
             default:
                 ctl_sigs_reg[`WB_SIG_IDX] = `WB_EX_RESULT;
         endcase
+
+        //REGFILE_WRITE
+		case(opcode)
+			`OUT_OPCODE, `MAC_OPCODE, `MACCL_OPCODE, `SPEQ_OPCODE, `SPLT_OPCODE, `SPLTU_OPCODE, 
+			`CLRP_OPCODE, `SRP_OPCODE, `SB_OPCODE, `SW_OPCODE, `JUMP_OPCODE, `JRET_OPCODE, 
+            `HALT_OPCODE, `IN_OPCODE:
+				ctl_sigs_reg[`REGFILE_WRITE_IDX] = 0; //no regfile change
+			default:
+				ctl_sigs_reg[`REGFILE_WRITE_IDX] = 1;
+		endcase
     end
 endmodule

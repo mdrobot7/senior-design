@@ -44,6 +44,7 @@ OPCODE_JUMP     = 0x24`6
 OPCODE_JAL      = 0x25`6
 OPCODE_JRET     = 0x26`6
 OPCODE_HALT     = 0x27`6
+OPCODE_IN       = 0x28`6
 
 
 ; Registers and Immediates
@@ -234,7 +235,7 @@ OPCODE_HALT     = 0x27`6
     {pred: predicate} spltu   {pred_data: predicate_bit}, {rs1: srcreg}, {rs2: srcreg}  => OPCODE_SPLTU @ pred @ pred_data @ rs1 @ rs2 @ 0`7
                       clrp    {pred_data: predicate}                                    => OPCODE_CLRP  @  0`3 @ 0`1 @ pred_data @ 0`19
                       spr     {rd: destreg}                                             => OPCODE_SPR   @  0`3 @ rd @ 0`19
-    {pred: predicate} srp     {rs: destreg}                                             => OPCODE_SRP   @ pred @ rs @ 0`19
+    {pred: predicate} srp     {rs: destreg}                                             => OPCODE_SRP   @ pred @ rs @ 0`2 @ rs  @ 0`13
     {pred: predicate} sreq    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}               => OPCODE_SREQ  @ pred @ rd @ rs1 @ rs2 @ 0`7
     {pred: predicate} srlt    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}               => OPCODE_SRLT  @ pred @ rd @ rs1 @ rs2 @ 0`7
     {pred: predicate} srltu   {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}               => OPCODE_SRLTU @ pred @ rd @ rs1 @ rs2 @ 0`7
@@ -252,6 +253,8 @@ OPCODE_HALT     = 0x27`6
 
     ; Halt
     halt => OPCODE_HALT @ 0`26
+
+    {pred: predicate} in => OPCODE_IN    @ 0`26
 }
 
 

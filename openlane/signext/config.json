@@ -1,5 +1,5 @@
 {
-  "DESIGN_NAME": "signext",
+  "DESIGN_NAME": "signext_m",
   "DESIGN_IS_CORE": 0,
   "VERILOG_FILES": [
       "dir::../../verilog/rtl/defines.v",

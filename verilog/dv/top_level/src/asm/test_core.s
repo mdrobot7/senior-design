@@ -82,13 +82,14 @@ clrp (111)
 () li $r10, 100.
 () li $r11, 20.195345
 () mac $r9, $r10
+() macrd $r12
 () maccl
 () mac $r9, $r10
 () mac $r10, $r11
 () mac $r11, $r11
-() macrd $r15
+() macrd $r13
 () mac $r5, $r6
-() macrd $r15
+() macrd $r14
 () maccl
 () macrd $r15
 
