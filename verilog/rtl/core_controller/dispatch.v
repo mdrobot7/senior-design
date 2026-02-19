@@ -104,7 +104,6 @@ module dispatch_m #(
 
   always @(posedge clk_i, negedge nrst_i) begin
     if (nrst_i) begin
-      mport_o <= 0;
       vertcache_test_valid_o <= 0;
       vertorder_sstreami_o <= 0;
       thread_id_o <= 0;
