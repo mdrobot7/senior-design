@@ -34,15 +34,16 @@ module index_fetch_m #(
   output wire [`STREAM_MOPORT(`WORD_WIDTH)] mstream_o
 );
 
-  localparam STATE_READY = 0;
-  localparam STATE_PREP  = 1;
-  localparam STATE_READ  = 2;
-  localparam STATE_DONE  = 3;
+  localparam STATE_READY        = 0;
+  localparam STATE_PREP         = 1;
+  localparam STATE_READ         = 2;
+  localparam STATE_WAIT_FOR_ACK = 3;
+  localparam STATE_DONE         = 4;
 
   reg  [`STREAM_SIPORT(`WORD_WIDTH)] sstreami;
   wire [`STREAM_SOPORT(`WORD_WIDTH)] sstreamo;
   wire                               fifo_full  = !sstreamo[`STREAM_SO_READY(`WORD_WIDTH)];
-  wire                               fifo_empty = mstream_o[`STREAM_MO_VALID(`WORD_WIDTH)];
+  wire                               fifo_empty = !mstream_o[`STREAM_MO_VALID(`WORD_WIDTH)];
   stream_fifo_m #(
       `WORD_WIDTH,
       CACHE_LEN_WORDS
@@ -61,7 +62,7 @@ module index_fetch_m #(
   reg [2:0]   state;
 
   always @(posedge clk_i, negedge nrst_i) begin
-    if (nrst_i) begin
+    if (!nrst_i) begin
       mport_o <= 0;
       model_done_o <= 0;
 
@@ -84,20 +85,24 @@ module index_fetch_m #(
             state <= STATE_READ;
         end
         STATE_READ: begin
-          if (mport_i[`BUS_MI_SEQSLV]) begin
-            sstreami[`STREAM_SI_DATA(`WORD_WIDTH)] <= mport_i[`BUS_MI_DATA];
-            sstreami[`STREAM_SI_VALID(`WORD_WIDTH)] <= 1;
-
-            index_buffer_offset <= index_buffer_offset + 1;
-          end
-          else
-            sstreami[`STREAM_SI_VALID(`WORD_WIDTH)] <= 0;
-
-          if (fifo_full || index_buffer_offset >= num_dispatches_i - 1) begin
+          if (fifo_full || index_buffer_offset >= num_dispatches_i) begin
             // Stop on fifo overrun, or index buffer overrun
+            sstreami[`STREAM_SI_VALID(`WORD_WIDTH)] <= 0;
             mport_o[`BUS_MO_SEQMST] <= 1;
+            state <= STATE_WAIT_FOR_ACK;
           end
+          else begin
+            if (mport_i[`BUS_MI_SEQSLV]) begin
+              sstreami[`STREAM_SI_DATA(`WORD_WIDTH)] <= mport_i[`BUS_MI_DATA];
+              sstreami[`STREAM_SI_VALID(`WORD_WIDTH)] <= 1;
 
+              index_buffer_offset <= index_buffer_offset + 1;
+            end
+            else
+              sstreami[`STREAM_SI_VALID(`WORD_WIDTH)] <= 0;
+          end
+        end
+        STATE_WAIT_FOR_ACK: begin
           if (!mport_i[`BUS_MI_ACK]) begin
             state <= STATE_DONE;
           end
