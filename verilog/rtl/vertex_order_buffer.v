@@ -31,6 +31,6 @@ module vertex_order_buffer_m #(
 
     assign full_o = !sstream_o[`STREAM_SO_READY(INDEX_WIDTH)];
 
-    assign empty_o = mstream_o[`STREAM_MO_VALID(INDEX_WIDTH)];
+    assign empty_o = !mstream_o[`STREAM_MO_VALID(INDEX_WIDTH)];
 
 endmodule

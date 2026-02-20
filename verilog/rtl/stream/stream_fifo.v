@@ -16,7 +16,7 @@ module stream_fifo_m #(
 
     localparam DEPTH_LOG = $clog2(DEPTH);
 
-    reg [DEPTH_LOG - 1:0] head, size;
+    reg [DEPTH_LOG:0] head, size;
     reg [SIZE - 1:0] buffer[DEPTH - 1:0];
 
     assign sstream_o[`STREAM_SO_READY(SIZE)] = size != DEPTH;
@@ -35,7 +35,7 @@ module stream_fifo_m #(
             for (i = 0; i < DEPTH; i = i + 1) buffer[i] <= 0;
         end
         else if (clk_i) begin : CLOCK
-            reg [DEPTH_LOG - 1:0] new_size;
+            reg [DEPTH_LOG:0] new_size;
 
             new_size = size;
 
