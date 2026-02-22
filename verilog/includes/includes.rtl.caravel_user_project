@@ -19,8 +19,10 @@
 -v $(USER_PROJECT_VERILOG)/rtl/user_defines/core.v
 -v $(USER_PROJECT_VERILOG)/rtl/user_defines/rasterizer.v
 -v $(USER_PROJECT_VERILOG)/rtl/user_defines/vga.v
+
 -v $(USER_PROJECT_VERILOG)/rtl/user_defines.v
 -v $(USER_PROJECT_VERILOG)/rtl/user_project_wrapper.v
+-v $(USER_PROJECT_VERILOG)/rtl/top_level.v
 
 -v $(USER_PROJECT_VERILOG)/../library/wishbone_helper/verilog/rtl/wishbone_helper.v
 

@@ -19,7 +19,7 @@ module bus_master_m #(
     initial begin
 
         mport_o = 0;
-        for (i = 0; i < SIZE_BYTES; i++)
+        for (i = 0; i < SIZE_BYTES; i = i + 1)
             mem[i] <= 0;
     end
 

@@ -149,3 +149,4 @@
 `define MAILBOX_STREAM_CYCLES ((`WORD_WIDTH*`CORE_MAILBOX_HEIGHT) /  `MAILBOX_STREAM_SIZE)
 `define OUTBOX_COUNTER_WIDTH ($clog2(`MAILBOX_STREAM_CYCLES))
 `define STAGE_SLICE(stage, size) (((stage+1)*(size))-1):((stage)*(size))
+

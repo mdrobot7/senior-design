@@ -30,3 +30,6 @@
 `define WBREG_TYPE_W1C (1) // Write 1 to clear
 `define WBREG_TYPE_W1S (2) // Write 1 to set
 `define WBREG_TYPE_W1T (3) // Write 1 to toggle
+
+`define SPI_MEM_SIZE (32000000 / 8)
+

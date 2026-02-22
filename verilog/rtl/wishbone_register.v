@@ -74,7 +74,7 @@ module wishbone_register_m #(
                 // Should synthesize to a 5-input mux on each bit of the reg
                 // with the inputs reg_o[i], din[i], 0, 1, !reg_o[i] corresponding
                 // to no change, input data, clear, set, and toggle.
-                for (i = 0; i < (SIZE_WORDS * `WORD_WIDTH); i++) begin
+                for (i = 0; i < (SIZE_WORDS * `WORD_WIDTH); i = i + 1) begin
                     if (access_write_mask_i[bit_offset + i] &&
                         (!enable_prot_i[bit_offset + i] || !enable_i)) begin
                         if (TYPE == `WBREG_TYPE_REG)

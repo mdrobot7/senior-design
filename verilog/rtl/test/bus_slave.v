@@ -38,7 +38,7 @@ module bus_slave_m #(
 
     always @ (posedge clk_i or negedge nrst_i) begin
         if (!nrst_i) begin
-            for(i = 0; i < SIZE; i++)
+            for(i = 0; i < SIZE; i = i + 1)
                 mem[i] <= 0;
             sport_o <= 0;
             state <= STATE_READY;

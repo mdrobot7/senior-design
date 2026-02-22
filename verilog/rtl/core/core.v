@@ -265,7 +265,7 @@ module core_m(
     //fwd assignments
     assign stall = stall_o | stall_i;
 
-    always @ (*) begin
+    always @ (*) begin : BLOCK1
         //continuous assignments
         integer i;
 
@@ -316,7 +316,7 @@ module core_m(
         stall_o = mem_stall | inbox_stall | outbox_stall;
     end
 
-    always @ (posedge clk_i, negedge nrst_i) begin
+    always @ (posedge clk_i, negedge nrst_i) begin : BLOCK2
         integer i;
         if(!nrst_i) begin : RESET
             piped_inst <= 0;
@@ -430,7 +430,7 @@ module core_m(
     end
 
     //inbox fsm
-    always @(*) begin
+    always @(*) begin : BLOCK3
         integer i;
         next_inbox_state <= inbox_state;
         inbox_stall <= 0;
@@ -473,7 +473,7 @@ module core_m(
     end
 
     //inbox clocked
-    always @(posedge clk_i, negedge nrst_i) begin
+    always @(posedge clk_i, negedge nrst_i) begin : BLOCK4
         integer i;
         if(!nrst_i) begin
             for(i = 0; i < `CORE_MAILBOX_HEIGHT; i = i + 1) begin
@@ -539,7 +539,7 @@ module core_m(
     end
 
     //outbox clocked
-    always @(posedge clk_i, negedge nrst_i) begin
+    always @(posedge clk_i, negedge nrst_i) begin : BLOCK5
         integer i;
         if(!nrst_i) begin
             for(i = 0; i < `CORE_MAILBOX_HEIGHT; i = i + 1) begin
