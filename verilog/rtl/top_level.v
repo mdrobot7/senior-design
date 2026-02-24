@@ -39,6 +39,27 @@ module top_level_m(
     assign clk = wb_clk_i;
     assign nrst = !wb_rst_i;
 
+    localparam integer NUM_ADDRS = 2;
+    wire [31:0] wbs_datN_o [NUM_ADDRS:0];
+    wire wbs_ackN_o [NUM_ADDRS-1:0];
+    reg wbs_stbN_i [NUM_ADDRS-1:0];
+
+    `define address_map(n, address, mask) \
+        wbs_stbN_i[n] = 0; \
+        if ((wbs_adr_i & mask) == address) begin \
+            wbs_dat_o = wbs_datN_o[n]; \
+            wbs_ack_o = wbs_ackN_o[n]; \
+            wbs_stbN_i[n] = wbs_stb_i; \
+        end
+
+    always @(*) begin
+        wbs_dat_o = 0;
+        wbs_ack_o = 0;
+
+        `address_map(0, 32'h38000000, 32'hF8000000);
+        `address_map(1, 32'h30000000, 32'hF8000000);
+    end
+
     wire [`BUS_MIPORT] vga_mporti;
     wire [`BUS_MOPORT] vga_mporto;
 
@@ -57,9 +78,45 @@ module top_level_m(
     wire [`BUS_SIPORT] spi2_sporti;
     wire [`BUS_SOPORT] spi2_sporto;
 
-    assign rast1_mporto = 0;
-    assign rast2_mporto = 0;
-    assign rast3_mporto = 0;
+    reg  [`WORD] inst;
+
+    reg  [`WORD] global_r1, global_r2;
+
+    wire jump_request;
+    reg  fds;
+
+    reg  stalli;
+    wire stallo;
+
+    reg nsync_rst;
+
+    wire [`STREAM_MIPORT(`MAILBOX_STREAM_SIZE)] cc_mstreami;
+    reg  [`STREAM_MOPORT(`MAILBOX_STREAM_SIZE)] cc_mstreamo;
+
+    wire [`STREAM_MIPORT(`MAILBOX_STREAM_SIZE)] core_mstreami;
+    wire [`STREAM_MOPORT(`MAILBOX_STREAM_SIZE)] core_mstreamo;
+
+    wire [`STREAM_MIPORT(`SHADED_VERTEX_WIDTH)] core_deser_mstreami;
+    wire [`STREAM_MOPORT(`SHADED_VERTEX_WIDTH)] core_deser_mstreamo;
+
+    reg svc_clear;
+
+    reg  [`WORD] test_index;
+    reg  test_valid;
+    wire test_found;
+
+    reg  [`SHADED_VERTEX] store_vertex;
+    reg  [`WORD] store_index;
+    reg  store_valid;
+
+    wire [`STREAM_MIPORT(`SHADED_VERTEX_WIDTH)] svc_mstreami;
+    wire [`STREAM_MOPORT(`SHADED_VERTEX_WIDTH)] svc_mstreamo;
+
+    wire [`STREAM_MIPORT(1)] order_mstreami;
+    wire [`STREAM_MOPORT(1)] order_mstreamo;
+
+    wire [`STREAM_MIPORT(3 * `SHADED_VERTEX_WIDTH)] vrc_mstreami;
+    wire [`STREAM_MOPORT(3 * `SHADED_VERTEX_WIDTH)] vrc_mstreamo;
 
     busarb_m #(4, 2, 2) arbiter(
         .clk_i(clk),
@@ -108,26 +165,96 @@ module top_level_m(
         .spi_dqsm_en_o(spi2_dqsm_en_o)
     );
 
-    localparam integer NUM_ADDRS = 1;
-    wire [31:0] wbs_datN_o [NUM_ADDRS:0];
-    wire wbs_ackN_o [NUM_ADDRS-1:0];
-    reg wbs_stbN_i [NUM_ADDRS-1:0];
+    core_m core(
+        .clk_i(clk),
+        .nrst_i(nrst),
 
-    `define address_map(n, address, mask) \
-        wbs_stbN_i[n] = 0; \
-        if ((wbs_adr_i & mask) == address) begin \
-            wbs_dat_o = wbs_datN_o[n]; \
-            wbs_ack_o = wbs_ackN_o[n]; \
-            wbs_stbN_i[n] = wbs_stb_i; \
-        end
+        .inst_i(inst),
+        .global_r1_data_i(global_r1),
+        .global_r2_data_i(global_r2),
 
-    always @(*) begin
-        wbs_dat_o = 0;
-        wbs_ack_o = 0;
+        .jump_request_o(jump_request),
+        .flush_dec_stage_i(fds),
+        
+        .stall_i(stalli),
+        .stall_o(stallo),
 
-        `address_map(0, 32'h38000000, 32'hF8000000);
-    end
+        .nsync_rst_i(nsync_rst),
 
+        .inbox_sstream_i(cc_mstreamo),
+        .inbox_sstream_o(cc_mstreami),
+
+        .outbox_mstream_i(core_mstreami),
+        .outbox_mstream_o(core_mstreamo)
+    );
+
+    vertex_deserializer_m core_deserializer(
+        .clk_i(clk),
+        .nrst_i(nrst),
+
+        .sstream_i(core_mstreamo),
+        .sstream_o(core_mstreami),
+
+        .mstream_i(core_deser_mstreami),
+        .mstream_o(core_deser_mstreamo)
+    );
+
+    shaded_vertex_cache_m #(6) svc(
+        .clk_i(clk),
+        .nrst_i(nrst),
+
+        .clear_i(svc_clear),
+
+        .test_index_i(test_index),
+        .test_valid_i(test_valid),
+        .test_found_o(test_found),
+
+        .store_vertex_i(store_vertex),
+        .store_index_i(store_index),
+        .store_valid_i(store_valid),
+
+        .mstream_i(svc_mstreami),
+        .mstream_o(svc_mstreamo)
+    );
+
+    vertex_reorder_controller_m #(2) vrc(
+        .clk_i(clk),
+        .nrst_i(nrst),
+
+        .order_sstream_i(order_mstreamo),
+        .order_sstream_o(order_mstreami),
+
+        .sstreams_i({ svc_mstreamo, core_deser_mstreamo }),
+        .sstreams_o({ svc_mstreami, core_deser_mstreami }),
+
+        .mstream_i(vrc_mstreami),
+        .mstream_o(vrc_mstreamo)
+    );
+
+    rasterizer_wrapper_m rasterizer(
+        .wb_clk_i(wb_clk_i),
+        .wb_rst_i(wb_rst_i),
+        .wbs_stb_i(wbs_stbN_i[1]),
+        .wbs_cyc_i(wbs_cyc_i),
+        .wbs_we_i(wbs_we_i),
+        .wbs_sel_i(wbs_sel_i),
+        .wbs_dat_i(wbs_dat_i),
+        .wbs_adr_i(wbs_adr_i),
+        .wbs_ack_o(wbs_ackN_o[1]),
+        .wbs_dat_o(wbs_datN_o[1]),
+
+        .sstream_i(vrc_mstreamo),
+        .sstream_o(vrc_mstreami),
+
+        .depth_mport_i(rast1_mporti),
+        .depth_mport_o(rast1_mporto),
+
+        .pix_mport_i(rast2_mporti),
+        .pix_mport_o(rast2_mporto),
+
+        .tex_mport_i(rast3_mporti),
+        .tex_mport_o(rast3_mporto)
+    );
 
     vga_wrapper_m vga (
         .wb_clk_i(wb_clk_i),
@@ -148,7 +275,33 @@ module top_level_m(
         .hsync_o(hsync_o),
         .vsync_o(vsync_o)
     );
-    
+
+    initial begin
+        inst = 0;
+
+        global_r2 = 0;
+
+        jump_request = 0;
+        fds = 0;
+
+        stalli = 0;
+        stallo = 0;
+
+        nsync_rst = 0;
+
+        svc_clear = 0;
+
+        test_index = 0;
+        test_valid = 0;
+
+        store_vertex = 0;
+        store_index = 0;
+        store_valid = 0;
+
+        #1000;
+
+    end
+
 
 endmodule
 

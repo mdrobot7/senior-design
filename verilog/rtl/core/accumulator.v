@@ -19,9 +19,9 @@ module accumulator_m (
     
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin : RESET
-            acc_o <= '0;
+            acc_o <= 0;
         end else if (clr_i) begin : CLEAR
-            acc_o <= '0;
+            acc_o <= 0;
         end else if (en_i) begin : ACCUMULATE
             acc_o <= sum;
         end

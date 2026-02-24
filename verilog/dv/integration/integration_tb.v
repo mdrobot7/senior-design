@@ -1,4 +1,4 @@
-module rasterizer_tb();
+module integration_tb();
 
     wire clk, nrst;
 
@@ -29,249 +29,339 @@ module rasterizer_tb();
     wire [`BUS_SIPORT] sportbi;
     wire [`BUS_SOPORT] sportbo;
 
-    word_stripe_cache_m #(16, 2) word_cache(
-        .clk_i(clk),
-        .nrst_i(nrst),
+    wire spi1_clk;
+    wire spi1_cs;
+    wire [3:0] spi1_mosi;
+    wire [3:0] spi1_miso;
+    wire spi1_dqsmi;
+    wire spi1_dqsmo;
 
-        .cached_mport_i(mportao), 
-        .cached_mport_o(mportai),
-
-        .mport_i(mportbi),
-        .mport_o(mportbo)
-    );
-
-    assign mportco = mportbo;
-    assign mportbi = mportci;
-
-    busarb_m #(3, 2, 2) arbiter(
-        .clk_i(clk),
-        .nrst_i(nrst),
-
-        .mports_i({ mportco, mportdo, mporteo }),
-        .mports_o({ mportci, mportdi, mportei }),
-
-        .sports_i({ sportbo, sportao }),
-        .sports_o({ sportbi, sportai })
-    );
-
-    wire spi_clk1;
-    wire spi_cs1;
-    wire [3:0] spi_mosi1;
-    wire [3:0] spi_miso1;
-    wire spi_dqsmi1;
-    wire spi_dqsmo1;
-
-    wire spi_clk2;
-    wire spi_cs2;
-    wire [3:0] spi_mosi2;
-    wire [3:0] spi_miso2;
-    wire spi_dqsmi2;
-    wire spi_dqsmo2;
-
-    spi_mem_m #(0, 320*240*2) spi_mem1(
-        .clk_i(clk),
-        .nrst_i(nrst),
-
-        .sport_i({ sportai }),
-        .sport_o({ sportao }),
-
-        .spi_clk_o(spi_clk1),
-        .spi_cs_o(spi_cs1),
-        .spi_mosi_o(spi_mosi1),
-        .spi_miso_i(spi_miso1),
-        .spi_dqsm_i(spi_dqsmi1),
-        .spi_dqsm_o(spi_dqsmo1)
-    );
+    wire spi2_clk;
+    wire spi2_cs;
+    wire [3:0] spi2_mosi;
+    wire [3:0] spi2_miso;
+    wire spi2_dqsmi;
+    wire spi2_dqsmo;
 
     spi_chip_m #(5, 1, 500000) spi_chip1(
-        .clk_i(spi_clk1),
-        .cs_i(spi_cs1),
-        .mosi_i(spi_mosi1),
-        .miso_o(spi_miso1),
-        .dqsm_o(spi_dqsmi1),
-        .dqsm_i(spi_dqsmo1)
-    );
-
-    spi_mem_m #(320*240*2, 4000000) spi_mem2(
-        .clk_i(clk),
-        .nrst_i(nrst),
-
-        .sport_i({ sportbi }),
-        .sport_o({ sportbo }),
-
-        .spi_clk_o(spi_clk2),
-        .spi_cs_o(spi_cs2),
-        .spi_mosi_o(spi_mosi2),
-        .spi_miso_i(spi_miso2),
-        .spi_dqsm_i(spi_dqsmi2),
-        .spi_dqsm_o(spi_dqsmo2)
+        .clk_i(spi1_clk),
+        .cs_i(spi1_cs),
+        .mosi_i(spi1_mosi),
+        .miso_o(spi1_miso),
+        .dqsm_o(spi1_dqsmi),
+        .dqsm_i(spi1_dqsmo)
     );
 
     spi_chip_m #(5, 1, 500000) spi_chip2(
-        .clk_i(spi_clk2),
-        .cs_i(spi_cs2),
-        .mosi_i(spi_mosi2),
-        .miso_o(spi_miso2),
-        .dqsm_o(spi_dqsmi2),
-        .dqsm_i(spi_dqsmo2)
+        .clk_i(spi2_clk),
+        .cs_i(spi2_cs),
+        .mosi_i(spi2_mosi),
+        .miso_o(spi2_miso),
+        .dqsm_o(spi2_dqsmi),
+        .dqsm_i(spi2_dqsmo)
     );
 
-    reg  run;
-    wire busy;
-    wire output_ready;
-    reg [7:0] color;
-    reg [`BUS_ADDR_PORT] tex_addr;
-    reg [`TEX_DIM] tex_width;
-    reg [`TEX_DIM] tex_height;
+    wire [`BUS_MIPORT] vga_mporti;
+    wire [`BUS_MOPORT] vga_mporto;
 
-    reg [31:0] t0x;
-    reg [31:0] t0y;
-    reg [31:0] t1x;
-    reg [31:0] t1y;
-    reg [31:0] t2x;
-    reg [31:0] t2y;
+    wire [`BUS_MIPORT] rast1_mporti;
+    wire [`BUS_MOPORT] rast1_mporto;
 
-    reg [31:0] v0x;
-    reg [31:0] v0y;
-    reg [31:0] v0z;
-    reg [31:0] v1x;
-    reg [31:0] v1y;
-    reg [31:0] v1z;
-    reg [31:0] v2x;
-    reg [31:0] v2y;
-    reg [31:0] v2z;
+    wire [`BUS_MIPORT] rast2_mporti;
+    wire [`BUS_MOPORT] rast2_mporto;
 
-    image_m image();
+    wire [`BUS_MIPORT] core_mporti;
+    wire [`BUS_MOPORT] core_mporto;
 
-    rasterizer_m rasterizer(
+    wire [`BUS_MIPORT] write_mporti;
+    wire [`BUS_MOPORT] write_mporto;
+
+    wire [`BUS_SIPORT] spi1_sporti;
+    wire [`BUS_SOPORT] spi1_sporto;
+
+    wire [`BUS_SIPORT] spi2_sporti;
+    wire [`BUS_SOPORT] spi2_sporto;
+
+    reg  [`WORD] inst;
+
+    reg  [`WORD] global_r1, global_r2;
+
+    wire jump_request;
+    reg  fds;
+
+    reg  stalli;
+    wire stallo;
+
+    reg nsync_rst;
+
+    wire [`STREAM_MIPORT(`MAILBOX_STREAM_SIZE)] cc_mstreami;
+    reg  [`STREAM_MOPORT(`MAILBOX_STREAM_SIZE)] cc_mstreamo;
+
+    wire [`STREAM_MIPORT(`MAILBOX_STREAM_SIZE)] core_mstreami;
+    wire [`STREAM_MOPORT(`MAILBOX_STREAM_SIZE)] core_mstreamo;
+
+    wire [`STREAM_MIPORT(`SHADED_VERTEX_WIDTH)] core_deser_mstreami;
+    wire [`STREAM_MOPORT(`SHADED_VERTEX_WIDTH)] core_deser_mstreamo;
+
+    reg svc_clear;
+
+    reg  [`WORD] test_index;
+    reg  test_valid;
+    wire test_found;
+
+    reg  [`SHADED_VERTEX] store_vertex;
+    reg  [`WORD] store_index;
+    reg  store_valid;
+
+    wire [`STREAM_MIPORT(`SHADED_VERTEX_WIDTH)] svc_mstreami;
+    wire [`STREAM_MOPORT(`SHADED_VERTEX_WIDTH)] svc_mstreamo;
+    wire [`STREAM_MIPORT(`SHADED_VERTEX_WIDTH)] svb_mstreami;
+    wire [`STREAM_MOPORT(`SHADED_VERTEX_WIDTH)] svb_mstreamo;
+
+    wire [`STREAM_MIPORT(1)] order_mstreami;
+    wire [`STREAM_MOPORT(1)] order_mstreamo;
+    wire [`STREAM_MIPORT(1)] vob_mstreami;
+    wire [`STREAM_MOPORT(1)] vob_mstreamo;
+
+    wire [`STREAM_MIPORT(3 * `SHADED_VERTEX_WIDTH)] vrc_mstreami;
+    wire [`STREAM_MOPORT(3 * `SHADED_VERTEX_WIDTH)] vrc_mstreamo;
+
+    wire [`STREAM_MIPORT(`FRAGMENT_WIDTH)] frag_mstreami;
+    wire [`STREAM_MOPORT(`FRAGMENT_WIDTH)] frag_mstreamo;
+
+    busarb_m #(5, 2, 2) arbiter(
         .clk_i(clk),
         .nrst_i(nrst),
 
-        .depth_mport_i({ mportai }),
-        .depth_mport_o({ mportao }),
+        .mports_i({ write_mporto, core_mporto, rast2_mporto, rast1_mporto, vga_mporto }),
+        .mports_o({ write_mporti, core_mporti, rast2_mporti, rast1_mporti, vga_mporti }),
 
-        .pix_mport_i({ mportdi }),
-        .pix_mport_o({ mportdo }),
-
-        .tex_mport_i({ mportei }),
-        .tex_mport_o({ mporteo }),
-
-        .run_i(run),
-        .busy_o(busy),
-
-        .tex_addr_i(tex_addr),
-        .tex_width_i(tex_width),
-        .tex_height_i(tex_height),
-        .fb_i(1'b0),
-
-        .t0x(t0x),
-        .t0y(t0y),
-        .t1x(t1x),
-        .t1y(t1y),
-        .t2x(t2x),
-        .t2y(t2y),
-
-        .v0x(v0x),
-        .v0y(v0y),
-        .v0z(v0z),
-        .v1x(v1x),
-        .v1y(v1y),
-        .v1z(v1z),
-        .v2x(v2x),
-        .v2y(v2y),
-        .v2z(v2z)
+        .sports_i({ spi1_sporto, spi2_sporto }),
+        .sports_o({ spi1_sporti, spi2_sporti })
     );
 
-    wire [`STREAM_SIPORT(`MAILBOX_STREAM_SIZE)] inbox_sstreami;
-    wire [`STREAM_SOPORT(`MAILBOX_STREAM_SIZE)] inbox_sstreamo;
-    wire [`STREAM_MIPORT(`MAILBOX_STREAM_SIZE)] outbox_mstreami;
-    wire [`STREAM_MOPORT(`MAILBOX_STREAM_SIZE)] outbox_mstreamo;
-
-    vertex_reorder_controller_m #(2) reorder(
+    spi_mem_m #(0, `SPI_MEM_SIZE) spi_mem1(
         .clk_i(clk),
         .nrst_i(nrst),
 
+        .sport_i(spi1_sporti),
+        .sport_o(spi1_sporto),
 
+        .spi_clk_o(spi1_clk),
+        .spi_cs_o(spi1_cs),
+        .spi_mosi_o(spi1_mosi),
+        .spi_miso_i(spi1_miso),
+        .spi_dqsm_i(spi1_dqsmi),
+        .spi_dqsm_o(spi1_dqsmo)
     );
 
-    core_m my_core_m(
+    spi_mem_m #(`SPI_MEM_SIZE, `SPI_MEM_SIZE) spi_mem2(
+        .clk_i(clk),
+        .nrst_i(nrst),
+
+        .sport_i(spi2_sporti),
+        .sport_o(spi2_sporto),
+
+        .spi_clk_o(spi2_clk),
+        .spi_cs_o(spi2_cs),
+        .spi_mosi_o(spi2_mosi),
+        .spi_miso_i(spi2_miso),
+        .spi_dqsm_i(spi2_dqsmi),
+        .spi_dqsm_o(spi2_dqsmo)
+    );
+
+    core_m core(
         .clk_i(clk),
         .nrst_i(nrst),
 
         .inst_i(inst),
-        .global_r1_data_i(global_r1_data),
-        .global_r2_data_i(global_r2_data),
+        .global_r1_data_i(global_r1),
+        .global_r2_data_i(global_r2),
 
         .jump_request_o(jump_request),
-        .flush_dec_stage_i(flush_dec_stage),
-        .stall_i(stall),
+        .flush_dec_stage_i(fds),
+        
+        .stall_i(stalli),
         .stall_o(stallo),
+
         .nsync_rst_i(nsync_rst),
 
-        .inbox_sstream_i(inbox_sstreami),
-        .inbox_sstream_o(inbox_sstreamo),
-        .outbox_mstream_i(outbox_mstreami),
-        .outbox_mstream_o(outbox_mstreamo),
+        .inbox_sstream_i(cc_mstreamo),
+        .inbox_sstream_o(cc_mstreami),
 
-        .mport_i(mportai),
-        .mport_o(mportao)
+        .outbox_mstream_i(core_mstreami),
+        .outbox_mstream_o(core_mstreamo),
+        
+        .mport_i(core_mporti),
+        .mport_o(core_mporto)
     );
 
-    stream_stat_m #(SC_WIDTH * 2) pos_stat(
+    vertex_deserializer_m core_deserializer(
+        .clk_i(clk),
+        .nrst_i(nrst),
+
+        .sstream_i(core_mstreamo),
+        .sstream_o(core_mstreami),
+
+        .mstream_i(core_deser_mstreami),
+        .mstream_o(core_deser_mstreamo)
+    );
+
+    shaded_vertex_cache_m #(6) svc(
+        .clk_i(clk),
+        .nrst_i(nrst),
+
+        .clear_i(svc_clear),
+
+        .test_index_i(test_index),
+        .test_valid_i(test_valid),
+        .test_found_o(test_found),
+
+        .store_vertex_i(store_vertex),
+        .store_index_i(store_index),
+        .store_valid_i(store_valid),
+
+        .mstream_i(svc_mstreami),
+        .mstream_o(svc_mstreamo)
+    );
+
+    stream_fifo_m #(`SHADED_VERTEX_WIDTH, 10) svb(
+        .clk_i(clk),
+        .nrst_i(nrst),
+
+        .sstream_i(svc_mstreamo),
+        .sstream_o(svc_mstreami),
+
+        .mstream_i(svb_mstreami),
+        .mstream_o(svb_mstreamo)
+    );
+
+    stream_master_m #(1) order_master(
         .clk_i(clk),
 
-        .mstreami_i(rasterizer.pos_streami),
-        .mstreamo_i(rasterizer.pos_streamo)
+        .mstream_i(order_mstreami),
+        .mstream_o(order_mstreamo)
     );
 
-    stream_stat_m #(SC_WIDTH * 2 + WORD_WIDTH * 3) bary_stat(
+    vertex_order_buffer_m #(6, 1) vob(
         .clk_i(clk),
+        .nrst_i(nrst),
+        
+        .sstream_i(order_mstreamo),
+        .sstream_o(order_mstreami),
 
-        .mstreami_i(rasterizer.filt_bary_streami),
-        .mstreamo_i(rasterizer.filt_bary_streamo)
+        .mstream_i(vob_mstreami),
+        .mstream_o(vob_mstreamo),
+
+        .full_o(),
+        .empty_o()
     );
 
-    stream_stat_m #(SC_WIDTH * 2 + WORD_WIDTH * 3) filt_bary_stat(
+    vertex_reorder_controller_m #(2) vrc(
         .clk_i(clk),
+        .nrst_i(nrst),
 
-        .mstreami_i(rasterizer.filt_bary_streami),
-        .mstreamo_i(rasterizer.filt_bary_streamo)
+        .order_sstream_i(vob_mstreamo),
+        .order_sstream_o(vob_mstreami),
+
+        .sstreams_i({ svb_mstreamo, core_deser_mstreamo }),
+        .sstreams_o({ svb_mstreami, core_deser_mstreami }),
+
+        .mstream_i(vrc_mstreami),
+        .mstream_o(vrc_mstreamo)
     );
 
-    stream_stat_m #(`RAST_WAVG_OUT_WIDTH) wavg_stat(
+    rasterizer_wrapper_m rasterizer(
+        .wb_clk_i(clk),
+        .wb_rst_i(!nrst),
+        .wbs_stb_i(1'b0),
+        .wbs_cyc_i(1'b0),
+        .wbs_we_i(1'b0),
+        .wbs_sel_i(4'b0),
+        .wbs_dat_i(32'h0),
+        .wbs_adr_i(32'b0),
+        .wbs_ack_o(),
+        .wbs_dat_o(),
+
+        .sstream_i(vrc_mstreamo),
+        .sstream_o(vrc_mstreami),
+
+        .mstream_i(frag_mstreami),
+        .mstream_o(frag_mstreamo),
+
+        .depth_mport_i(rast1_mporti),
+        .depth_mport_o(rast1_mporto),
+
+        .tex_mport_i(rast2_mporti),
+        .tex_mport_o(rast2_mporto)
+    );
+
+    vga_wrapper_m vga(
+        .wb_clk_i(clk),
+        .wb_rst_i(!nrst),
+        .wbs_stb_i(1'b0),
+        .wbs_cyc_i(1'b0),
+        .wbs_we_i(1'b0),
+        .wbs_sel_i(4'b0),
+        .wbs_dat_i(32'h0),
+        .wbs_adr_i(32'b0),
+        .wbs_ack_o(),
+        .wbs_dat_o(),
+
+        .mport_i(vga_mporti),
+        .mport_o(vga_mporto),
+
+        .pixel_o(),
+        .hsync_o(),
+        .vsync_o()
+    );
+
+    mem_write_m mem_write(
         .clk_i(clk),
+        .nrst_i(nrst),
 
-        .mstreami_i(rasterizer.wavg_streami),
-        .mstreamo_i(rasterizer.wavg_streamo)
+        .busy_o(),
+        
+        .sstream_i(frag_mstreamo),
+        .sstream_o(frag_mstreami),
+
+        .mport_i(write_mporti),
+        .mport_o(write_mporto),
+        
+        .fb_i(1'b0)
     );
 
-    stream_stat_m #(`RAST_WAVG_OUT_WIDTH) wavg_fifo_stat(
-        .clk_i(clk),
-
-        .mstreami_i(rasterizer.wavg_fifo_streami),
-        .mstreamo_i(rasterizer.wavg_fifo_streamo)
-    );
+    reg [`WORD] insts [1023:0];
 
     initial begin : MAIN
         integer i, j;
         integer x, y;
 
-		$dumpfile("rasterizer.vcd");
-		$dumpvars(0, rasterizer_tb);
+		$dumpfile("integration.vcd");
+		$dumpvars(0, integration_tb);
 
-        run = 0;
+        inst = 0;
 
-        tex_addr = `ADDR_FB1;
-        tex_width = 60;
-        tex_height = 60;
+        global_r2 = 0;
+
+        fds = 0;
+
+        stalli = 0;
+
+        nsync_rst = 1;
+
+        svc_clear = 0;
+
+        test_index = 0;
+        test_valid = 0;
+
+        store_vertex = 0;
+        store_index = 0;
+        store_valid = 0;
+
+        $readmemh("../top_level/src/asm/vertex_gen.txt", insts);
 
         clk_rst.RESET();
-
-        pos_stat.RESET();
-        bary_stat.RESET();
-        filt_bary_stat.RESET();
-        wavg_stat.RESET();
-        wavg_fifo_stat.RESET();
 
         for (x = 0; x < 320; x = x + 1) begin
             for (y = 0; y < 240; y = y + 1) begin : DB_FILL
@@ -287,68 +377,63 @@ module rasterizer_tb();
 
         for (x = 0; x < 60; x = x + 1) begin
             for (y = 0; y < 60; y = y + 1) begin
-                WRITE_MEM(`ADDR_FB1 + (y * 60 + x), image.tex_data[y * 60 + x]);
-                // WRITE_MEM(`ADDR_FB1 + (y * 60 + x), 8'b11000000);
+                // WRITE_MEM(`ADDR_FB1 + (y * 60 + x), image.tex_data[y * 60 + x]);
+                WRITE_MEM(`ADDR_FB1 + (y * 60 + x), 8'b11000000);
             end
         end
 
-        // for (x = 0; x < 60; x = x + 1) begin
-        //     for (y = 0; y < 60; y = y + 1) begin
-        //         if (x < 2 || x >= 58 || y < 2 || y >= 58) WRITE_MEM(`ADDR_FB1 + (y * 60 + x), 8'b11000000);
-        //         else WRITE_MEM(`ADDR_FB1 + (y * 60 + x), (x % 8 == 4) || (y % 8 == 4) ? 8'b00000111 : 8'b00111000);
+        wait(!clk);
 
-        //         // WRITE_MEM(`ADDR_FB1 + (y * 60 + x), 8'b11000000);
-        //     end
-        // end
+        svc_clear = 1;
+        wait(clk);
+        wait(!clk);
+        svc_clear = 0;
 
-        for (x = 0; x < 320; x = x + 1) begin
-            for (y = 0; y < 240; y = y + 1) begin
-                WRITE_MEM(`ADDR_FB0 + (y * 320 + x), 0);
+        store_vertex = { 32'h00000400, 32'h00005000, 32'h00005000, 32'h00000400 };
+        store_index = 1;
+        store_valid = 1;
+        wait(clk);
+        wait(!clk);
+        store_valid = 0;
+
+        store_vertex = { 32'h00000400, 32'h00005000, 32'h00000400, 32'h00005000 };
+        store_index = 2;
+        store_valid = 1;
+        wait(clk);
+        wait(!clk);
+        store_valid = 0;
+
+        order_master.WRITE(1);
+        order_master.WRITE(0);
+        order_master.WRITE(1);
+
+        for (i = 0; i < 26 * 3; i = i + 1) begin
+            @(negedge clk);
+            if(stallo) begin
+                @(negedge stallo);
+                @(negedge clk);
             end
+            inst = insts[i];
         end
 
-`include "cube.v"
-// `include "duwe_cube.v"
-// `include "quad.v"
+        test_index = 1;
+        test_valid = 1;
+        wait(clk);
+        wait(!clk);
+        test_valid = 0;
 
-        clk_rst.WAIT_CYCLES(10);
-    
-        $display("Elapsed %d clock cycles", clk_rst.current_cycle);
-        $display("%d FPS at 10 MHz", 10000000.0 / clk_rst.current_cycle);
-        $display("%d FPS at 20 MHz", 20000000.0 / clk_rst.current_cycle);
-        $display("%d FPS at 30 MHz", 30000000.0 / clk_rst.current_cycle);
-        $display("%d FPS at 40 MHz", 40000000.0 / clk_rst.current_cycle);
-        $display("%d FPS at 50 MHz", 50000000.0 / clk_rst.current_cycle);
-        $display("%d FPS at 100 MHz", 100000000.0 / clk_rst.current_cycle);
-
-        $display("Pipeline info");
-
-        $display("Pos Stats");
-        pos_stat.PRINT_STATS();
-
-        $display("Bary Stats");
-        bary_stat.PRINT_STATS();
-
-        $display("Filt Bary Stats");
-        filt_bary_stat.PRINT_STATS();
-
-        $display("WAvg Stats");
-        wavg_stat.PRINT_STATS();
-
-        $display("WAvg FIFO Stats");
-        wavg_fifo_stat.PRINT_STATS();
-
-        $display("Dumping image...");
-
-        `VGA_WRITE("output.bmp", spi_chip1.mem, `ADDR_FB0, 320, 240, `COLOR_TYPE_RGB332);
-
-        // `VGA_WRITE("depth.bmp", spi_chip1.mem, `ADDR_DEPTH_BUFFER, 320, 240, `COLOR_TYPE_GSW);
-
-        $finish;
+        test_index = 2;
+        test_valid = 1;
+        wait(clk);
+        wait(!clk);
+        test_valid = 0;
     end
 
     initial begin
-        #100000000000;
+        #1000000;
+
+        `VGA_WRITE("output.bmp", spi_chip1.mem, `ADDR_FB0, 320, 240, `COLOR_TYPE_RGB332);
+
         $finish;
     end
 
@@ -366,3 +451,4 @@ module rasterizer_tb();
     endtask
 
 endmodule
+

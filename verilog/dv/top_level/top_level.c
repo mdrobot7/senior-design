@@ -150,8 +150,8 @@ void main() {
 
     delay_ms(1000);
 
-    vga.fbaddr = 0;
-    vga.control = 0b001000101;
+    vga->fbaddr = 0;
+    vga->control = 0b001000101;
 
     while (1) {
         reg_gpio_out   = 1; // LED on
