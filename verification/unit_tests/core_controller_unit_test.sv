@@ -6,17 +6,33 @@
 `include "stream/stream_fifo.v"
 `include "vertex_order_buffer.v"
 `include "shaded_vertex_cache.v"
-`include "core/regfile.v"
 `include "test/bus_slave.v"
 `include "test/clk_rst.v"
 
+`include "math/full_adder.v"
+`include "math/mul.v"
+`include "math/add.v"
+
+`include "core/core.v"
+`include "core/accumulator.v"
+`include "core/alu.v"
+`include "core/decoder.v"
+`include "core/forward.v"
+`include "core/predicate.v"
+`include "core/regfile.v"
+`include "core/signext.v"
+
 `default_nettype wire
+`define functional
   `include "../../ip/CF_SRAM_1024x32/hdl/beh_models/CF_SRAM_1024x32.tt_180V_25C.v"
+`undef functional
 `default_nettype none
 
 `include "core_controller/index_fetch.v"
 `include "core_controller/dispatch.v"
+`define FPGA
 `include "core_controller/core_controller.v"
+`undef FPGA
 
 module core_controller_m_unit_test;
   import svunit_pkg::svunit_testcase;
@@ -30,6 +46,14 @@ module core_controller_m_unit_test;
   // running the Unit Tests on
   //===================================
 
+  localparam STATE_STOPPED          = 0; // Waiting for program to start from beginning
+  localparam STATE_DISPATCHING      = 1; // Dispatching jobs
+  localparam STATE_VERTEX_SHADING   = 2;
+  localparam STATE_FRAGMENT_SHADING = 3;
+  localparam STATE_GPGPU_COMPUTE    = 4;
+  localparam STATE_PAUSED           = 5; // Manual pause by management core or step-through
+  localparam STATE_HALTING          = 6; // Used for pause on halt and when a model finishes
+
   wire clk;
   wire nrst;
   clk_rst_m  #(10, 30) clk_rst (
@@ -39,22 +63,23 @@ module core_controller_m_unit_test;
 
   wire [`BUS_MIPORT] mportai;
   reg  [`BUS_MOPORT] mportao;
+  wire [`BUS_MIPORT] mportcorei [`NUM_CORES-1:0];
+  reg  [`BUS_MOPORT] mportcoreo [`NUM_CORES-1:0];
   wire [`BUS_SIPORT] sportai;
   wire [`BUS_SOPORT] sportao;
-  busarb_m #(1, 1, 1) arbiter (
+  busarb_m #(`NUM_CORES+1, 1, `NUM_CORES+1) arbiter (
     .clk_i(clk),
     .nrst_i(nrst),
 
-    .mports_i({ mportao }),
-    .mports_o({ mportai }),
+    .mports_i({ mportao, mportcoreo }),
+    .mports_o({ mportai, mportcorei }),
 
     .sports_i({ sportao }),
     .sports_o({ sportai })
   );
 
-  localparam INDEX_BUFFER_ADDR         = 32'h00001000;
-  localparam INDEX_BUFFER_SIZE_INDICES = 12 * 3; // cube.obj
-  localparam INDEX_BUFFER_SIZE_BYTES   = INDEX_BUFFER_SIZE_INDICES * 3;
+  localparam INDEX_BUFFER_ADDR         = 0;
+  localparam INDEX_BUFFER_SIZE_BYTES   = 1024;
   bus_slave_m #(INDEX_BUFFER_ADDR, INDEX_BUFFER_SIZE_BYTES) ram (
     .clk_i(clk),
     .nrst_i(nrst),
@@ -76,7 +101,7 @@ module core_controller_m_unit_test;
 
     .sstream_i(vertorder_sstreami),
     .sstream_o(vertorder_sstreamo),
-    .mstream_i(32'b0),
+    .mstream_i(1'b0),
     .mstream_o(),
 
     .full_o(vertorder_full),
@@ -105,7 +130,7 @@ module core_controller_m_unit_test;
     .store_index_i(vertcache_store_index),
     .store_valid_i(vertcache_store_valid),
 
-    .mstream_i(0),
+    .mstream_i(1'b0),
     .mstream_o()
   );
 
@@ -203,6 +228,34 @@ module core_controller_m_unit_test;
     .global_regfile_rs2_data_o(global_regfile_rs2_data)
   );
 
+  core_m core[`NUM_CORES-1:0] (
+    .clk_i(clk),
+    .nrst_i(nrst),
+    .inst_i(inst),
+    .global_r1_data_i(global_regfile_rs1_data),
+    .global_r2_data_i(global_regfile_rs2_data),
+    .jump_request_o(core_jumpi),
+    .flush_dec_stage_i(core_jumpo),
+    .stall_i(core_stallo),
+    .stall_o(core_stalli),
+    .nsync_rst_i(core_reset),
+    .inbox_sstream_i(34'b0),
+    .inbox_sstream_o(),
+    .outbox_mstream_i(1'b0),
+    .outbox_mstream_o(),
+    .mport_i(mportcorei),
+    .mport_o(mportcoreo)
+  );
+  // Can't for loop this (compiler issues) so we're doing this instead
+  `define CHECK_REG(local_reg, val) \
+    `FAIL_UNLESS_EQUAL(core[0].regfile.mem[local_reg], val); \
+    `FAIL_UNLESS_EQUAL(core[1].regfile.mem[local_reg], val); \
+    `FAIL_UNLESS_EQUAL(core[2].regfile.mem[local_reg], val); \
+    `FAIL_UNLESS_EQUAL(core[3].regfile.mem[local_reg], val); \
+    `FAIL_UNLESS_EQUAL(core[4].regfile.mem[local_reg], val); \
+    `FAIL_UNLESS_EQUAL(core[5].regfile.mem[local_reg], val);
+
+  reg[`WORD_WIDTH-1:0] imem_reg [0:1023];
 
   //===================================
   // Build
@@ -238,9 +291,7 @@ module core_controller_m_unit_test;
     num_dispatches = 0;
     job_done_clr = 0;
     batch_done_clr = 0;
-    core_stalli = 0;
     core_flushi = 0;
-    core_jumpi = 0;
     clk_rst.RESET();
   endtask
 
@@ -292,7 +343,7 @@ module core_controller_m_unit_test;
     // Read test: data should appear on the same cycle
     global_regfile_write_en = 0;
     clk_rst.WAIT_CYCLES(1);
-    for (int i = `NUM_LOCAL_REGS; i < `NUM_LOCAL_REGS + `NUM_GLOBAL_REGS; i++) begin
+for (int i = `NUM_LOCAL_REGS; i < `NUM_LOCAL_REGS + `NUM_GLOBAL_REGS; i++) begin
       global_regfile_addr = i;
       #1;
       if (i == `NUM_LOCAL_REGS + `NUM_GLOBAL_REGS - 1) begin
@@ -335,16 +386,45 @@ module core_controller_m_unit_test;
     end
   `SVTEST_END
 
-  `SVTEST(index_fetch)
-    // TODO
-  `SVTEST_END
-
-  `SVTEST(dispatch)
-    // TODO
-  `SVTEST_END
-
   `SVTEST(exec_gpgpu)
-    // TODO
+    clk_rst.WAIT_CYCLES(1);
+    fill_imem();
+    // `FAIL_UNLESS_EQUAL(0, 1);
+
+    pc_gpgpu_compute = 0;
+    core_enable = {`NUM_CORES{1'b1}};
+    cmd = `CORE_CTRL_CMD_RUN;
+    pause_at_halt = 1;
+    dispatch_ctrl = `CORE_CTRL_DISPATCH_INT;
+    num_dispatches = 100;
+
+    for (int i = 0; i < 10000000; i++) begin
+      clk_rst.WAIT_CYCLES(1);
+      if (job_done)
+        break;
+    end
+    `FAIL_UNLESS_EQUAL(state, STATE_PAUSED);
+    `FAIL_UNLESS_EQUAL(job_done, 1);
+
+    for (int i = 0; i < `NUM_CORES; i++) begin
+      $display("Checking core %d...", i);
+      `CHECK_REG( 0, 32'h00000000);
+      `CHECK_REG( 1, 32'hFFFFFFFF);
+      `CHECK_REG( 2, 32'h00000002);
+      `CHECK_REG( 3, 32'hFFFFFFFD);
+      `CHECK_REG( 4, 32'h00000004);
+      `CHECK_REG( 5, 32'hFFFFFFFB);
+      `CHECK_REG( 6, 32'h00000006);
+      `CHECK_REG( 7, 32'hFFFFFFF9);
+      `CHECK_REG( 8, 32'h00000A00);
+      `CHECK_REG( 9, 32'h00000007);
+      // `CHECK_REG(10, 32'hFFFFF371); Undefined value in test_core.s
+      `CHECK_REG(11, 32'h000050C8);
+      `CHECK_REG(12, 32'h00000000);
+      // `CHECK_REG(13, 32'hFFFF8B51); Undefined value in test_core.s
+      `CHECK_REG(14, 32'h0000000A);
+      `CHECK_REG(15, 32'h0000000A);
+    end
   `SVTEST_END
 
   `SVTEST(exec_raster)
@@ -356,5 +436,25 @@ module core_controller_m_unit_test;
   `SVTEST_END
 
   `SVUNIT_TESTS_END
+
+  int fd;
+  task fill_imem;
+  begin
+    // For the sake of this test set unused IMEM to 0. Shouldn't cause any
+    // issues
+    for (int i = 0; i < 1024; i++)
+      imem_reg[i] = 0;
+
+    $readmemh("../../verilog/dv/top_level/src/asm/test_core.hex", imem_reg);
+    imem_rw = 0;
+    for (int i = 0; i < 1024; i++) begin // Word-addressed
+      // dut.imem.memory_mode_inst.memory[i] = imem_reg[i];
+      imem_addr = i;
+      imem_di = imem_reg[i];
+      clk_rst.WAIT_CYCLES(1);
+    end
+    clk_rst.WAIT_CYCLES(1);
+  end
+  endtask
 
 endmodule

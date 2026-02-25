@@ -561,10 +561,6 @@ module core_controller_m #(
 
   localparam INST_NOP        = 32'h08000000;
 
-  localparam DISPATCH_CTRL_DISABLE = 0;
-  localparam DISPATCH_CTRL_INT     = 1;
-  localparam DISPATCH_CTRL_INDEX   = 2;
-
   localparam HALT_STAGE     = 3; // 1 = decode, 4 = writeback
   localparam JUMP_STAGE     = 2; // 1 = decode, 2 = exec
   localparam JUMP_TYPE_JUMP = 0;
@@ -577,6 +573,9 @@ module core_controller_m #(
   localparam STATE_GPGPU_COMPUTE    = 4;
   localparam STATE_PAUSED           = 5; // Manual pause by management core or step-through
   localparam STATE_HALTING          = 6; // Used for pause on halt and when a model finishes
+  localparam STATE_DONE             = 7;
+
+  integer i;
 
   reg [2:0] state;
   reg [2:0] cur_prog;
@@ -588,15 +587,15 @@ module core_controller_m #(
   reg [`IMEM_ADDR_WIDTH-1:0] pc;
 
   // Call stack
-  reg [CALL_STACK_LEN-1:0]  call_stack[`IMEM_ADDR_WIDTH-1:0];
-  reg [CALL_STACK_BITS-1:0] call_stack_idx;
+  reg [`IMEM_ADDR_WIDTH-1:0] call_stack[CALL_STACK_LEN-1:0];
+  reg [CALL_STACK_BITS-1:0]  call_stack_idx;
 
   // Tracking jumps and halts through the core pipeline
   reg  [1:0]                  halt_counter;
   reg  [`JUMP_WIDTH-1:0]      jump_offsets [JUMP_STAGE-1:0];
   reg  [JUMP_STAGE-1:0]       jump_type;
-  wire [`IMEM_ADDR_WIDTH-1:0] jump_jal_offset = pc + jump_offsets[1][22:2]; // Add word offset, not byte offset
-  wire [`IMEM_ADDR_WIDTH-1:0] jret_offset     = pc + call_stack[call_stack_idx][22:2];
+  wire [`IMEM_ADDR_WIDTH-1:0] jump_jal_offset = pc + $signed(jump_offsets[1][22:2]); // Add word offset, not byte offset
+  wire [`IMEM_ADDR_WIDTH-1:0] jret_offset     = pc + $signed(call_stack[call_stack_idx][`IMEM_ADDR_WIDTH-1:2]);
 
   // IMEM
   wire [`WORD_WIDTH-1:0]      imem_do;
@@ -633,13 +632,14 @@ module core_controller_m #(
 
   always @(negedge nrst_i, posedge clk_i) begin
     if (!nrst_i) begin
-      for (i = 0; i < 1024; i++)
-        imem <= 0;
+      for (i = 0; i < 1024; i=i+1)
+        imem[i] <= 0;
     end
     else if (clk_i) begin
       if (!imem_rw)
         imem[imem_addr] <= imem_di_i;
     end
+  end
 `endif
 
   // Instruction decode
@@ -652,7 +652,7 @@ module core_controller_m #(
   wire         dispatch_index_fetch_enable = (state != STATE_STOPPED);
   wire         dispatch_reset              = (state == STATE_STOPPED);
   reg          dispatch_enable;
-  wire         dispatch_indices            = (dispatch_ctrl_i == DISPATCH_CTRL_INDEX);
+  wire         dispatch_indices            = (dispatch_ctrl_i == `CORE_CTRL_DISPATCH_INDEX);
   wire [`WORD] dispatch_thread_id;
   wire [`WORD] dispatch_inst;
   wire [`NUM_CORES-1:0] dispatch_core_stall;
@@ -725,10 +725,8 @@ module core_controller_m #(
   assign imem_do_o = (state == STATE_STOPPED) ? imem_do : 0;
   assign state_o  = state;
 
-  wire is_rasterization = (dispatch_ctrl_i != DISPATCH_CTRL_INDEX);
-  wire should_dispatch  = (dispatch_ctrl_i != DISPATCH_CTRL_DISABLE && next_prog != STATE_FRAGMENT_SHADING);
-
-  integer i;
+  wire is_rasterization = (dispatch_ctrl_i == `CORE_CTRL_DISPATCH_INDEX);
+  wire should_dispatch  = (dispatch_ctrl_i != `CORE_CTRL_DISPATCH_DISABLE && next_prog != STATE_FRAGMENT_SHADING);
 
   always @(posedge clk_i, negedge nrst_i) begin
     if (!nrst_i) begin
@@ -736,13 +734,13 @@ module core_controller_m #(
       batch_done_o <= 0;
 
       halt_counter <= 0;
-      for (i = 0; i < JUMP_STAGE; i++)
+      for (i = 0; i < JUMP_STAGE; i+=1)
         jump_offsets[i] <= 0;
       jump_type <= 0;
 
       pc <= 0;
 
-      for (i = 0; i < CALL_STACK_LEN; i++)
+      for (i = 0; i < CALL_STACK_LEN; i+=1)
         call_stack[i] <= 0;
       call_stack_idx <= 0;
 
@@ -800,7 +798,7 @@ module core_controller_m #(
             `CORE_CTRL_CMD_STOP:  state <= STATE_STOPPED;
             `CORE_CTRL_CMD_PAUSE: state <= STATE_PAUSED;
             `CORE_CTRL_CMD_RUN, `CORE_CTRL_CMD_STEP: begin
-              if (!core_stall_i && last_cmd_step) begin
+              if (!core_stall_i && ((cmd_i == `CORE_CTRL_CMD_STEP && last_cmd_step) || cmd_i == `CORE_CTRL_CMD_RUN)) begin
                 pc <= pc + 1;
 
                 if (last_cmd_step)
@@ -810,8 +808,10 @@ module core_controller_m #(
                 if (inst_opcode == `HALT_OPCODE) begin
                   job_done_o <= 1;
                   cur_prog <= next_prog;
-                  if (pause_at_halt_i || next_prog == STATE_STOPPED)
+                  if (pause_at_halt_i || next_prog == STATE_STOPPED) begin
+                    job_done_o <= 0;
                     state <= STATE_HALTING;
+                  end
                   else if (should_dispatch)
                     state <= STATE_DISPATCHING;
                   else
@@ -859,20 +859,23 @@ module core_controller_m #(
           endcase
         end
         STATE_HALTING: begin
-          if (halt_counter == HALT_STAGE - 1) begin
-            // Halt inst has reached writeback, decide what to do next
-            if (dispatch_model_done)
-              batch_done_o <= 1;
-            if (pause_at_halt_i) begin
-              if (cmd_i == `CORE_CTRL_CMD_RUN || cmd_i == `CORE_CTRL_CMD_STEP)
-                state <= (should_dispatch ? STATE_DISPATCHING : next_prog);
-            end
-            else
-              state <= STATE_STOPPED;
-          end
+          if (halt_counter == HALT_STAGE - 1)
+            state <= STATE_DONE;
           else
             halt_counter <= halt_counter + 1;
           if (cmd_i == `CORE_CTRL_CMD_STOP)
+            state <= STATE_STOPPED;
+        end
+        STATE_DONE: begin
+          // Halt inst has reached writeback, decide what to do next
+          job_done_o <= 1;
+          if (dispatch_model_done)
+            batch_done_o <= 1;
+          if (pause_at_halt_i) begin
+            if (cmd_i == `CORE_CTRL_CMD_RUN || cmd_i == `CORE_CTRL_CMD_STEP)
+              state <= (should_dispatch ? STATE_DISPATCHING : next_prog);
+          end
+          else
             state <= STATE_STOPPED;
         end
       endcase
@@ -881,7 +884,7 @@ module core_controller_m #(
 
   always @(*) begin
     // Instruction muxing
-    if (state == STATE_STOPPED || halt_counter != 0)
+    if (state == STATE_STOPPED || state == STATE_HALTING || state == STATE_DONE)
       // Feed nops after a halt
       inst_o = INST_NOP;
     else if (state == STATE_DISPATCHING)
@@ -902,7 +905,7 @@ module core_controller_m #(
     else
       core_stall_o = 0;
     core_flush_o = (core_flush_i ? 1 : 0);
-    core_jump_o  = (core_jump_o  ? 1 : 0);
+    core_jump_o  = (core_jump_i  ? 1 : 0);
 
     // Next program selection
     if (cur_prog == STATE_GPGPU_COMPUTE) begin
