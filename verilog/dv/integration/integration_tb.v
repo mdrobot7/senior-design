@@ -109,9 +109,9 @@ module integration_tb();
     reg  test_valid;
     wire test_found;
 
-    reg  [`SHADED_VERTEX] store_vertex;
+    wire [`SHADED_VERTEX] store_vertex;
     reg  [`WORD] store_index;
-    reg  store_valid;
+    wire store_valid;
 
     wire [`STREAM_MIPORT(`SHADED_VERTEX_WIDTH)] svc_mstreami;
     wire [`STREAM_MOPORT(`SHADED_VERTEX_WIDTH)] svc_mstreamo;
@@ -206,6 +206,9 @@ module integration_tb();
         .mstream_i(core_deser_mstreami),
         .mstream_o(core_deser_mstreamo)
     );
+
+    assign store_valid = core_deser_mstreamo[`STREAM_MO_VALID(`SHADED_VERTEX_WIDTH)];
+    assign store_vertex = core_deser_mstreamo[`STREAM_MO_DATA(`SHADED_VERTEX_WIDTH)];
 
     shaded_vertex_cache_m #(6) svc(
         .clk_i(clk),
@@ -333,6 +336,8 @@ module integration_tb();
 
     reg [`WORD] insts [1023:0];
 
+    image_m image();
+
     initial begin : MAIN
         integer i, j;
         integer x, y;
@@ -340,9 +345,10 @@ module integration_tb();
 		$dumpfile("integration.vcd");
 		$dumpvars(0, integration_tb);
 
-        inst = 0;
+        global_r1 = `SPI_MEM_SIZE;
+        global_r2 = `SPI_MEM_SIZE;
 
-        global_r2 = 0;
+        inst = 0;
 
         fds = 0;
 
@@ -355,11 +361,10 @@ module integration_tb();
         test_index = 0;
         test_valid = 0;
 
-        store_vertex = 0;
         store_index = 0;
-        store_valid = 0;
 
-        $readmemh("../top_level/src/asm/vertex_gen.txt", insts);
+        for (i = 0; i < 1024; i++) insts[i] = 0;
+        $readmemh("../top_level/src/asm/vertex_shader_cached.txt", insts);
 
         clk_rst.RESET();
 
@@ -377,8 +382,8 @@ module integration_tb();
 
         for (x = 0; x < 60; x = x + 1) begin
             for (y = 0; y < 60; y = y + 1) begin
-                // WRITE_MEM(`ADDR_FB1 + (y * 60 + x), image.tex_data[y * 60 + x]);
-                WRITE_MEM(`ADDR_FB1 + (y * 60 + x), 8'b11000000);
+                WRITE_MEM(`ADDR_FB1 + (y * 60 + x), image.tex_data[y * 60 + x]);
+                // WRITE_MEM(`ADDR_FB1 + (y * 60 + x), 8'b11000000);
             end
         end
 
@@ -389,48 +394,41 @@ module integration_tb();
         wait(!clk);
         svc_clear = 0;
 
-        store_vertex = { 32'h00000400, 32'h00005000, 32'h00005000, 32'h00000400 };
-        store_index = 1;
-        store_valid = 1;
-        wait(clk);
-        wait(!clk);
-        store_valid = 0;
+        WRITE_WORD(`SPI_MEM_SIZE + 0 * 20 + 0, `FP(1));
+        WRITE_WORD(`SPI_MEM_SIZE + 0 * 20 + 4, `FP(1));
+        WRITE_WORD(`SPI_MEM_SIZE + 0 * 20 + 8, `FP(1));
+        WRITE_WORD(`SPI_MEM_SIZE + 0 * 20 + 12, `FP(0));
+        WRITE_WORD(`SPI_MEM_SIZE + 0 * 20 + 16, `FP(0));
 
-        store_vertex = { 32'h00000400, 32'h00005000, 32'h00000400, 32'h00005000 };
-        store_index = 2;
-        store_valid = 1;
-        wait(clk);
-        wait(!clk);
-        store_valid = 0;
+        WRITE_WORD(`SPI_MEM_SIZE + 1 * 20 + 0, `FP(61));
+        WRITE_WORD(`SPI_MEM_SIZE + 1 * 20 + 4, `FP(1));
+        WRITE_WORD(`SPI_MEM_SIZE + 1 * 20 + 8, `FP(1));
+        WRITE_WORD(`SPI_MEM_SIZE + 1 * 20 + 12, `FP(60));
+        WRITE_WORD(`SPI_MEM_SIZE + 1 * 20 + 16, `FP(0));
 
-        order_master.WRITE(1);
-        order_master.WRITE(0);
-        order_master.WRITE(1);
+        WRITE_WORD(`SPI_MEM_SIZE + 2 * 20 + 0, `FP(1));
+        WRITE_WORD(`SPI_MEM_SIZE + 2 * 20 + 4, `FP(61));
+        WRITE_WORD(`SPI_MEM_SIZE + 2 * 20 + 8, `FP(1));
+        WRITE_WORD(`SPI_MEM_SIZE + 2 * 20 + 12, `FP(0));
+        WRITE_WORD(`SPI_MEM_SIZE + 2 * 20 + 16, `FP(60));
 
-        for (i = 0; i < 26 * 3; i = i + 1) begin
-            @(negedge clk);
-            if(stallo) begin
-                @(negedge stallo);
-                @(negedge clk);
-            end
-            inst = insts[i];
-        end
+        WRITE_WORD(`SPI_MEM_SIZE + 3 * 20 + 0, `FP(61));
+        WRITE_WORD(`SPI_MEM_SIZE + 3 * 20 + 4, `FP(61));
+        WRITE_WORD(`SPI_MEM_SIZE + 3 * 20 + 8, `FP(1));
+        WRITE_WORD(`SPI_MEM_SIZE + 3 * 20 + 12, `FP(60));
+        WRITE_WORD(`SPI_MEM_SIZE + 3 * 20 + 16, `FP(60));
 
-        test_index = 1;
-        test_valid = 1;
-        wait(clk);
-        wait(!clk);
-        test_valid = 0;
+        EXECUTE_INDEX(0);
+        EXECUTE_INDEX(2);
+        EXECUTE_INDEX(1);
 
-        test_index = 2;
-        test_valid = 1;
-        wait(clk);
-        wait(!clk);
-        test_valid = 0;
+        EXECUTE_INDEX(1);
+        EXECUTE_INDEX(2);
+        EXECUTE_INDEX(3);
     end
 
     initial begin
-        #1000000;
+        #10000000;
 
         `VGA_WRITE("output.bmp", spi_chip1.mem, `ADDR_FB0, 320, 240, `COLOR_TYPE_RGB332);
 
@@ -441,11 +439,80 @@ module integration_tb();
         input [31:0] addr;
         input [7:0] data;
     begin
-        if (addr < 320 * 240 * 2) begin
+        if (addr < `SPI_MEM_SIZE) begin
             spi_chip1.mem[addr] = data;
         end
         else begin
-            spi_chip2.mem[addr - 320 * 240 * 2] = data;
+            spi_chip2.mem[addr - `SPI_MEM_SIZE] = data;
+        end
+    end
+    endtask
+
+    task WRITE_WORD;
+        input [31:0] addr;
+        input [31:0] data;
+    begin
+        WRITE_MEM(addr + 0, data[7:0]);
+        WRITE_MEM(addr + 1, data[15:8]);
+        WRITE_MEM(addr + 2, data[23:16]);
+        WRITE_MEM(addr + 3, data[31:24]);
+    end
+    endtask
+
+    task EXECUTE_INDEX;
+        input [15:0] index;
+
+        integer i;
+    begin
+        wait(!clk);
+
+        store_index = index;
+        test_index = index;
+        test_valid = 1;
+        #1;
+        if (test_found) begin
+            wait(clk);
+            wait(!clk);
+            test_valid = 0;
+
+            order_master.WRITE(1);
+        end
+        else begin
+            order_master.WRITE(0);
+
+            test_valid = 0;
+            // stalli = 0;
+
+            @(negedge clk);
+            if(stallo) begin
+                @(negedge stallo);
+                @(negedge clk);
+            end
+            inst = { 6'h12, 3'b000, 4'b0000, 3'b000, index };
+            @(negedge clk);
+            if(stallo) begin
+                @(negedge stallo);
+                @(negedge clk);
+            end
+            inst = { 6'h11, 3'b000, 4'b0000, 3'b000, 16'h0000 };
+
+            for (i = 0; i < 30; i = i + 1) begin
+                @(negedge clk);
+                if(stallo) begin
+                    @(negedge stallo);
+                    @(negedge clk);
+                end
+                inst = insts[i];
+            end
+            @(negedge clk);
+            if(stallo) begin
+                @(negedge stallo);
+                @(negedge clk);
+            end
+
+            // stalli = 1;
+
+            inst = 0;
         end
     end
     endtask

@@ -380,6 +380,7 @@ module core_m(
         end
     end
 
+    reg  [`BUS_ADDR_PORT] mport_addr;
     //bus fsm
     always @(*) begin
         next_bus_state <= bus_state;
@@ -422,6 +423,7 @@ module core_m(
             default: mport_o[`BUS_MO_REQ] <= 0;
         endcase
 
+        mport_addr <= piped_alu_result[`STAGE_SLICE(MEM_STAGE, `WORD_WIDTH)];
         mport_o[`BUS_MO_ADDR] <= piped_alu_result[`STAGE_SLICE(MEM_STAGE, `WORD_WIDTH)];
         mport_o[`BUS_MO_DATA] <= piped_r2_data[`STAGE_SLICE(MEM_STAGE, `WORD_WIDTH)];
         mport_o[`BUS_MO_SEQMST] <= 0;

@@ -110,6 +110,8 @@ module rasterizer_wrapper_m(
 
     reg [1:0] state;
 
+    reg [4:0] timer;
+
     always @(posedge clk, negedge nrst) begin
         if (!nrst) begin
             state <= STATE_READY;
@@ -153,12 +155,15 @@ module rasterizer_wrapper_m(
                 STATE_RUN: begin
                     if (busy) begin
                         state <= STATE_WAIT;
+
+                        timer <= 0;
                     end
                 end
 
                 STATE_WAIT: begin
                     if (!busy) begin
-                        state <= STATE_READY;
+                        if (timer == 31) state <= STATE_READY;
+                        else timer <= timer + 1;
                     end
                 end
             endcase
@@ -181,7 +186,7 @@ module rasterizer_wrapper_m(
     wire [NUM_REGS-1:0] wbs_ackN;
     wire [`WORD_WIDTH-1:0] wbs_datN [NUM_REGS-1:0];
 
-    wishbone_register_m #(32'h00000000, 1, `WBREG_TYPE_REG) addr_reg (
+    wishbone_register_m #(`ADDR_FB1, 1, `WBREG_TYPE_REG) addr_reg (
         .wb_clk_i(wb_clk_i),
         .wb_rst_i(wb_rst_i),
         .wbs_stb_i(wbs_stbN[0]),
@@ -204,7 +209,7 @@ module rasterizer_wrapper_m(
         .reg_o(tex_addr)
     );
 
-    wishbone_register_m #(32'h00010001, 1, `WBREG_TYPE_REG) dim_reg (
+    wishbone_register_m #(32'h003C003C, 1, `WBREG_TYPE_REG) dim_reg (
         .wb_clk_i(wb_clk_i),
         .wb_rst_i(wb_rst_i),
         .wbs_stb_i(wbs_stbN[1]),
