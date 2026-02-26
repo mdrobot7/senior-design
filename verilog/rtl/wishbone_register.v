@@ -44,7 +44,7 @@ module wishbone_register_m #(
 );
 
     wire wbs_we;
-    lib_wishbone_helper wb_helper(
+    wishbone_helper_m wb_helper(
         .wb_clk_i(wb_clk_i),
         .wbs_we_i(wbs_we_i),
         .wbs_stb_i(wbs_stb_i),
