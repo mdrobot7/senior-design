@@ -5,9 +5,12 @@
   Uses Write Back Policy with Dirty bit.
   Prioritizes low latency read hits. 
 */
-`default_nettype wire
-  `include "../../ip/CF_SRAM_1024x32/hdl/beh_models/CF_SRAM_1024x32.tt_180V_25C.v"
-`default_nettype none
+
+// `default_nettype wire
+//   `include "../../ip/CF_SRAM_1024x32/hdl/beh_models/CF_SRAM_1024x32.tt_180V_25C.v"
+// `default_nettype none
+
+`include "../../ip/CF_SRAM_1024x32/hdl/CF_SRAM_1024x32_wrapper.v"
 
 module metadata_cache
 #(

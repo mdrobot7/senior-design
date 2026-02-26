@@ -32,9 +32,6 @@ module bus_unit_test;
   wire spi_dqsmi;
   wire spi_dqsmo;
 
-  // SRAM memory
-  reg [31:0] sram_memory [1023:0];
-
   //===================================
   // This is the UUT that we're
   // running the Unit Tests on
