@@ -419,10 +419,10 @@ for (int i = `NUM_LOCAL_REGS; i < `NUM_LOCAL_REGS + `NUM_GLOBAL_REGS; i++) begin
       `CHECK_REG( 7, 32'hFFFFFFF9);
       `CHECK_REG( 8, 32'h00000A00);
       `CHECK_REG( 9, 32'h00000007);
-      // `CHECK_REG(10, 32'hFFFFF371); Undefined value in test_core.s
+      // r10: Undefined value in test_core.s
       `CHECK_REG(11, 32'h000050C8);
       `CHECK_REG(12, 32'h00000000);
-      // `CHECK_REG(13, 32'hFFFF8B51); Undefined value in test_core.s
+      // r13: Undefined value in test_core.s
       `CHECK_REG(14, 32'h0000000A);
       `CHECK_REG(15, 32'h0000000A);
     end
