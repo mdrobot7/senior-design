@@ -11,8 +11,6 @@ module fragment_fifo_m #(
     input  wire                         clk_i,
     input  wire                         nrst_i,
 
-    output wire [`NUM_CORES-1:0]        select_lines,
-
     //Slave to rasterizer
     input  wire [`STREAM_SIPORT(SIZE)] sstream_i,
     output wire [`STREAM_SOPORT(SIZE)] sstream_o,
@@ -50,17 +48,52 @@ stream_fifo_m #( .SIZE(SIZE) .DEPTH(DEPTH) ) fifo
 ); 
 
 // Get READY bits per core from mstream_i
+reg [`NUM_CORES-1:0] sel_i;
+reg [`NUM_CORES-1:0] core_ready;
+integer i;
+always @(*) begin
+    for(i = 0; i < `NUM_CORES; i++)
+        core_ready[i] = mstream_i[MI_Size*i + `STREAM_MI_READY(size)];
+end
+
+wire fifo_has_data   = fifo_mstream_o[`STREAM_MO_VALID(SIZE)];
+wire cur_core_ready  = |(core_ready & sel_i);
 
 // Select idx core, increment to next core if not ready
+always @(posedge clk_i or negedge nrst_i) begin
+    if (!nrst_i) begin
+        // 0th core selected
+        sel_i <={{(`NUM_CORES-1){1'b0}}, 1'b1};
+    end
+    else if (fifo_has_data && !cur_core_ready) begin
+        sel_i <= {sel_i[`NUM_CORES-2:0], sel_i[`NUM_CORES-1]};
+    end
+    // else: sel_i stays the same since current core is ready
+end
 
-//Assign mstreams_o VALID bit for selected core
+// Assign mstreams_o VALID bit for selected core
+integer j;
+always @(*) begin
+    mstream_o = {MO_Size * `NUM_CORES{1'b0}};
+    if (fifo_has_data) begin
+        for (j = 0; j< `NUM_CORES; j++) begin
+            if (sel_i[j] ) begin
+                mstreams_o[j * MO_Size + `STREAM_MOPORT_SIZE(SIZE)] = fifo_mstream_o[`STREAM_MOPORT_SIZE(SIZE)];
+                // Valid for selected core
+                mstreams_o[j * MO_Size* + STREAM_MO_VALID(SIZE)]=1'b1;
+            end                           
+        end
+    end
+end
+
+assign internal_mstream_i[`STREAM_MI_READY(SIZE)] = cur_core_ready;
 
 
 // Assign MC status bits
 always @(*) begin
-    // full = 
-    // empty = 
-    // done_mailing = 
+    full = ~stream_o[`STREAM_SO_READY(SIZE)];
+    empty = ~fifo_has_data;
+    done_mailing = sel_i[0];
     end
     
 /*
