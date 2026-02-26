@@ -54,8 +54,6 @@ module core_controller_wrapper_m #(
   output wire [`NUM_CORES-1:0]  core_reset_o, // Core soft reset
   input  wire [`NUM_CORES-1:0]  core_stall_i,
   output wire [`NUM_CORES-1:0]  core_stall_o, // Per-core stall control
-  input  wire [`NUM_CORES-1:0]  core_flush_i,
-  output wire                   core_flush_o, // Flushes all stages on all cores
   input  wire [`NUM_CORES-1:0]  core_jump_i,
   output wire                   core_jump_o,  // Flushes decode on all cores
   output wire [`WORD]           global_regfile_rs1_data_o,
@@ -148,8 +146,6 @@ module core_controller_wrapper_m #(
     .core_reset_o(core_reset_o),
     .core_stall_i(core_stall_i),
     .core_stall_o(core_stall_o),
-    .core_flush_i(core_flush_i),
-    .core_flush_o(core_flush_o),
     .core_jump_i(core_jump_i),
     .core_jump_o(core_jump_o),
     .global_regfile_rs1_data_o(global_regfile_rs1_data_o),
@@ -549,8 +545,6 @@ module core_controller_m #(
   output reg  [`NUM_CORES-1:0]  core_reset_o, // Core soft reset
   input  wire [`NUM_CORES-1:0]  core_stall_i,
   output reg  [`NUM_CORES-1:0]  core_stall_o, // Per-core stall control
-  input  wire [`NUM_CORES-1:0]  core_flush_i,
-  output reg                    core_flush_o, // Flushes all stages on all cores
   input  wire [`NUM_CORES-1:0]  core_jump_i,
   output reg                    core_jump_o,  // Flushes decode on all cores
   output wire [`WORD]           global_regfile_rs1_data_o,
@@ -572,8 +566,7 @@ module core_controller_m #(
   localparam STATE_FRAGMENT_SHADING = 3;
   localparam STATE_GPGPU_COMPUTE    = 4;
   localparam STATE_PAUSED           = 5; // Manual pause by management core or step-through
-  localparam STATE_HALTING          = 6; // Used for pause on halt and when a model finishes
-  localparam STATE_DONE             = 7;
+  localparam STATE_DONE             = 6;
 
   integer i;
 
@@ -594,10 +587,10 @@ module core_controller_m #(
 
   // Tracking jumps and halts through the core pipeline
   reg  [1:0]                  halt_counter;
-  reg  [`JUMP_WIDTH-1:0]      jump_offsets [JUMP_STAGE-1:0];
+  reg  [`IMEM_ADDR_WIDTH-1:0] jump_bases [JUMP_STAGE-1:0]; // PC at the time the jump was taken
+  reg  [`JUMP_WIDTH-1:0]      jump_offsets [JUMP_STAGE-1:0]; // Jump offset from instruction
   reg  [JUMP_STAGE-1:0]       jump_type;
-  wire [`IMEM_ADDR_WIDTH-1:0] jump_jal_offset = pc + $signed(jump_offsets[1][22:2]); // Add word offset, not byte offset
-  wire [`IMEM_ADDR_WIDTH-1:0] jret_offset     = pc + $signed(call_stack[call_stack_idx][`IMEM_ADDR_WIDTH-1:2]);
+  wire [`IMEM_ADDR_WIDTH-1:0] jump_jal_offset = jump_bases[1] + $signed(jump_offsets[1][22:2]) + 1; // Add word offset, not byte offset
 
   // IMEM
   wire [`WORD_WIDTH-1:0]      imem_do;
@@ -736,8 +729,10 @@ module core_controller_m #(
       batch_done_o <= 0;
 
       halt_counter <= 0;
-      for (i = 0; i < JUMP_STAGE; i = i + 1)
+      for (i = 0; i < JUMP_STAGE; i = i + 1) begin
+        jump_bases[i] <= 0;
         jump_offsets[i] <= 0;
+      end
       jump_type <= 0;
 
       pc <= 0;
@@ -807,42 +802,44 @@ module core_controller_m #(
                   last_cmd_step <= 0;
 
                 // Handle halt and program switchover
-                if (inst_opcode == `HALT_OPCODE) begin
-                  job_done_o <= 1;
-                  cur_prog <= next_prog;
-                  if (pause_at_halt_i || next_prog == STATE_STOPPED) begin
-                    job_done_o <= 0;
-                    state <= STATE_HALTING;
-                  end
-                  else if (should_dispatch)
-                    state <= STATE_DISPATCHING;
-                  else
-                    state <= next_prog;
-                end
+                if (inst_opcode == `HALT_OPCODE || halt_counter)
+                  halt_counter <= halt_counter + 1;
+                if (halt_counter == HALT_STAGE - 1)
+                  state <= STATE_DONE;
 
                 // Handle jump, jal: Record jump offsets and wait for jump sig
                 // from any core. If jal, push to call stack.
+                jump_bases[1]   <= jump_bases[0];
                 jump_offsets[1] <= jump_offsets[0];
-                jump_type[1] <= jump_type[0];
+                jump_type[1]    <= jump_type[0];
                 if (inst_opcode == `JUMP_OPCODE || inst_opcode == `JAL_OPCODE) begin
+                  jump_bases[0]   <= pc;
                   jump_offsets[0] <= inst_jump_offset;
-                  jump_type[0] <= (inst_opcode == `JAL_OPCODE) ? JUMP_TYPE_JAL : JUMP_TYPE_JUMP;
+                  jump_type[0]    <= (inst_opcode == `JAL_OPCODE) ? JUMP_TYPE_JAL : JUMP_TYPE_JUMP;
+                end
+                else begin
+                  jump_bases[0]   <= 0;
+                  jump_offsets[0] <= 0;
+                  jump_type[0]    <= 0;
                 end
                 if (core_jump_i) begin
+                  halt_counter <= 0; // jump/jal was taken before halt reaches writeback, no halt
                   if (jump_type[1] == JUMP_TYPE_JAL && call_stack_idx != CALL_STACK_LEN - 1) begin
                     // Call stack overflow is a nop
                     pc <= jump_jal_offset;
-                    call_stack[call_stack_idx] <= jump_jal_offset;
+                    call_stack[call_stack_idx] <= pc - 1;
                     call_stack_idx <= call_stack_idx + 1;
                   end
                   else if (jump_type[1] == JUMP_TYPE_JUMP)
                     pc <= jump_jal_offset;
                 end
 
-                // Handle jret: Jump immediately, jret can't be predicated
-                if (inst_opcode == `JRET_OPCODE && call_stack_idx != 0) begin
+                // Handle jret: Jump immediately, jret can't be predicated.
+                // If there are jumps in the previous 2 cycles, make sure they
+                // clear exec stage and aren't taken.
+                if (inst_opcode == `JRET_OPCODE && call_stack_idx != 0 && !jump_offsets[0] && !jump_offsets[1]) begin
                   // Call stack underflow is a nop
-                  pc <= call_stack[call_stack_idx];
+                  pc <= call_stack[call_stack_idx - 1];
                   call_stack_idx <= call_stack_idx - 1;
                 end
               end
@@ -860,20 +857,21 @@ module core_controller_m #(
             end
           endcase
         end
-        STATE_HALTING: begin
-          if (halt_counter == HALT_STAGE - 1)
-            state <= STATE_DONE;
-          else
-            halt_counter <= halt_counter + 1;
-          if (cmd_i == `CORE_CTRL_CMD_STOP)
-            state <= STATE_STOPPED;
-        end
         STATE_DONE: begin
           job_done_o <= 1;
           if (dispatch_model_done)
             batch_done_o <= 1;
 
-          state <= STATE_STOPPED;
+          cur_prog <= next_prog;
+          if (pause_at_halt_i || next_prog == STATE_STOPPED)
+            state <= STATE_STOPPED;
+          else if (should_dispatch)
+            state <= STATE_DISPATCHING;
+          else
+            state <= next_prog;
+
+          if (cmd_i == `CORE_CTRL_CMD_STOP)
+            state <= STATE_STOPPED;
         end
       endcase
     end
@@ -881,11 +879,13 @@ module core_controller_m #(
 
   always @(*) begin
     // Instruction muxing
-    if (state == STATE_STOPPED || state == STATE_HALTING || state == STATE_DONE)
+    if (state == STATE_STOPPED || halt_counter || state == STATE_DONE)
       // Feed nops after a halt
       inst_o = INST_NOP;
     else if (state == STATE_DISPATCHING)
       inst_o = dispatch_inst;
+    else if (core_jump_i)
+      inst_o = INST_NOP; // Flush "fetch" stage on a jump
     else
       inst_o = imem_do;
 
@@ -901,7 +901,6 @@ module core_controller_m #(
       core_stall_o = {`NUM_CORES{1'b1}};
     else
       core_stall_o = 0;
-    core_flush_o = (core_flush_i ? 1 : 0);
     core_jump_o  = (core_jump_i  ? 1 : 0);
 
     // Next program selection

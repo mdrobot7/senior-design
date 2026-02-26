@@ -2,6 +2,11 @@
 
 `include "user_defines.v"
 
+`undef NUM_CORES
+`define NUM_CORES (1)
+`undef NUM_CORES_WIDTH
+`define NUM_CORES_WIDTH (1)
+
 `include "bus/busarb.v"
 `include "stream/stream_fifo.v"
 `include "vertex_order_buffer.v"
@@ -162,8 +167,6 @@ module core_controller_m_unit_test;
   wire [`NUM_CORES-1:0]        core_reset;
   reg  [`NUM_CORES-1:0]        core_stalli;
   wire [`NUM_CORES-1:0]        core_stallo;
-  reg  [`NUM_CORES-1:0]        core_flushi;
-  wire                         core_flusho;
   reg  [`NUM_CORES-1:0]        core_jumpi;
   wire                         core_jumpo;
   wire [`WORD]                 global_regfile_rs1_data;
@@ -220,8 +223,6 @@ module core_controller_m_unit_test;
     .core_reset_o(core_reset),
     .core_stall_i(core_stalli),
     .core_stall_o(core_stallo),
-    .core_flush_i(core_flushi),
-    .core_flush_o(core_flusho),
     .core_jump_i(core_jumpi),
     .core_jump_o(core_jumpo),
     .global_regfile_rs1_data_o(global_regfile_rs1_data),
@@ -247,13 +248,14 @@ module core_controller_m_unit_test;
     .mport_o(mportcoreo)
   );
   // Can't for loop this (compiler issues) so we're doing this instead
+  // (expand to NUM_CORES once multicore tests are added)
+  `define FAIL_UNLESS_EQUAL_PRINT(exp, found) \
+    if (exp != found) begin \
+      $display("Fail: expected 0x%x, found 0x%x", exp, found); \
+      `FAIL_UNLESS_EQUAL(exp, found); \
+    end
   `define CHECK_REG(local_reg, val) \
-    `FAIL_UNLESS_EQUAL(core[0].regfile.mem[local_reg], val); \
-    `FAIL_UNLESS_EQUAL(core[1].regfile.mem[local_reg], val); \
-    `FAIL_UNLESS_EQUAL(core[2].regfile.mem[local_reg], val); \
-    `FAIL_UNLESS_EQUAL(core[3].regfile.mem[local_reg], val); \
-    `FAIL_UNLESS_EQUAL(core[4].regfile.mem[local_reg], val); \
-    `FAIL_UNLESS_EQUAL(core[5].regfile.mem[local_reg], val);
+    `FAIL_UNLESS_EQUAL_PRINT(val, core[0].regfile.mem[local_reg]);
 
   reg[`WORD_WIDTH-1:0] imem_reg [0:1023];
 
@@ -291,7 +293,6 @@ module core_controller_m_unit_test;
     num_dispatches = 0;
     job_done_clr = 0;
     batch_done_clr = 0;
-    core_flushi = 0;
     clk_rst.RESET();
   endtask
 
@@ -403,7 +404,7 @@ for (int i = `NUM_LOCAL_REGS; i < `NUM_LOCAL_REGS + `NUM_GLOBAL_REGS; i++) begin
       if (job_done)
         break;
     end
-    `FAIL_UNLESS_EQUAL(state, STATE_PAUSED);
+    `FAIL_UNLESS_EQUAL(state, STATE_STOPPED);
     `FAIL_UNLESS_EQUAL(job_done, 1);
 
     for (int i = 0; i < `NUM_CORES; i++) begin
