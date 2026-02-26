@@ -96,12 +96,17 @@ module rasterizer_wrapper_m(
         .v0x(v0x),
         .v0y(v0y),
         .v0z(v0z),
+        .v0w(v0w),
+
         .v1x(v1x),
         .v1y(v1y),
         .v1z(v1z),
+        .v1w(v1w),
+
         .v2x(v2x),
         .v2y(v2y),
-        .v2z(v2z)
+        .v2z(v2z),
+        .v2w(v2w)
     );
 
     localparam STATE_READY = 2'd0;

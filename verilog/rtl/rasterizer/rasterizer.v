@@ -28,12 +28,17 @@ module rasterizer_m(
     input wire signed [`WORD] v0x,
     input wire signed [`WORD] v0y,
     input wire signed [`WORD] v0z,
+    input wire signed [`WORD] v0w,
+
     input wire signed [`WORD] v1x,
     input wire signed [`WORD] v1y,
     input wire signed [`WORD] v1z,
+    input wire signed [`WORD] v1w,
+
     input wire signed [`WORD] v2x,
     input wire signed [`WORD] v2y,
-    input wire signed [`WORD] v2z
+    input wire signed [`WORD] v2z,
+    input wire signed [`WORD] v2w
 );
 
     reg signed [`WORD] bbx0;
