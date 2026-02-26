@@ -1,3 +1,5 @@
+`define FPGA
+
 module core_controller_wrapper_m #(
   parameter INDEX_FETCH_CACHE_LEN_WORDS = 0,
   parameter CALL_STACK_LEN = 8
@@ -63,9 +65,9 @@ module core_controller_wrapper_m #(
   localparam NUM_CONTROL_REGS = 10;
   localparam NUM_REGS         = NUM_CONTROL_REGS + `NUM_GLOBAL_REGS;
 
-  reg  [NUM_REGS-1:0]    wbs_stbN;
-  wire [NUM_REGS-1:0]    wbs_ackN;
-  wire [`WORD_WIDTH-1:0] wbs_datN [NUM_REGS-1:0];
+  reg  [NUM_CONTROL_REGS-1:0] wbs_stbN;
+  wire [NUM_CONTROL_REGS-1:0] wbs_ackN;
+  wire [`WORD_WIDTH-1:0]      wbs_datN [NUM_CONTROL_REGS-1:0];
 
   wire                         imem_rw;
   wire [`WORD]                 imem_do;
@@ -568,8 +570,6 @@ module core_controller_m #(
   localparam STATE_PAUSED           = 5; // Manual pause by management core or step-through
   localparam STATE_DONE             = 6;
 
-  integer i;
-
   reg [2:0] state;
 
   // Cur/next programs (vertex shade, fragment shade, gpgpu compute)
@@ -627,6 +627,7 @@ module core_controller_m #(
 
   always @(negedge nrst_i, posedge clk_i) begin
     if (!nrst_i) begin
+      integer i;
       for (i = 0; i < 1024; i=i+1)
         imem[i] <= 0;
     end
@@ -725,6 +726,7 @@ module core_controller_m #(
 
   always @(posedge clk_i, negedge nrst_i) begin
     if (!nrst_i) begin
+      integer i;
       job_done_o <= 0;
       batch_done_o <= 0;
 
