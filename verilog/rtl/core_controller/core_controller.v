@@ -559,7 +559,7 @@ module core_controller_m #(
 
   localparam CALL_STACK_BITS = $clog2(CALL_STACK_LEN);
 
-  localparam INST_NOP        = 32'h08000000;
+  localparam INST_NOP        = 32'h04000000;
 
   localparam HALT_STAGE     = 3; // 1 = decode, 4 = writeback
   localparam JUMP_STAGE     = 2; // 1 = decode, 2 = exec
@@ -578,6 +578,8 @@ module core_controller_m #(
   integer i;
 
   reg [2:0] state;
+
+  // Cur/next programs (vertex shade, fragment shade, gpgpu compute)
   reg [2:0] cur_prog;
   reg [2:0] next_prog;
 
@@ -734,13 +736,13 @@ module core_controller_m #(
       batch_done_o <= 0;
 
       halt_counter <= 0;
-      for (i = 0; i < JUMP_STAGE; i+=1)
+      for (i = 0; i < JUMP_STAGE; i = i + 1)
         jump_offsets[i] <= 0;
       jump_type <= 0;
 
       pc <= 0;
 
-      for (i = 0; i < CALL_STACK_LEN; i+=1)
+      for (i = 0; i < CALL_STACK_LEN; i = i + 1)
         call_stack[i] <= 0;
       call_stack_idx <= 0;
 
@@ -867,16 +869,11 @@ module core_controller_m #(
             state <= STATE_STOPPED;
         end
         STATE_DONE: begin
-          // Halt inst has reached writeback, decide what to do next
           job_done_o <= 1;
           if (dispatch_model_done)
             batch_done_o <= 1;
-          if (pause_at_halt_i) begin
-            if (cmd_i == `CORE_CTRL_CMD_RUN || cmd_i == `CORE_CTRL_CMD_STEP)
-              state <= (should_dispatch ? STATE_DISPATCHING : next_prog);
-          end
-          else
-            state <= STATE_STOPPED;
+
+          state <= STATE_STOPPED;
         end
       endcase
     end
