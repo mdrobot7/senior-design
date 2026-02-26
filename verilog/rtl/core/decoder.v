@@ -23,7 +23,7 @@ module decoder_m (
 
         //IMM_SIZE
         case(opcode)
-            `ADDI_OPCODE, `MULI_OPCODE, `ANDI_OPCODE, `ORI_OPCODE, `XORI_OPCODE, `LW_OPCODE, 
+            `ADDI_OPCODE, `MULI_OPCODE, `ANDI_OPCODE, `ORI_OPCODE, `XORI_OPCODE, `LW_OPCODE,
             `LB_OPCODE, `SW_OPCODE, `SB_OPCODE:
                 ctl_sigs_reg[`IMM_SIZE_IDX] = `IMM_13_BIT;
             `LUI_OPCODE, `LLI_OPCODE:
@@ -57,7 +57,7 @@ module decoder_m (
 
         //ALU_SRC_B
         case(opcode)
-            `ADDI_OPCODE, `MULI_OPCODE, `ANDI_OPCODE, `ORI_OPCODE, `XORI_OPCODE, `SLL_OPCODE, 
+            `ADDI_OPCODE, `MULI_OPCODE, `ANDI_OPCODE, `ORI_OPCODE, `XORI_OPCODE, `SLL_OPCODE,
             `SRL_OPCODE, `SRA_OPCODE, `LW_OPCODE, `LB_OPCODE, `SW_OPCODE,
             `SB_OPCODE, `JUMP_OPCODE, `JAL_OPCODE:
                 ctl_sigs_reg[`ALU_SRC_B_IDX] = `IMM_SRC_B; //use imm
@@ -179,8 +179,8 @@ module decoder_m (
 
         //REGFILE_WRITE
 		case(opcode)
-			`OUT_OPCODE, `MAC_OPCODE, `MACCL_OPCODE, `SPEQ_OPCODE, `SPLT_OPCODE, `SPLTU_OPCODE, 
-			`CLRP_OPCODE, `SRP_OPCODE, `SB_OPCODE, `SW_OPCODE, `JUMP_OPCODE, `JRET_OPCODE, 
+			`OUT_OPCODE, `MAC_OPCODE, `MACCL_OPCODE, `SPEQ_OPCODE, `SPLT_OPCODE, `SPLTU_OPCODE,
+			`CLRP_OPCODE, `SRP_OPCODE, `SB_OPCODE, `SW_OPCODE, `JUMP_OPCODE, `JAL_OPCODE, `JRET_OPCODE,
             `HALT_OPCODE, `IN_OPCODE:
 				ctl_sigs_reg[`REGFILE_WRITE_IDX] = 0; //no regfile change
 			default:
