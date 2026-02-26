@@ -75,11 +75,11 @@ module regfile_m #(
             r2_data = ((r2_addr_i == wr_addr_i) && wr_en_i && (wr_addr_i != REGFILE_HIGHEST_ADDR)) ? wr_data_i : mem[r2_addr_i];
         end
 
-        if (r1_addr_i >= REGFILE_BASE_ADDR && r1_addr_i < REGFILE_BASE_ADDR + REGFILE_HEIGHT)
+        if (r1_addr_i >= REGFILE_BASE_ADDR && r1_addr_i <= REGFILE_HIGHEST_ADDR)
           r1_data_o = r1_data;
         else
           r1_data_o = 0;
-        if (r2_addr_i >= REGFILE_BASE_ADDR && r2_addr_i < REGFILE_BASE_ADDR + REGFILE_HEIGHT)
+        if (r2_addr_i >= REGFILE_BASE_ADDR && r2_addr_i <= REGFILE_HIGHEST_ADDR)
           r2_data_o = r2_data;
         else
           r2_data_o = 0;
