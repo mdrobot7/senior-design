@@ -36,14 +36,6 @@ module regfile_m #(
     localparam REGFILE_HIGHEST_ADDR = REGFILE_HEIGHT + REGFILE_BASE_ADDR - 1;
     reg [REGFILE_WIDTH - 1:0] mem [REGFILE_HIGHEST_ADDR:REGFILE_BASE_ADDR];
 
-    wire [REGFILE_WIDTH - 1:0] r0, r1, r2, r10, r11, r12;
-    assign r0 = mem[0];
-    assign r1 = mem[1];
-    assign r2 = mem[2];
-    assign r10 = mem[10];
-    assign r11 = mem[11];
-    assign r12 = mem[12];
-
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin : RESET
             integer i;
