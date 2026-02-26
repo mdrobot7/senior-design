@@ -7,7 +7,6 @@
 `include "test/clk_rst.v"
 `include "test/spi_chip.v"
 
-`timescale 1ns/1ns
 module bus_unit_test;
   import svunit_pkg::svunit_testcase;
 
@@ -223,12 +222,12 @@ module bus_unit_test;
       s_core_i[`BUS_SI_SIZE] = `BUS_SIZE_WORD;
       
       // Wait for ack
-      while(!s_core_o[`BUS_SO_ACK] && timeout < 1000) begin
+      while(!s_core_o[`BUS_SO_ACK] && timeout < 500) begin
         @(posedge clk);
         timeout = timeout + 1;
       end
       
-      if (timeout >= 1000) begin
+      if (timeout >= 500) begin
         $display("!!!!! ERROR: Timeout waiting for ACK at addr 0x%h", addr);
       end
       else begin
@@ -237,12 +236,12 @@ module bus_unit_test;
       
       // Wait ack low
       timeout = 0;
-      while(s_core_o[`BUS_SO_ACK] && timeout < 10000) begin
+      while(s_core_o[`BUS_SO_ACK] && timeout < 2000) begin
         @(posedge clk);
         timeout = timeout + 1;
       end
       
-      if (timeout >= 10000) begin
+      if (timeout >= 2000) begin
         $display("!!!!! ERROR: Timeout waiting for ack low at addr 0x%h", addr);
       end
       else begin
@@ -269,27 +268,29 @@ module bus_unit_test;
       s_core_i[`BUS_SI_DATA] = data;
       
       // Wait for ack
-      while(!s_core_o[`BUS_SO_ACK] && timeout < 1000) begin
+      while(!s_core_o[`BUS_SO_ACK] && timeout < 500) begin
         @(posedge clk);
         timeout = timeout + 1;
       end
       
-      if (timeout >= 1000) begin
+      if (timeout >= 500) begin
         $display("!!!!! ERROR: Timeout waiting for ACK at addr 0x%h", addr);
-      end else begin
+      end 
+      else begin
         $display("[%0t] Got ACK (timeout=%0d)", $time, timeout);
       end
       
       // Wait for ack low
       timeout = 0;
-      while(s_core_o[`BUS_SO_ACK] && timeout < 10000) begin
+      while(s_core_o[`BUS_SO_ACK] && timeout < 2000) begin
         @(posedge clk);
         timeout = timeout + 1;
       end
       
-      if (timeout >= 10000) begin
+      if (timeout >= 2000) begin
         $display("!!!!! ERROR: Timeout waiting for ack low addr 0x%h", addr);
-      end else begin
+      end 
+      else begin
         $display("[%0t] ACK low (timeout=%0d)", $time, timeout);
       end
       
@@ -344,115 +345,115 @@ module bus_unit_test;
       `FAIL_UNLESS_EQUAL(actual_data, expected_data);
     `SVTEST_END
 
-    // `SVTEST(read_hit)
-    //   reg [31:0] addr;
-    //   reg [31:0] actual_data_1;
-    //   reg [31:0] actual_data_2;
-    //   reg [31:0] expected_data;
+    `SVTEST(read_hit)
+      reg [31:0] addr;
+      reg [31:0] actual_data_1;
+      reg [31:0] actual_data_2;
+      reg [31:0] expected_data;
 
-    //   addr = {$random} % MEM_SIZE;
+      addr = {$random} % MEM_SIZE;
       
-    //   expected_data = {
-    //     spi_chip.mem[{addr[31:2], 2'b11}],
-    //     spi_chip.mem[{addr[31:2], 2'b10}],
-    //     spi_chip.mem[{addr[31:2], 2'b01}],
-    //     spi_chip.mem[{addr[31:2], 2'b00}]
-    //   };
+      expected_data = {
+        spi_chip.mem[{addr[31:2], 2'b11}],
+        spi_chip.mem[{addr[31:2], 2'b10}],
+        spi_chip.mem[{addr[31:2], 2'b01}],
+        spi_chip.mem[{addr[31:2], 2'b00}]
+      };
 
-    //   core_read(addr, actual_data_1);
-    //   core_read(addr+4, actual_data_2);
+      core_read(addr, actual_data_1);
+      core_read(addr+4, actual_data_2);
 
-    //   $display("!!!!! Read HIT: Actual: 0x%h, Expected: 0x%h", actual_data_2, expected_data);
-    //   `FAIL_UNLESS_EQUAL(actual_data_1, expected_data);
-    //   `FAIL_UNLESS_EQUAL(actual_data_2, expected_data);
-    // `SVTEST_END
+      $display("!!!!! Read HIT: Actual: 0x%h, Expected: 0x%h", actual_data_2, expected_data);
+      `FAIL_UNLESS_EQUAL(actual_data_1, expected_data);
+      `FAIL_UNLESS_EQUAL(actual_data_2, expected_data);
+    `SVTEST_END
 
-    // `SVTEST(write_miss)
-    //   reg [31:0] addr;
-    //   reg [31:0] data_in;
-    //   reg [31:0] actual_data;
+    `SVTEST(write_miss)
+      reg [31:0] addr;
+      reg [31:0] data_in;
+      reg [31:0] actual_data;
 
-    //   data_in = {$random};
-    //   addr = 32'h000012300;
+      data_in = {$random};
+      addr = 32'h000012300;
 
-    //   core_write(addr, data_in);
+      core_write(addr, data_in);
 
-    //   // wait till ack low
-    //   while(s_core_o[`BUS_SO_ACK]) begin
-    //     @(posedge clk);
-    //   end
+      // wait till ack low
+      while(s_core_o[`BUS_SO_ACK]) begin
+        @(posedge clk);
+      end
 
-    //   core_read(addr, actual_data);
+      core_read(addr, actual_data);
 
-    //   $display("!!!!! Write MISS: Actual: 0x%h, Expected: 0x%h", actual_data, data_in);
-    //   `FAIL_UNLESS_EQUAL(actual_data, data_in);
-    // `SVTEST_END
+      $display("!!!!! Write MISS: Actual: 0x%h, Expected: 0x%h", actual_data, data_in);
+      `FAIL_UNLESS_EQUAL(actual_data, data_in);
+    `SVTEST_END
 
-    // `SVTEST(write_hit)
-    //   reg [31:0] addr;
-    //   reg [31:0] data_in;
-    //   reg [31:0] actual_data;
+    `SVTEST(write_hit)
+      reg [31:0] addr;
+      reg [31:0] data_in;
+      reg [31:0] actual_data;
 
-    //   data_in = {$random};
-    //   addr = {$random} % MEM_SIZE;
+      data_in = {$random};
+      addr = {$random} % MEM_SIZE;
 
-    //   core_read(addr, actual_data);
+      core_read(addr, actual_data);
 
-    //   // wait till ack low
-    //   while(s_core_o[`BUS_SO_ACK]) begin
-    //     @(posedge clk);
-    //   end
+      // wait till ack low
+      while(s_core_o[`BUS_SO_ACK]) begin
+        @(posedge clk);
+      end
 
-    //   core_write(addr, data_in);
+      core_write(addr, data_in);
 
-    //   // wait till ack low
-    //   while(s_core_o[`BUS_SO_ACK]) begin
-    //     @(posedge clk);
-    //   end
+      // wait till ack low
+      while(s_core_o[`BUS_SO_ACK]) begin
+        @(posedge clk);
+      end
 
-    //   core_read(addr, actual_data);
+      core_read(addr, actual_data);
 
-    //   $display("!!!!! Write MISS: Actual: 0x%h, Expected: 0x%h", actual_data, data_in);
-    //   `FAIL_UNLESS_EQUAL(actual_data, data_in);
-    // `SVTEST_END
+      $display("!!!!! Write MISS: Actual: 0x%h, Expected: 0x%h", actual_data, data_in);
+      `FAIL_UNLESS_EQUAL(actual_data, data_in);
+    `SVTEST_END
 
-    // `SVTEST(write_dirty)
-    //   reg [31:0] addr1, addr2;
-    //   reg [31:0] write_data;
-    //   reg [31:0] read_data;
-    //   reg [31:0] actual_data;
-    //   integer i;
+    `SVTEST(write_dirty)
+      reg [31:0] addr1, addr2;
+      reg [31:0] write_data;
+      reg [31:0] read_data;
+      reg [31:0] actual_data;
+      integer i;
 
-    //   addr1 = 32'h00001000;
-    //   addr2 = 32'h00002000;
-    //   write_data = {$random};
+      addr1 = 32'h00001000;
+      addr2 = 32'h00002000;
+      write_data = {$random};
 
-    //   core_read(addr1, read_data);
+      core_read(addr1, read_data);
 
-    //   // wait till ack low
-    //   while(s_core_o[`BUS_SO_ACK]) begin
-    //     @(posedge clk);
-    //   end
+      // wait till ack low
+      while(s_core_o[`BUS_SO_ACK]) begin
+        @(posedge clk);
+      end
       
-    //   core_write(addr1, write_data);
+      core_write(addr1, write_data);
 
-    //   // wait till ack low
-    //   while(s_core_o[`BUS_SO_ACK]) begin
-    //     @(posedge clk);
-    //   end
+      // wait till ack low
+      while(s_core_o[`BUS_SO_ACK]) begin
+        @(posedge clk);
+      end
       
-    //   core_read(addr2, read_data);
+      core_read(addr2, read_data);
       
-    //   actual_data = {
-    //     spi_chip.mem[{addr1[31:2], 2'b11}],
-    //     spi_chip.mem[{addr1[31:2], 2'b10}],
-    //     spi_chip.mem[{addr1[31:2], 2'b01}],
-    //     spi_chip.mem[{addr1[31:2], 2'b00}]
-    //   };
+      actual_data = {
+        spi_chip.mem[{addr1[31:2], 2'b11}],
+        spi_chip.mem[{addr1[31:2], 2'b10}],
+        spi_chip.mem[{addr1[31:2], 2'b01}],
+        spi_chip.mem[{addr1[31:2], 2'b00}]
+      };
 
-    //   $display("!!!!! Write on Dirty: Actual: 0x%h, Expected: 0x%h", actual_data, write_data);
-    //   `FAIL_UNLESS_EQUAL(actual_data, write_data);
-    // `SVTEST_END
+      $display("!!!!! Write on Dirty: Actual: 0x%h, Expected: 0x%h", actual_data, write_data);
+      `FAIL_UNLESS_EQUAL(actual_data, write_data);
+    `SVTEST_END
 
   `SVUNIT_TESTS_END
 endmodule

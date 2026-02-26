@@ -148,11 +148,11 @@ always @ (posedge clk_i) begin
   end
   else begin
     // defaults
-    // mem_req_o <= 0;
-    // mem_rw <= `BUS_READ;
-    // mem_seqmst_o <= 0;
-    // sram_en <= 0;
-    // sram_rw <= `SRAM_READ;
+    mem_req_o <= 0;
+    mem_rw <= `BUS_READ;
+    mem_seqmst_o <= 0;
+    sram_en <= 0;
+    sram_rw <= `SRAM_READ;
 
     case (state) 
 
@@ -241,6 +241,7 @@ always @ (posedge clk_i) begin
       end
 
       if (wb_done) begin
+        mem_req_o <= 0;
         mem_seqmst_o <= 1;
         if (!mem_ack_i) begin
           wb_done <= 0;
@@ -249,7 +250,6 @@ always @ (posedge clk_i) begin
         end
       end
     end
-
 
     S_FILL: begin
       mem_req_o <= 1;
@@ -290,7 +290,6 @@ always @ (posedge clk_i) begin
       end
     end
 
-
     S_MISS_1: begin
       // wait one cycle for sram
       sram_en <= 1;
@@ -305,7 +304,6 @@ always @ (posedge clk_i) begin
         s_core_o[`BUS_SO_DATA] <= sram_out_data;
       else
         dirty[req_index] <= 1;
-
       s_core_o[`BUS_SO_ACK] <= 0;
       state <= S_WAIT;
     end
