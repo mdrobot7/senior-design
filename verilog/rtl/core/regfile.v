@@ -1,5 +1,5 @@
 /**
-*   Generic Register File 
+*   Generic Register File
 *
 *   Can have variable widths/heights. Standard widths is 32 bits, and standard heights are 16 and 48
 *   Has a variable base address for regfile concatenation.
@@ -25,7 +25,7 @@ module regfile_m #(
 
     input wire [REGFILE_ADDR_SIZE-1:0] r1_addr_i,
     input wire [REGFILE_ADDR_SIZE-1:0] r2_addr_i,
-    
+
     output reg [REGFILE_WIDTH-1:0] r1_data_o,
     output reg [REGFILE_WIDTH-1:0] r2_data_o,
 
@@ -64,15 +64,25 @@ module regfile_m #(
 
     always @(*) begin : READ
         integer i;
+        reg [REGFILE_WIDTH-1:0] r1_data;
+        reg [REGFILE_WIDTH-1:0] r2_data;
         //Forwards data if current write = current read address
         if(!HAS_ZERO_REG) begin
-            r1_data_o = ((r1_addr_i == wr_addr_i) && wr_en_i) ? wr_data_i : mem[r1_addr_i];
-            r2_data_o = ((r2_addr_i == wr_addr_i) && wr_en_i) ? wr_data_i : mem[r2_addr_i];
+            r1_data = ((r1_addr_i == wr_addr_i) && wr_en_i) ? wr_data_i : mem[r1_addr_i];
+            r2_data = ((r2_addr_i == wr_addr_i) && wr_en_i) ? wr_data_i : mem[r2_addr_i];
         end else begin
-            r1_data_o = ((r1_addr_i == wr_addr_i) && wr_en_i && (wr_addr_i != REGFILE_HIGHEST_ADDR)) ? wr_data_i : mem[r1_addr_i];
-            r2_data_o = ((r2_addr_i == wr_addr_i) && wr_en_i && (wr_addr_i != REGFILE_HIGHEST_ADDR)) ? wr_data_i : mem[r2_addr_i];
-
+            r1_data = ((r1_addr_i == wr_addr_i) && wr_en_i && (wr_addr_i != REGFILE_HIGHEST_ADDR)) ? wr_data_i : mem[r1_addr_i];
+            r2_data = ((r2_addr_i == wr_addr_i) && wr_en_i && (wr_addr_i != REGFILE_HIGHEST_ADDR)) ? wr_data_i : mem[r2_addr_i];
         end
+
+        if (r1_addr_i >= REGFILE_BASE_ADDR && r1_addr_i <= REGFILE_HIGHEST_ADDR)
+          r1_data_o = r1_data;
+        else
+          r1_data_o = 0;
+        if (r2_addr_i >= REGFILE_BASE_ADDR && r2_addr_i <= REGFILE_HIGHEST_ADDR)
+          r2_data_o = r2_data;
+        else
+          r2_data_o = 0;
 
         for(i = 0; i < `CORE_MAILBOX_HEIGHT; i = i + 1) begin
             outbox_o[i*REGFILE_WIDTH +: REGFILE_WIDTH] = {mem[i + 1]};

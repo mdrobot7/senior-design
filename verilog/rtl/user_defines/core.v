@@ -34,6 +34,10 @@
 `define MSB_16_IMM 15
 `define MSB_23_IMM 22
 
+// REGISTERS
+`define NUM_LOCAL_REGS  (16)
+`define NUM_GLOBAL_REGS (48)
+
 //ISA
 `define OPCODE_WIDTH            6
 `define OPCODE_IDX              31:26

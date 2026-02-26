@@ -98,6 +98,7 @@
 `include "./user_defines/bus_stream.v"
 `include "./user_defines/common_misc.v"
 `include "./user_defines/core.v"
+`include "./user_defines/core_controller.v"
 `include "./user_defines/rasterizer.v"
 `include "./user_defines/vga.v"
 `endif

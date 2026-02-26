@@ -5,16 +5,18 @@ module stream_fifo_m #(
     input wire clk_i,
     input wire nrst_i,
 
+    // Data input
     input  wire [`STREAM_SIPORT(SIZE)] sstream_i,
     output wire [`STREAM_SOPORT(SIZE)] sstream_o,
 
+    // Data output
     input  wire [`STREAM_MIPORT(SIZE)] mstream_i,
     output wire [`STREAM_MOPORT(SIZE)] mstream_o
 );
 
     localparam DEPTH_LOG = $clog2(DEPTH);
 
-    reg [DEPTH_LOG - 1:0] head, size;
+    reg [DEPTH_LOG:0] head, size;
     reg [SIZE - 1:0] buffer[DEPTH - 1:0];
 
     assign sstream_o[`STREAM_SO_READY(SIZE)] = size != DEPTH;
@@ -33,7 +35,7 @@ module stream_fifo_m #(
             for (i = 0; i < DEPTH; i = i + 1) buffer[i] <= 0;
         end
         else if (clk_i) begin : CLOCK
-            reg [DEPTH_LOG - 1:0] new_size;
+            reg [DEPTH_LOG:0] new_size;
 
             new_size = size;
 

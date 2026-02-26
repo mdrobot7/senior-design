@@ -22,7 +22,7 @@ export UNIT_TEST_PATH=$(pwd)/unit_tests
 # Usage: cf_run_svunit [name_of_unit_test.sv]
 cf_run_svunit() {
     cd ${UNIT_TEST_PATH}
-    runSVUnit -s questa -f rtl.f -t "$1"
+    runSVUnit -s questa -f rtl.f -r "-sv_seed random" -t "$1"
     cd - >/dev/null
 }
 
@@ -31,6 +31,6 @@ cf_run_svunit() {
 # Ex: cf_run_svunit_waves vga_unit_test.sv
 cf_run_svunit_waves() {
     cd ${UNIT_TEST_PATH}
-    runSVUnit -s questa -f rtl.f -r "-voptargs=+acc" -r "-do \"add log -r sim:/testrunner/*\"" -t "$1"
+    runSVUnit -s questa -f rtl.f -c "+acc" -r "-voptargs=+acc" -r "-sv_seed random" -r "-do \"set WildcardFilter None\"" -r "-do \"log -r /testrunner/*\"" -t "$1"
     cd - >/dev/null
 }
