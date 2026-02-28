@@ -36,7 +36,7 @@ module bus_unit_test;
   // This is the UUT that we're
   // running the Unit Tests on
   //===================================
-  metadata_cache #(16) 
+  metadata_cache_m #(16) 
   DUT (
     .clk_i(clk),
     .nrst_i(nrst),

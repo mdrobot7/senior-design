@@ -10,9 +10,7 @@
 //   `include "../../ip/CF_SRAM_1024x32/hdl/beh_models/CF_SRAM_1024x32.tt_180V_25C.v"
 // `default_nettype none
 
-`include "../../ip/CF_SRAM_1024x32/hdl/CF_SRAM_1024x32_wrapper.v"
-
-module metadata_cache
+module metadata_cache_m
 #(
   parameter BLOCK_WORD_SIZE = 16
 )
@@ -103,7 +101,8 @@ parameter vpwrac = 1'b1;
 parameter vpwrpc = 1'b1;
 wire ScanOutCC;
   
-CF_SRAM_1024x32_macro sram(
+// CF_SRAM_1024x32_macro
+CF_SRAM_1024x32_wrapper sram(
   .DO(sram_out_data),
   .AD(sram_addr),
   .DI(sram_in_data),

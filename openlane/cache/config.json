@@ -1,30 +1,31 @@
 {
-  "DESIGN_NAME": "cache_m",
+  "DESIGN_NAME": "metadata_cache_m",
   "DESIGN_IS_CORE": 0,
   "VERILOG_FILES": [
       "dir::../../verilog/rtl/defines.v",
       "dir::../../verilog/rtl/user_defines.v",
-      "dir::../../ip/CF_SRAM_1024x32/hdl/CF_SRAM_1024x32_wrapper.v",
-      "dir::../../ip/CF_SRAM_1024x32/hdl/CF_SRAM_1024x32_stub.v",
-      "dir::../../verilog/rtl/core/metadata_cache.v"
+      
+      "dir::../../verilog/rtl/metadata_cache.v"
   ],
     "SYNTH_READ_BLACKBOX_LIB": true,
     "EXTRA_GDS_FILES": [
-        "dir::../../ip/CF_SRAM_1024x32/gds/CF_SRAM_1024x32.gds"
+        "dir::../../gds/CF_SRAM_1024x32_wrapper.gds"
     ],
     "EXTRA_LEFS": [
-        "dir::../../ip/CF_SRAM_1024x32/lef/CF_SRAM_1024x32.lef"
+        "dir::../../lef/CF_SRAM_1024x32_wrapper.lef"
     ],
     "EXTRA_LIBS": [
         "dir::../../ip/CF_SRAM_1024x32/lib/CF_SRAM_1024x32_tt_180V_25C.lib"
     ],
+  "FP_PDN_MACRO_HOOKS": "sram vccd1 vssd1 vccd1 vssd1",
   "ROUTING_CORES": 4,
-  "CLOCK_PERIOD": 50,
+  "CLOCK_PERIOD": 25,
   "RUN_LINTER": 1,
   "CLOCK_PORT": "clk_i",
   "CLOCK_NET": "clk_i",
   "FP_SIZING": "absolute",
   "DIE_AREA": "0 0 1000 1000",
+  "MACRO_PLACEMENT_CFG": "dir::macro.cfg",
   "FP_PIN_ORDER_CFG": "dir::pin_order.cfg",
   "MAX_TRANSITION_CONSTRAINT": 1.0,
   "MAX_FANOUT_CONSTRAINT": 16,
