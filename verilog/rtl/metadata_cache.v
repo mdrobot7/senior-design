@@ -1,5 +1,5 @@
 /*
-  Metadata Cache for direct-mapped SRAM cache.
+  Direct-mapped SRAM cache.
   Designed for 64-byte BLOCKS.
   Physical SRAM is 1024x32 bit array.
   Uses Write Back Policy with Dirty bit.
