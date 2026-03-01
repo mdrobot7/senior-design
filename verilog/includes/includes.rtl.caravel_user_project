@@ -23,7 +23,7 @@
 -v $(USER_PROJECT_VERILOG)/rtl/user_defines.v
 -v $(USER_PROJECT_VERILOG)/rtl/user_project_wrapper.v
 
--v $(USER_PROJECT_VERILOG)/../library/wishbone_helper/verilog/rtl/wishbone_helper.v
+-v $(USER_PROJECT_VERILOG)/rtl/wishbone_helper.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/test/bus_master.v
 -v $(USER_PROJECT_VERILOG)/rtl/test/bus_slave.v
@@ -34,6 +34,7 @@
 -v $(USER_PROJECT_VERILOG)/rtl/test/stream_master.v
 -v $(USER_PROJECT_VERILOG)/rtl/test/stream_slave.v
 -v $(USER_PROJECT_VERILOG)/rtl/test/stream_stat.v
+-v $(USER_PROJECT_VERILOG)/rtl/test/wishbone_master.v
 -v $(USER_PROJECT_VERILOG)/rtl/test/clk_rst.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/bus/busarb.v
