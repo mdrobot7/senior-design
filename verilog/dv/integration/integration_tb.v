@@ -7,12 +7,6 @@ module integration_tb();
         .nrst_o(nrst)
     );
 
-    localparam WORD_WIDTH = 32;
-    localparam WIDTH = 320;
-    localparam HEIGHT = 240;
-
-    localparam SC_WIDTH = $clog2(WIDTH > HEIGHT ? WIDTH : HEIGHT);
-
     wire [`BUS_MIPORT] mportai;
     wire [`BUS_MOPORT] mportao;
     wire [`BUS_MIPORT] mportbi;
