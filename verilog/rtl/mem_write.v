@@ -4,8 +4,8 @@ module mem_write_m(
 
     output wire busy_o,
 
-    input  wire [`STREAM_SIPORT(`RAST_TS_OUT_WIDTH)] sstream_i,
-    output wire [`STREAM_SOPORT(`RAST_TS_OUT_WIDTH)] sstream_o,
+    input  wire [`STREAM_SIPORT(`FRAGMENT_WIDTH)] sstream_i,
+    output wire [`STREAM_SOPORT(`FRAGMENT_WIDTH)] sstream_o,
 
     input  wire [`BUS_MIPORT] mport_i,
     output reg  [`BUS_MOPORT] mport_o,
@@ -18,10 +18,10 @@ module mem_write_m(
     wire [`BUS_ADDR_PORT] fb_addr;
     assign fb_addr = fb_i ? `ADDR_FB1 : `ADDR_FB0;
 
-    reg [`COLOR] color;
-    reg [`SC_WIDTH - 1:0] posx, posy;
-    reg [`WORD_WIDTH - 1:0] tx, ty;
-    reg [`WORD_WIDTH - 1:0] depth;
+    reg [`WORD] color_ex;
+    wire [`COLOR] color = color_ex;
+    reg [`WORD] posx_ex, posy_ex;
+    wire [`SC_WIDTH - 1:0] posx = posx_ex, posy = posy_ex;
 
     reg [7:0] state;
 
@@ -34,10 +34,10 @@ module mem_write_m(
         else if (clk_i) begin
             case (state)
                 0: begin
-                    if (sstream_i[`STREAM_SI_VALID(`RAST_TS_OUT_WIDTH)]) begin
+                    if (sstream_i[`STREAM_SI_VALID(`FRAGMENT_WIDTH)]) begin
                         state <= 1;
 
-                        { color, posx, posy, tx, ty, depth } <= sstream_i[`STREAM_SI_DATA(`RAST_TS_OUT_WIDTH)];
+                        { posx_ex, posy_ex, color_ex } <= sstream_i[`STREAM_SI_DATA(`FRAGMENT_WIDTH)];
                     end
                 end
 
@@ -68,8 +68,9 @@ module mem_write_m(
         end
     end
 
-    assign sstream_o[`STREAM_SO_READY(`RAST_TS_OUT_WIDTH)] = state == 0;
+    assign sstream_o[`STREAM_SO_READY(`FRAGMENT_WIDTH)] = state == 0;
 
     assign busy_o = state != 0;
 
 endmodule
+

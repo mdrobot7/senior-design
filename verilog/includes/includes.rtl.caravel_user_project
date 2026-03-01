@@ -20,8 +20,10 @@
 -v $(USER_PROJECT_VERILOG)/rtl/user_defines/core_controller.v
 -v $(USER_PROJECT_VERILOG)/rtl/user_defines/rasterizer.v
 -v $(USER_PROJECT_VERILOG)/rtl/user_defines/vga.v
+
 -v $(USER_PROJECT_VERILOG)/rtl/user_defines.v
 -v $(USER_PROJECT_VERILOG)/rtl/user_project_wrapper.v
+-v $(USER_PROJECT_VERILOG)/rtl/top_level.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/wishbone_helper.v
 
@@ -47,6 +49,8 @@
 -v $(USER_PROJECT_VERILOG)/rtl/core/regfile.v
 -v $(USER_PROJECT_VERILOG)/rtl/core/signext.v
 -v $(USER_PROJECT_VERILOG)/rtl/core/predicate.v
+-v $(USER_PROJECT_VERILOG)/rtl/core/forward.v
+-v $(USER_PROJECT_VERILOG)/rtl/core/accumulator.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/core_controller/core_controller.v
 -v $(USER_PROJECT_VERILOG)/rtl/core_controller/dispatch.v
@@ -63,8 +67,10 @@
 -v $(USER_PROJECT_VERILOG)/rtl/math/div_pipe_rasterizer.v
 -v $(USER_PROJECT_VERILOG)/rtl/math/shared_div.v
 -v $(USER_PROJECT_VERILOG)/rtl/math/shared_div_rasterizer.v
+-v $(USER_PROJECT_VERILOG)/rtl/math/full_adder.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/rasterizer.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/rasterizer_wrapper.v
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/bary_pipe.v
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/bary_check_pipe.v
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/wavg_pipe.v
@@ -73,7 +79,6 @@
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/wavg_pipe2.v
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/depth_test.v
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/tex_sample.v
--v $(USER_PROJECT_VERILOG)/rtl/rasterizer/mem_write.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/spi_mem.v
 -v $(USER_PROJECT_VERILOG)/rtl/vertex_order_buffer.v
@@ -82,5 +87,7 @@
 -v $(USER_PROJECT_VERILOG)/rtl/vga.v
 -v $(USER_PROJECT_VERILOG)/rtl/wishbone_register.v
 -v $(USER_PROJECT_VERILOG)/rtl/image.v
+-v $(USER_PROJECT_VERILOG)/rtl/vertex_deserializer.v
+-v $(USER_PROJECT_VERILOG)/rtl/mem_write.v
 
 -v $(USER_PROJECT_VERILOG)/../ip/CF_SRAM_1024x32/hdl/beh_models/CF_SRAM_1024x32.tt_180V_25C.v

@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 #include <defs.h>
 #include <stub.h>
 
@@ -82,6 +84,10 @@ static inline void init_io() {
 #define VGA_IO_HSYNC (reg_mprj_io_22)
 #define VGA_IO_VSYNC (reg_mprj_io_23)
 
+struct __attribute__((packed)) {
+    uint32_t control, htiming, vtiming, fbaddr;
+} * vga = (void *) 0x38000000;
+
 void main() {
     reg_gpio_mode1 = 1;
     reg_gpio_mode0 = 0;
@@ -91,10 +97,6 @@ void main() {
     reg_wb_enable = 1;
 
     init_io();
-
-    set_la_dir(0, true);
-
-    set_la_data(0, false);
 
     reg_uart_enable = 1;
 
@@ -143,9 +145,8 @@ void main() {
 
     delay_ms(1000);
 
-    set_la_data(0, true);
-
-    delay_ms(1000);
+    vga->fbaddr = 0;
+    vga->control = 0b001000101;
 
     while (1) {
         reg_gpio_out   = 1; // LED on

@@ -89,41 +89,6 @@ module user_project_wrapper #(
     assign clk = wb_clk_i;
     assign nrst = la_data_in[0];
 
-    wire [`BUS_MIPORT] mportai;
-    wire [`BUS_MOPORT] mportao;
-
-    wire [`BUS_MIPORT] mportbi;
-    wire [`BUS_MOPORT] mportbo;
-
-    wire [`BUS_MIPORT] mportci;
-    reg  [`BUS_MOPORT] mportco;
-
-    wire [`BUS_MIPORT] mportdi;
-    wire [`BUS_MOPORT] mportdo;
-
-    wire [`BUS_MIPORT] mportei;
-    wire [`BUS_MOPORT] mporteo;
-
-    wire [`BUS_MIPORT] mportfi;
-    wire [`BUS_MOPORT] mportfo;
-
-    wire [`BUS_SIPORT] sportai;
-    wire [`BUS_SOPORT] sportao;
-
-    wire [`BUS_SIPORT] sportbi;
-    wire [`BUS_SOPORT] sportbo;
-
-    busarb_m #(5, 1, 1) arbiter(
-        .clk_i(clk),
-        .nrst_i(nrst),
-
-        .mports_i({ mportfo, mporteo, mportco, mportbo, mportao }),
-        .mports_o({ mportfi, mportei, mportci, mportbi, mportai }),
-
-        .sports_i({ sportao }), // sportbo, 
-        .sports_o({ sportai })
-    );
-
     wire spi1_clk;
     wire spi1_cs;
     wire [3:0] spi1_mosi;
@@ -140,43 +105,7 @@ module user_project_wrapper #(
     reg  spi2_dqsmi;
     wire spi2_dqsmo;
     wire [3:0] spi2_sio_en;
-    wire spi2_dqsm_en;
-
-    spi_mem_m #(0, 4000000) spi_mem1(
-        .clk_i(clk),
-        .nrst_i(nrst),
-
-        .sport_i(sportai),
-        .sport_o(sportao),
-
-        .spi_clk_o(spi1_clk),
-        .spi_cs_o(spi1_cs),
-        .spi_mosi_o(spi1_mosi),
-        .spi_miso_i(spi1_miso),
-        .spi_dqsm_i(spi1_dqsmi),
-        .spi_dqsm_o(spi1_dqsmo),
-
-        .spi_sio_en_o(spi1_sio_en),
-        .spi_dqsm_en_o(spi1_dqsm_en)
-    );
-
-    spi_mem_m #(4000000, 4000000) spi_mem2(
-        .clk_i(clk),
-        .nrst_i(nrst),
-
-        .sport_i(sportbi),
-        .sport_o(sportbo),
-
-        .spi_clk_o(spi2_clk),
-        .spi_cs_o(spi2_cs),
-        .spi_mosi_o(spi2_mosi),
-        .spi_miso_i(spi2_miso),
-        .spi_dqsm_i(spi2_dqsmi),
-        .spi_dqsm_o(spi2_dqsmo),
-
-        .spi_sio_en_o(spi2_sio_en),
-        .spi_dqsm_en_o(spi2_dqsm_en)
-    );
+wire spi2_dqsm_en;
 
     wire [2:0] red;
     wire [2:0] green;
@@ -184,402 +113,42 @@ module user_project_wrapper #(
     wire hsync;
     wire vsync;
 
-    reg enable;
+    top_level_m top_level(
+        .wb_clk_i(wb_clk_i),
+        .wb_rst_i(wb_rst_i),
+        .wbs_stb_i(wbs_stb_i),
+        .wbs_cyc_i(wbs_cyc_i),
+        .wbs_we_i(wbs_we_i),
+        .wbs_sel_i(wbs_sel_i),
+        .wbs_dat_i(wbs_dat_i),
+        .wbs_adr_i(wbs_adr_i),
+        .wbs_ack_o(wbs_ack_o),
+        .wbs_dat_o(wbs_dat_o),
+        
+        .spi1_clk_o(spi1_clk),
+        .spi1_cs_o(spi1_cs),
+        .spi1_mosi_o(spi1_mosi),
+        .spi1_miso_i(spi1_miso),
+        .spi1_dqsm_i(spi1_dqsmi),
+        .spi1_dqsm_o(spi1_dqsmo),
+        .spi1_sio_en_o(spi1_sio_en),
+        .spi1_dqsm_en_o(spi1_dqsm_en),
+        
+        .spi2_clk_o(spi2_clk),
+        .spi2_cs_o(spi2_cs),
+        .spi2_mosi_o(spi2_mosi),
+        .spi2_miso_i(spi2_miso),
+        .spi2_dqsm_i(spi2_dqsmi),
+        .spi2_dqsm_o(spi2_dqsmo),
+        .spi2_sio_en_o(spi2_sio_en),
+        .spi2_dqsm_en_o(spi2_dqsm_en),
 
-    reg fb;
-
-    vga_m #(`ADDR_FB0, `ADDR_FB1) my_vga (
-        .clk_i(clk),
-        .nrst_i(nrst),
-        .enable_i(enable),
-        .prescaler_i(4'd2),
-        .resolution_i(`VGA_RES_320x240),
-        .base_h_active_i(`VGA_BASE_H_ACTIVE),
-        .base_h_fporch_i(`VGA_BASE_H_FPORCH),
-        .base_h_sync_i(`VGA_BASE_H_SYNC),
-        .base_h_bporch_i(`VGA_BASE_H_BPORCH),
-        .base_v_active_i(`VGA_BASE_V_ACTIVE),
-        .base_v_fporch_i(`VGA_BASE_V_FPORCH),
-        .base_v_sync_i(`VGA_BASE_V_SYNC),
-        .base_v_bporch_i(`VGA_BASE_V_BPORCH),
-        .mport_i(mportai),
-        .mport_o(mportao),
-        .fb_i(fb),
-        .word_color_i(1'b0),
-        .pixel_o({ blue, green, red }), // Remap standard 8 bit color to the correct IO
+        .blue_o(blue),
+        .green_o(green),
+        .red_o(red),
         .hsync_o(hsync),
         .vsync_o(vsync)
     );
-
-    reg  run;
-    wire busy;
-    reg [7:0] color;
-
-    reg [`BUS_ADDR_PORT] tex_addr;
-    reg [`TEX_DIM] tex_width;
-
-    reg [31:0] t0x;
-    reg [31:0] t0y;
-    reg [31:0] t1x;
-    reg [31:0] t1y;
-    reg [31:0] t2x;
-    reg [31:0] t2y;
-
-    reg [31:0] v0x;
-    reg [31:0] v0y;
-    reg [31:0] v0z;
-    reg [31:0] v1x;
-    reg [31:0] v1y;
-    reg [31:0] v1z;
-    reg [31:0] v2x;
-    reg [31:0] v2y;
-    reg [31:0] v2z;
-
-    assign mportbi = mportdi;
-    assign mportbo = mportdo;
-
-    // word_stripe_cache_m #(8, 3) word_cache(
-    //     .clk_i(clk),
-    //     .nrst_i(nrst),
-
-    //     .cached_mport_i(mportdo), 
-    //     .cached_mport_o(mportdi),
-
-    //     .mport_i(mportbi),
-    //     .mport_o(mportbo)
-    // );
-
-    rasterizer_m rasterizer(
-        .clk_i(clk),
-        .nrst_i(nrst),
-
-        .depth_mport_i({ mportdi }),
-        .depth_mport_o({ mportdo }),
-
-        .pix_mport_i({ mportei }),
-        .pix_mport_o({ mporteo }),
-
-        .tex_mport_i({ mportfi }),
-        .tex_mport_o({ mportfo }),
-
-        .run_i(run),
-        .busy_o(busy),
-
-        .tex_addr_i(tex_addr),
-        .tex_width_i(tex_width),
-
-        .fb_i(!fb),
-
-        .t0x(t0x),
-        .t0y(t0y),
-        .t1x(t1x),
-        .t1y(t1y),
-        .t2x(t2x),
-        .t2y(t2y),
-
-        .v0x(v0x),
-        .v0y(v0y),
-        .v0z(v0z),
-        .v1x(v1x),
-        .v1y(v1y),
-        .v1z(v1z),
-        .v2x(v2x),
-        .v2y(v2y),
-        .v2z(v2z)
-    );
-
-    reg [7:0] state;
-
-    reg [31:0] timer;
-
-    reg [31:0] addr;
-    reg [31:0] end_addr;
-
-    reg [31:0] temp;
-    reg [31:0] yep;
-
-    wire [7:0] addrp0, addrp1, addrp2, addrp3;
-
-    assign addrp0 = addr + 0;
-    assign addrp1 = addr + 1;
-    assign addrp2 = addr + 2;
-    assign addrp3 = addr + 3;
-
-    image_m image();
-
-    always @(posedge clk, negedge nrst) begin
-        if (!nrst) begin
-            state <= 100;
-
-            fb <= 0;
-
-            mportco <= 0;
-
-            timer <= 0;
-            addr  <= 0;
-            end_addr <= 0;
-
-            enable <= 0;
-
-            temp <= 0;
-            yep <= 0;
-
-            tex_addr <= 32'd460800;
-        end
-        else if (clk) begin
-            case (state)
-                100: begin
-                    state <= 101;
-
-                    timer <= 0;
-                    temp <= 0;
-                end
-
-                0: begin
-                    mportco[`BUS_MO_ADDR] <= addr;
-                    // mportco[`BUS_MO_DATA] <= { addrp0, addrp1, addrp2, addrp3 };
-                    mportco[`BUS_MO_DATA] <= 32'h38383838;
-                    mportco[`BUS_MO_SIZE] <= `BUS_SIZE_STREAM;
-                    mportco[`BUS_MO_RW]   <= `BUS_WRITE;
-                    mportco[`BUS_MO_REQ]  <= 1;
-                    mportco[`BUS_MO_SEQMST]  <= 0;
-
-                    temp <= 0;
-
-                    if (mportci[`BUS_MI_ACK]) state <= 1;
-                end
-                1: begin
-                    // mportco[`BUS_MO_DATA] <= { addrp0, addrp1, addrp2, addrp3 };
-
-                    if (!mportco[`BUS_MO_SEQMST]) begin
-                        if (mportci[`BUS_MI_SEQSLV]) begin
-                            if (addr == end_addr - 8) begin
-                                mportco[`BUS_MO_SEQMST]  <= 1;
-                            end
-                            else if (temp == 160 - 8) begin
-                                mportco[`BUS_MO_SEQMST]  <= 1;
-                            end
-                            else begin
-                                temp <= temp + 4;
-                                addr <= addr + 4;
-                            end
-                        end
-                    end
-                    else begin
-                        if (!mportci[`BUS_MI_ACK]) begin
-                            if (addr == end_addr - 8) begin
-                                state <= 2;
-                                addr <= `ADDR_DEPTH_BUFFER;
-                            end
-                            else begin
-                                state <= 0;
-                            end
-
-                            mportco[`BUS_MO_SEQMST]  <= 0;
-
-                            mportco[`BUS_MO_REQ]  <= 0;
-                        end
-                    end
-                end
-
-                2: begin
-                    mportco[`BUS_MO_ADDR] <= addr;
-                    mportco[`BUS_MO_DATA] <= 32'hFFFFFFFF;
-                    mportco[`BUS_MO_SIZE] <= `BUS_SIZE_STREAM;
-                    mportco[`BUS_MO_RW]   <= `BUS_WRITE;
-                    mportco[`BUS_MO_REQ]  <= 1;
-                    mportco[`BUS_MO_SEQMST]  <= 0;
-
-                    temp <= 0;
-
-                    if (mportci[`BUS_MI_ACK]) state <= 3;
-                end
-                3: begin
-                    if (!mportco[`BUS_MO_SEQMST]) begin
-                        if (mportci[`BUS_MI_SEQSLV]) begin
-                            if (addr == `ADDR_DEPTH_BUFFER + 320 * 240 * 4 - 8) begin
-                                mportco[`BUS_MO_SEQMST]  <= 1;
-                            end
-                            else if (temp == 160 - 8) begin
-                                mportco[`BUS_MO_SEQMST]  <= 1;
-                            end
-                            else begin
-                                temp <= temp + 4;
-                                addr <= addr + 4;
-                            end
-                        end
-                    end
-                    else begin
-                        if (!mportci[`BUS_MI_ACK]) begin
-                            if (addr == `ADDR_DEPTH_BUFFER + 320 * 240 * 4 - 8) begin
-                                state <= 4;
-                                addr <= 0;
-                            end
-                            else begin
-                                state <= 2;
-                            end
-
-                            mportco[`BUS_MO_SEQMST]  <= 0;
-                            
-                            mportco[`BUS_MO_REQ]  <= 0;
-                        end
-                    end
-                end
-
-                4: begin
-                    color <= 8'b00000111;
-
-                    // tex_addr <= fb ? `ADDR_FB1 : `ADDR_FB0;
-                    tex_addr <= 32'd460800;
-                    tex_width <= 60;
-
-                    v0x = 30 << `DECIMAL_POS;
-                    v0y = (30 - 40 + yep) << `DECIMAL_POS;
-                    v0z = 80;
-                    t0x = 0;
-                    t0y = 0;
-
-                    v1x = 120 << `DECIMAL_POS;
-                    v1y = (30 + 40 - yep) << `DECIMAL_POS;
-                    v1z = 240;
-                    t1x = `FP(60);
-                    t1y = 0;
-
-                    v2x = 30 << `DECIMAL_POS;
-                    v2y = (120 - 40 + yep) << `DECIMAL_POS;
-                    v2z = 240;
-                    t2x = 0;
-                    t2y = `FP(60);
-
-                    run <= 1;
-
-                    timer <= 0;
-
-                    if (busy) begin
-                        state <= 5;
-
-                        run <= 0;
-                    end
-                end
-
-                5: begin
-                    if (!busy) begin
-                        if (timer == 1000) state <= 6;
-                        else timer <= timer + 1;
-
-                        run <= 0;
-                    end
-                    else begin
-                        timer <= 0;
-                    end
-                end
-
-                6: begin
-                    color <= 8'b00111000;
-
-                    tex_addr <= 32'd460800;
-                    tex_width <= 60;
-
-                    v0x = 30 << `DECIMAL_POS;
-                    v0y = (120 - 40 + yep) << `DECIMAL_POS;
-                    v0z = 160;
-                    t0x = 0;
-                    t0y = `FP(60);
-                    
-                    v1x = 120 << `DECIMAL_POS;
-                    v1y = (30 + 40 - yep) << `DECIMAL_POS;
-                    v1z = 160;
-                    t1x = `FP(60);
-                    t1y = 0;
-                    
-                    v2x = 120 << `DECIMAL_POS;
-                    v2y = (120 + 40 - yep) << `DECIMAL_POS;
-                    v2z = 160;
-                    t2x = `FP(60);
-                    t2y = `FP(60);
-
-                    run <= 1;
-
-                    timer <= 0;
-
-                    if (busy) begin
-                        state <= 7;
-
-                        run <= 0;
-                    end
-                end
-
-                7: begin
-                    if (!busy) begin
-                        if (timer == 1000) begin
-                            state <= 10;
-
-                            fb <= !fb;
-    
-                            timer <= 0;
-                        end
-                        else timer <= timer + 1;
-                    end
-                    else begin
-                        timer <= 0;
-                    end
-                end
-
-                10: begin
-                    if (timer == 500) begin
-                        state <= 0;
-
-                        addr <= fb ? `ADDR_FB0 : `ADDR_FB1;
-                        end_addr <= (fb ? `ADDR_FB0 : `ADDR_FB1) + (320 * 240);
-
-                        if (yep < 80) yep <= yep + 5;
-                        else yep <= 0;
-                    end
-                    else timer <= timer + 1;
-                end
-
-                101: begin
-                    if (temp == 60*60) begin
-                        state <= 103;
-                    end
-                    else begin
-                        mportco[`BUS_MO_ADDR] <= 32'd460800 + temp;
-                        mportco[`BUS_MO_DATA] <= image.tex_data[temp];
-                        mportco[`BUS_MO_SIZE] <= `BUS_SIZE_BYTE;
-                        mportco[`BUS_MO_RW]   <= `BUS_WRITE;
-                        mportco[`BUS_MO_REQ]  <= 1;
-
-                        if (mportci[`BUS_MI_ACK]) begin
-                            state <= 102;
-                        end
-                    end
-                end
-
-                102: begin
-                    if (!mportci[`BUS_MI_ACK]) begin
-                        state <= 101;
-
-                        mportco[`BUS_MO_REQ]  <= 0;
-
-                        temp <= temp + 1;
-                    end
-                end
-
-                103: begin
-                    if (timer == 10000) begin
-                        state <= 10;
-
-                        timer <= 0;
-    
-                        enable <= 1;
-                    end
-                    else timer <= timer + 1;
-                end
-
-                default: ;
-            endcase
-        end
-    end
 
     always @(*) begin
         io_oeb <= 0;
