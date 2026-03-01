@@ -170,8 +170,10 @@ module vga_wrapper_m (
     wire [$clog2(NUM_REGS)-1:0] word_offset = {2'b00, wbs_adr_i[31:2]};
     always @ (*) begin
         wbs_stbN = wbs_stb_i << word_offset; // Only one at a time
-        wbs_ack_o = wbs_ackN[word_offset];
-        wbs_dat_o = wbs_datN[word_offset];
+        if (word_offset < NUM_REGS) begin
+            wbs_ack_o = wbs_ackN[word_offset];
+            wbs_dat_o = wbs_datN[word_offset];
+        end
     end
 
 endmodule

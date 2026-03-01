@@ -26,8 +26,6 @@ module rasterizer_wrapper_m(
     output wire [`BUS_MOPORT] tex_mport_o
 );
 
-    localparam NUM_REGS = 2;
-
     wire clk, nrst;
     assign clk = wb_clk_i;
     assign nrst = !wb_rst_i;
@@ -36,8 +34,10 @@ module rasterizer_wrapper_m(
     wire busy;
 
     wire [`BUS_ADDR_PORT] tex_addr;
-    wire [`TEX_DIM] tex_width;
-    wire [`TEX_DIM] tex_height;
+    wire [`TEX_DIM] tex_width, tex_height;
+    wire [`WORD] tex_width_ex, tex_height_ex;
+    assign tex_width = tex_width_ex;
+    assign tex_height = tex_height_ex;
 
     reg [`WORD] t0x;
     reg [`WORD] t0y;
@@ -190,11 +190,13 @@ module rasterizer_wrapper_m(
         endcase
     end
 
+    localparam NUM_REGS = 3;
+
     reg [NUM_REGS-1:0] wbs_stbN;
     wire [NUM_REGS-1:0] wbs_ackN;
     wire [`WORD_WIDTH-1:0] wbs_datN [NUM_REGS-1:0];
 
-    wishbone_register_m #(`ADDR_FB1, 1, `WBREG_TYPE_REG) addr_reg (
+    wishbone_register_m #(32'h00000000, 1, `WBREG_TYPE_REG) addr_reg (
         .wb_clk_i(wb_clk_i),
         .wb_rst_i(wb_rst_i),
         .wbs_stb_i(wbs_stbN[0]),
@@ -208,16 +210,16 @@ module rasterizer_wrapper_m(
 
         .access_read_mask_i(32'hFFFFFFFF),
         .access_write_mask_i(32'hFFFFFFFF),
-        .periph_read_mask_i(32'hFFFFFFFF),
+        .periph_read_mask_i(32'h00000000),
 
         .enable_prot_i(32'h00000000),
         .enable_i(1'b0),
 
-        .reg_i(tex_addr),
+        .reg_i(32'h00000000),
         .reg_o(tex_addr)
     );
 
-    wishbone_register_m #(32'h003C003C, 1, `WBREG_TYPE_REG) dim_reg (
+    wishbone_register_m #(32'h00000000, 1, `WBREG_TYPE_REG) tex_w_reg (
         .wb_clk_i(wb_clk_i),
         .wb_rst_i(wb_rst_i),
         .wbs_stb_i(wbs_stbN[1]),
@@ -231,21 +233,46 @@ module rasterizer_wrapper_m(
 
         .access_read_mask_i(32'hFFFFFFFF),
         .access_write_mask_i(32'hFFFFFFFF),
-        .periph_read_mask_i(32'hFFFFFFFF),
+        .periph_read_mask_i(32'h00000000),
 
         .enable_prot_i(32'h00000000),
         .enable_i(1'b0),
 
-        .reg_i({ tex_height, tex_width }),
-        .reg_o({ tex_height, tex_width })
+        .reg_i(32'd0),
+        .reg_o(tex_width_ex)
+    );
+
+    wishbone_register_m #(32'h00000000, 1, `WBREG_TYPE_REG) tex_h_reg (
+        .wb_clk_i(wb_clk_i),
+        .wb_rst_i(wb_rst_i),
+        .wbs_stb_i(wbs_stbN[2]),
+        .wbs_cyc_i(wbs_cyc_i),
+        .wbs_we_i(wbs_we_i),
+        .wbs_sel_i(wbs_sel_i),
+        .wbs_dat_i(wbs_dat_i),
+        .wbs_adr_i(wbs_adr_i),
+        .wbs_ack_o(wbs_ackN[2]),
+        .wbs_dat_o(wbs_datN[2]),
+
+        .access_read_mask_i(32'hFFFFFFFF),
+        .access_write_mask_i(32'hFFFFFFFF),
+        .periph_read_mask_i(32'h00000000),
+
+        .enable_prot_i(32'h00000000),
+        .enable_i(1'b0),
+
+        .reg_i(32'd0),
+        .reg_o(tex_height_ex)
     );
 
     // Mux between the registers (similar to user_project_wrapper's addressing)
     wire [$clog2(NUM_REGS)-1:0] word_offset = {2'b00, wbs_adr_i[31:2]};
     always @ (*) begin
         wbs_stbN = wbs_stb_i << word_offset; // Only one at a time
-        wbs_ack_o = wbs_ackN[word_offset];
-        wbs_dat_o = wbs_datN[word_offset];
+        if (word_offset < NUM_REGS) begin
+            wbs_ack_o = wbs_ackN[word_offset];
+            wbs_dat_o = wbs_datN[word_offset];
+        end
     end
 
 endmodule
