@@ -16,6 +16,7 @@
 `include "core/predicate.v"
 `include "core/regfile.v"
 `include "core/signext.v"
+`include "core/mem_bus.v"
 
 `include "math/full_adder.v"
 `include "math/mul.v"
