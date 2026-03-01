@@ -52,7 +52,7 @@ reg [`NUM_CORES-1:0] sel_i;
 reg [`NUM_CORES-1:0] core_ready;
 integer i;
 always @(*) begin
-    for(i = 0; i < `NUM_CORES; i++)
+    for(i = 0; i < `NUM_CORES; i = i + 1)
         core_ready[i] = mstream_i[MI_Size*i + `STREAM_MI_READY(size)];
 end
 
@@ -71,16 +71,16 @@ always @(posedge clk_i or negedge nrst_i) begin
     // else: sel_i stays the same since current core is ready
 end
 
-// Assign mstreams_o VALID bit for selected core
+// Assign mstream_o VALID bit for selected core
 integer j;
 always @(*) begin
     mstream_o = {MO_Size * `NUM_CORES{1'b0}};
     if (fifo_has_data) begin
-        for (j = 0; j< `NUM_CORES; j++) begin
+        for (j = 0; j< `NUM_CORES; j=j+1) begin
             if (sel_i[j] ) begin
-                mstreams_o[j * MO_Size + `STREAM_MOPORT_SIZE(SIZE)] = fifo_mstream_o[`STREAM_MOPORT_SIZE(SIZE)];
+                mstream_o[j * MO_Size + `STREAM_MOPORT_SIZE(SIZE)] = fifo_mstream_o[`STREAM_MOPORT_SIZE(SIZE)];
                 // Valid for selected core
-                mstreams_o[j * MO_Size* + STREAM_MO_VALID(SIZE)]=1'b1;
+                mstream_o[j * MO_Size* + STREAM_MO_VALID(SIZE)]=1'b1;
             end                           
         end
     end
