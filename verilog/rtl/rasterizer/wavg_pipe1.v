@@ -73,7 +73,7 @@ module wavg_pipe1_m(
         av <= 0;
         aa <= 0;
         ab <= 0;
-        db <= 0;
+        da <= 0;
         db <= 0;
         din_valid <= 0;
         dout_ready <= 0;

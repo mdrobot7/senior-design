@@ -154,15 +154,18 @@ module rasterizer_tb();
 
     image_m image();
 
+    wire [`STREAM_MIPORT(`FRAGMENT_WIDTH)] tex_mstreami;
+    wire [`STREAM_MOPORT(`FRAGMENT_WIDTH)] tex_mstreamo;
+
     rasterizer_m rasterizer(
         .clk_i(clk),
         .nrst_i(nrst),
 
+        .tex_stream_i(tex_mstreami),
+        .tex_stream_o(tex_mstreamo),
+
         .depth_mport_i({ mportai }),
         .depth_mport_o({ mportao }),
-
-        .pix_mport_i({ mportdi }),
-        .pix_mport_o({ mportdo }),
 
         .tex_mport_i({ mportei }),
         .tex_mport_o({ mporteo }),
@@ -173,7 +176,6 @@ module rasterizer_tb();
         .tex_addr_i(tex_addr),
         .tex_width_i(tex_width),
         .tex_height_i(tex_height),
-        .fb_i(1'b0),
 
         .t0x(t0x),
         .t0y(t0y),
@@ -185,12 +187,30 @@ module rasterizer_tb();
         .v0x(v0x),
         .v0y(v0y),
         .v0z(v0z),
+        .v0w(`FP(1)),
         .v1x(v1x),
         .v1y(v1y),
         .v1z(v1z),
+        .v1w(`FP(1)),
         .v2x(v2x),
         .v2y(v2y),
-        .v2z(v2z)
+        .v2z(v2z),
+        .v2w(`FP(1))
+    );
+
+    mem_write_m mem_write(
+        .clk_i(clk),
+        .nrst_i(nrst),
+
+        .busy_o(),
+
+        .sstream_i(tex_mstreamo),
+        .sstream_o(tex_mstreami),
+
+        .mport_i(mportdi),
+        .mport_o(mportdo),
+
+        .fb_i(1'b0)
     );
 
     stream_stat_m #(SC_WIDTH * 2) pos_stat(
@@ -283,8 +303,8 @@ module rasterizer_tb();
             end
         end
 
-`include "cube.v"
-// `include "duwe_cube.v"
+// `include "cube.v"
+`include "duwe_cube.v"
 // `include "quad.v"
 
         clk_rst.WAIT_CYCLES(10);

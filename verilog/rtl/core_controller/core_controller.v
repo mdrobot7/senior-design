@@ -626,7 +626,7 @@ module core_controller_m #(
   assign imem_do = imem[imem_addr];
 
   always @(negedge nrst_i, posedge clk_i) begin
-    if (!nrst_i) begin
+    if (!nrst_i) begin : FUK_U_MICAL1
       integer i;
       for (i = 0; i < 1024; i=i+1)
         imem[i] <= 0;
@@ -725,7 +725,7 @@ module core_controller_m #(
   wire should_dispatch  = (dispatch_ctrl_i != `CORE_CTRL_DISPATCH_DISABLE && next_prog != STATE_FRAGMENT_SHADING);
 
   always @(posedge clk_i, negedge nrst_i) begin
-    if (!nrst_i) begin
+    if (!nrst_i) begin : FUK_U_MICAL2
       integer i;
       job_done_o <= 0;
       batch_done_o <= 0;

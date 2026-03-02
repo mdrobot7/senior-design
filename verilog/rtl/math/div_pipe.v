@@ -44,11 +44,17 @@ module div_pipe_m #(
 
     assign y = a / b;
 
-    always @(*) begin
+    always @(*) begin : COMB
+        reg [WIDTH - 1:0] result;
+
         sstream_o[`STREAM_SO_READY(IN_SIZE)]  <= temp_streami[`STREAM_MI_READY(OUT_SIZE)];
         temp_streamo[`STREAM_MO_LAST(OUT_SIZE)]  <= sstream_i[`STREAM_SI_LAST(IN_SIZE)];
         temp_streamo[`STREAM_MO_VALID(OUT_SIZE)] <= sstream_i[`STREAM_SI_VALID(IN_SIZE)];
-        temp_streamo[`STREAM_MO_DATA(OUT_SIZE)]  <= { extra_data, y };
+
+        if (b == 0) result = `FP_SMAX;
+        else result = y;
+
+        temp_streamo[`STREAM_MO_DATA(OUT_SIZE)]  <= { extra_data, result };
     end
 
     stream_fifo_m #(OUT_SIZE, 40) fifo(
