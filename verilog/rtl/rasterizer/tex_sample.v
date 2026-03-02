@@ -38,10 +38,10 @@ module tex_sample_m(
     assign mstream_o[`STREAM_MO_DATA(`FRAGMENT_WIDTH)]  = {
         32'h00000000, 32'h00000000,
         32'h00000000, 32'h00000000, 32'h00000000,
-        posy_ext, posx_ext,
+        posx_ext, posy_ext,
         color_ext
     };
-    assign mstream_o[`STREAM_MO_LAST(`RAST_DT_OUT_WIDTH)] = 1'b0;
+    assign mstream_o[`STREAM_MO_LAST(`FRAGMENT_WIDTH)] = 1'b0;
 
     reg [7:0] state;
 

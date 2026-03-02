@@ -45,7 +45,7 @@ module div_pipe_m #(
     assign y = a / b;
 
     always @(*) begin : COMB
-        reg [WIDTH - 1:0] result;
+        reg signed [WIDTH - 1:0] result;
 
         sstream_o[`STREAM_SO_READY(IN_SIZE)]  <= temp_streami[`STREAM_MI_READY(OUT_SIZE)];
         temp_streamo[`STREAM_MO_LAST(OUT_SIZE)]  <= sstream_i[`STREAM_SI_LAST(IN_SIZE)];

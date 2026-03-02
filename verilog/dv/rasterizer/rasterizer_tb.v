@@ -187,15 +187,15 @@ module rasterizer_tb();
         .v0x(v0x),
         .v0y(v0y),
         .v0z(v0z),
-        .v0w(`FP(1)),
+        .v0w(32'h00010000),
         .v1x(v1x),
         .v1y(v1y),
         .v1z(v1z),
-        .v1w(`FP(1)),
+        .v1w(32'h00010000),
         .v2x(v2x),
         .v2y(v2y),
         .v2z(v2z),
-        .v2w(`FP(1))
+        .v2w(32'h00010000)
     );
 
     mem_write_m mem_write(
@@ -303,8 +303,8 @@ module rasterizer_tb();
             end
         end
 
-// `include "cube.v"
-`include "duwe_cube.v"
+`include "cube.v"
+// `include "cow_rotate.v"
 // `include "quad.v"
 
         clk_rst.WAIT_CYCLES(10);
