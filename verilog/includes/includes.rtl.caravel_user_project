@@ -91,3 +91,4 @@
 -v $(USER_PROJECT_VERILOG)/rtl/mem_write.v
 
 -v $(USER_PROJECT_VERILOG)/../ip/CF_SRAM_1024x32/hdl/beh_models/CF_SRAM_1024x32.tt_180V_25C.v
+-v $(USER_PROJECT_VERILOG)/rtl/sram_1024x32.v

@@ -13,6 +13,8 @@
 `define NUM_CORES (6)
 `define NUM_CORES_WIDTH ($clog2(`NUM_CORES))
 
+`define SRAM_1024x32_ADDR_WIDTH (10)
+
 // addresses
 `define ADDR_FB0          (0)
 `define ADDR_FB1          (0 + 320 * 240)
