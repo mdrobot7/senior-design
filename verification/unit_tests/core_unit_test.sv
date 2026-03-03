@@ -213,6 +213,7 @@ module core_m_unit_test;
     end
     clk_rst.WAIT_CYCLES(5);
 
+
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[0], 32'd0);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[1], -32'd1);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[2], 32'd2);
@@ -501,6 +502,9 @@ module core_m_unit_test;
       inst = i_mem[i];
     end
 
+    for(i = 0; i < 9; i = i + 1) begin
+      $display("%h", spi_chip1.mem[i]);
+    end
     //SPI CHIP mem check
     `FAIL_UNLESS_EQUAL(spi_chip1.mem[0], 8'hFF);
     `FAIL_UNLESS_EQUAL(spi_chip1.mem[1], 8'hFF);

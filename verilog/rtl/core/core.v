@@ -210,7 +210,7 @@ module core_m(
         .data_o(mem_read_data),
         .mport_i(mport_i),
         .mo_req_o(mo_req),
-        .wait_state_condition(mem_ctl_sigs[`WB_IS_IN_IDX] & (~stall)),
+        .prep_state_condition((ex_ctl_sigs[`IS_LOAD_IDX] | ex_ctl_sigs[`IS_STORE_IDX]) & (~stall)),
         .repeated_acccess_condition(ex_ctl_sigs[`IS_LOAD_IDX] | ex_ctl_sigs[`IS_STORE_IDX])
     );
 
@@ -422,6 +422,51 @@ module core_m(
             end
         end
     end
+
+    //inbox fsm
+    always @(*) begin
+        integer i;
+        next_inbox_state <= inbox_state;
+        inbox_stall <= 0;
+        inbox_write <= 0;
+        case(inbox_state)
+            MAILBOX_PREP_STATE: begin
+                inbox_stall <= 0;
+                if(mem_ctl_sigs[`WB_IS_IN_IDX] & (~stall))
+                    next_inbox_state <= MAILBOX_WAIT_STATE;
+            end
+            MAILBOX_WAIT_STATE: begin
+                inbox_stall <= 1;
+                if(inbox_sstream_i[`STREAM_SI_VALID(`MAILBOX_STREAM_SIZE)])
+                    next_inbox_state <= MAILBOX_TRANSACTION_STATE;
+            end
+            MAILBOX_TRANSACTION_STATE:begin
+                inbox_stall <= 1;
+                if(inbox_sstream_i[`STREAM_SI_LAST(`MAILBOX_STREAM_SIZE)])
+                    next_inbox_state <= MAILBOX_WAIT_STATE;
+            end
+            MAILBOX_WRITE_STATE: begin
+                inbox_stall <= 1;
+                inbox_write <= 1;
+                next_inbox_state <= MAILBOX_PREP_STATE;
+            end
+            default: begin
+                inbox_stall <= 0;
+                next_inbox_state <= MAILBOX_PREP_STATE;
+            end
+        endcase
+
+        case(inbox_state)
+            MAILBOX_WAIT_STATE, MAILBOX_TRANSACTION_STATE: inbox_sstream_o[`STREAM_SO_READY(`MAILBOX_STREAM_SIZE)] <= 1;
+            default : inbox_sstream_o[`STREAM_SO_READY(`MAILBOX_STREAM_SIZE)] <= 0;
+        endcase
+
+        for(i = 0; i < `CORE_MAILBOX_HEIGHT; i = i + 1) begin
+            wb_inbox[i*`WORD_WIDTH +: `WORD_WIDTH] <= inbox[i];
+        end
+    end
+
+
 
     reg[`OUTBOX_COUNTER_WIDTH-1:0] outbox_counter;
     //outbox fsm

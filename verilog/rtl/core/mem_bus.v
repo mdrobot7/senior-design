@@ -1,3 +1,17 @@
+/*
+*   Memory pkbus connection for the uGPU core
+*   clk_i   : clock
+*   nrst_i  : async reset
+*   nsync_rst_i : synchrounous reset
+*   stall_i : external stall from other modules
+*   stall_o : stall required by this module
+*   data_o  : latched read data
+*   mport_i : PKBus master input
+*   mo_req_o    : PKBus master output request
+*   prep_state_condition : condition to enter prep state
+*   repeated_access_condition : condition for repeated access 
+*/
+
 module mem_bus_m (
     input  wire         clk_i,
     input  wire         nrst_i,
@@ -9,7 +23,7 @@ module mem_bus_m (
     input  wire[`BUS_MIPORT] mport_i,
     output reg mo_req_o,
 
-    input  wire wait_state_condition,
+    input  wire prep_state_condition,
     input  wire repeated_acccess_condition
 );
     localparam BUS_DEFAULT_STATE = 0;
@@ -27,7 +41,7 @@ module mem_bus_m (
 
         case(bus_state)
             BUS_DEFAULT_STATE: begin
-                if(wait_state_condition)
+                if(prep_state_condition)
                     next_bus_state <= BUS_PREP_STATE;
             end
             BUS_PREP_STATE: begin
@@ -50,6 +64,7 @@ module mem_bus_m (
                 end 
             end
             BUS_BACK2BACK_STATE: begin
+                stall_o <= 1;
                 next_bus_state <= BUS_PREP_STATE;
             end
             default:
