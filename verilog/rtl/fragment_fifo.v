@@ -15,9 +15,9 @@ module fragment_fifo_m #(
     input  wire [`STREAM_SIPORT(SIZE)] sstream_i,
     output wire [`STREAM_SOPORT(SIZE)] sstream_o,
 
-    //Master to N cores
-    input  wire [`STREAM_MIPORT(SIZE) * `NUM_CORES] mstream_i,
-    output wire [`STREAM_MOPORT(SIZE) * `NUM_CORES] mstream_o
+    // Master to N cores (packed array of master streams)
+    input  wire [`STREAM_MIPORT_SIZE(SIZE) * `NUM_CORES - 1:0] mstream_i,
+    output reg  [`STREAM_MOPORT_SIZE(SIZE) * `NUM_CORES - 1:0] mstream_o,
 
     // Status for MC
     output reg                          empty,
@@ -32,18 +32,18 @@ localparam MO_Size = `STREAM_MOPORT_SIZE(SIZE);
 
 
 // Internal streamlines for FIFO between rasterizer 
-wire [`STREAM_MIPORT(SIZE) internal_mstream_i];
-wire [`STREAM_MOPORT(SIZE) internal_mstream_o];
+wire [`STREAM_MIPORT(SIZE)] internal_mstream_i;
+wire [`STREAM_MOPORT(SIZE)] internal_mstream_o;
 
 
-stream_fifo_m #( .SIZE(SIZE) .DEPTH(DEPTH) ) fifo 
+stream_fifo_m #( .SIZE(SIZE), .DEPTH(DEPTH) ) fifo 
 (
     .clk_i(clk_i),
     .nrst_i(nrst_i),
     .sstream_i(sstream_i),
     .sstream_o(sstream_o),
     .mstream_i(internal_mstream_i),
-    .mstream_o(internal_mstream_o), 
+    .mstream_o(internal_mstream_o)
 ); 
 
 // Get READY bits per core from mstream_i
@@ -92,7 +92,7 @@ assign internal_mstream_i[`STREAM_MI_READY(SIZE)] = cur_core_ready;
 
 // Assign MC status bits
 always @(*) begin
-    full = ~stream_o[`STREAM_SO_READY(SIZE)];
+    full = ~sstream_o[`STREAM_SO_READY(SIZE)];
     empty = ~fifo_has_data;
     done_mailing = sel_i[0];
 end

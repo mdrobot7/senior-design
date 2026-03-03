@@ -1,5 +1,9 @@
 `include "svunit_defines.svh"
+`include "user_defines.v"
+`include "test/clk_rst.v"
+`include "stream/stream_fifo.v"
 `include "fragment_fifo.v"
+
 
 module fragment_fifo_m_unit_test;
   import svunit_pkg::svunit_testcase;
@@ -7,29 +11,30 @@ module fragment_fifo_m_unit_test;
   string name = "fragment_fifo_m_ut";
   svunit_testcase svunit_ut;
 
+  // Test configuration
+  localparam int SIZE  = 1;
+  localparam int DEPTH = 10;
+  localparam int MI_Size = `STREAM_MIPORT_SIZE(SIZE);
+  localparam int MO_Size = `STREAM_MOPORT_SIZE(SIZE);
+
   wire clk, nrst;
   clk_rst_m clk_rst(.clk_o(clk), .nrst_o(nrst));
 
-  reg [`STREAM_SIPORT(SIZE)] sstream_i;
-  reg [`STREAM_SOPORT(SIZE)] sstream_o;
+  reg  [`STREAM_SIPORT(SIZE)] sstream_i;
+  wire [`STREAM_SOPORT(SIZE)] sstream_o;
 
-  reg [`STREAM_MIPORT(SIZE) * `NUM_CORES] mstream_i;
-  reg [`STREAM_MOPORT(SIZE) * `NUM_CORES] mstream_o;
+  reg  [MI_Size*`NUM_CORES] mstream_i;
+  wire [MO_Size*`NUM_CORES] mstream_o;
 
   wire empty;
   wire full;
   wire done_mailing;
 
-  parameter SIZE = 1;
-  parameter DEPTH = 10;
-  
-
-
   //===================================
   // This is the UUT that we're 
   // running the Unit Tests on
   //===================================
-  fragment_fifo_m #(.SIZE(SIZE) .DEPTH(DEPTH)) my_fragment_fifo_m(
+  fragment_fifo_m #(.SIZE(SIZE), .DEPTH(DEPTH)) my_fragment_fifo_m(
     .clk_i(clk),
     .nrst_i(nrst),
     .sstream_i(sstream_i),
@@ -85,14 +90,33 @@ module fragment_fifo_m_unit_test;
   //     <test code>
   //   `SVTEST_END
   //===================================
-  integer i; 
   `SVUNIT_TESTS_BEGIN
-    i = 0;
-    sstream_i[`STREAM_SI_DATA(SIZE)] = 2'b1
-    
 
-    mstream_i[`STREAM_MIPORT_SIZE(SIZE)* i + STREAM_MI_READY(SIZE)] = 1;
+    // Basic test: single fragment delivered to core 0
+    `SVTEST(single_fragment_core0)
+      // init inputs
+      sstream_i = '0;
+      mstream_i = '0;
 
+      // allow reset to propagate
+      clk_rst.WAIT_CYCLES(2);
+
+      // drive one fragment from rasterizer
+      sstream_i[`STREAM_SI_DATA(SIZE)]  = 'h1;
+      sstream_i[`STREAM_SI_VALID(SIZE)] = 1'b1;
+      sstream_i[`STREAM_SI_LAST(SIZE)]  = 1'b0;
+
+      // only core 0 ready
+      mstream_i = '0;
+      mstream_i[`STREAM_MI_READY(SIZE)] = 1'b1;
+
+      // wait for delivery through FIFO
+      clk_rst.WAIT_CYCLES(4);
+
+      // core 0 (index 0) should see VALID and the data
+      `FAIL_UNLESS(mstream_o[`STREAM_MO_VALID(SIZE)] == 1'b1);
+      `FAIL_UNLESS_EQUAL(1, mstream_o[`STREAM_MO_DATA(SIZE)]);
+    `SVTEST_END
 
   `SVUNIT_TESTS_END
 
