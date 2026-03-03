@@ -62,6 +62,7 @@ endmodule
 // https://docs.amd.com/v/u/en-US/pg058-blk-mem-gen
 // Vivado Single-Port Block RAM Write-First Mode (recommended template)
 // File: rams_sp_wf.v
+`ifdef FPGA
 module rams_sp_wf (clk, we, en, addr, di, dout);
   input clk;
   input we;
@@ -83,3 +84,4 @@ module rams_sp_wf (clk, we, en, addr, di, dout);
     end
   end
 endmodule
+`endif
