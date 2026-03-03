@@ -1,5 +1,3 @@
-`define FPGA
-
 module core_controller_wrapper_m #(
   parameter INDEX_FETCH_CACHE_LEN_WORDS = 0,
   parameter CALL_STACK_LEN = 8
@@ -72,14 +70,14 @@ module core_controller_wrapper_m #(
   wire                         imem_rw;
   wire [`WORD]                 imem_do;
   wire [`WORD]                 imem_di;
-  wire [`IMEM_ADDR_WIDTH-1:0]  imem_addr;
+  wire [`SRAM_1024x32_ADDR_WIDTH-1:0]  imem_addr;
   wire [`REG_SOURCE_WIDTH-1:0] global_regfile_addr;
   wire                         global_regfile_write_en;
   wire [`WORD]                 global_regfile_write_data;
   wire [`WORD]                 global_regfile_read_data;
-  wire [`IMEM_ADDR_WIDTH-1:0]  pc_vertex_shading;
-  wire [`IMEM_ADDR_WIDTH-1:0]  pc_fragment_shading;
-  wire [`IMEM_ADDR_WIDTH-1:0]  pc_gpgpu_compute;
+  wire [`SRAM_1024x32_ADDR_WIDTH-1:0]  pc_vertex_shading;
+  wire [`SRAM_1024x32_ADDR_WIDTH-1:0]  pc_fragment_shading;
+  wire [`SRAM_1024x32_ADDR_WIDTH-1:0]  pc_gpgpu_compute;
   wire [`NUM_CORES-1:0]        core_enable;
   wire [1:0]                   cmd;
   wire                         pause_at_halt;
@@ -497,7 +495,7 @@ module core_controller_m #(
   input  wire                       imem_rw_i, // 1 = read, 0 = write
   output wire [`WORD]               imem_do_o,
   input  wire [`WORD]               imem_di_i,
-  input  wire [`IMEM_ADDR_WIDTH-1:0] imem_addr_i,
+  input  wire [`SRAM_1024x32_ADDR_WIDTH-1:0] imem_addr_i,
 
   // Global regfile
   input  wire [`REG_SOURCE_WIDTH-1:0] global_regfile_addr_i,
@@ -506,9 +504,9 @@ module core_controller_m #(
   output wire [`WORD]                 global_regfile_read_data_o,
 
   // PCs
-  input wire [`IMEM_ADDR_WIDTH-1:0] pc_vertex_shading_i,
-  input wire [`IMEM_ADDR_WIDTH-1:0] pc_fragment_shading_i,
-  input wire [`IMEM_ADDR_WIDTH-1:0] pc_gpgpu_compute_i,
+  input wire [`SRAM_1024x32_ADDR_WIDTH-1:0] pc_vertex_shading_i,
+  input wire [`SRAM_1024x32_ADDR_WIDTH-1:0] pc_fragment_shading_i,
+  input wire [`SRAM_1024x32_ADDR_WIDTH-1:0] pc_gpgpu_compute_i,
 
   // PKBus
   input  wire [`BUS_MIPORT] mport_i,
@@ -579,64 +577,35 @@ module core_controller_m #(
   reg last_cmd_step; // 1: last command was a step
 
   // PC, in *words*
-  reg [`IMEM_ADDR_WIDTH-1:0] pc;
+  reg [`SRAM_1024x32_ADDR_WIDTH-1:0] pc;
 
   // Call stack
-  reg [`IMEM_ADDR_WIDTH-1:0] call_stack[CALL_STACK_LEN-1:0];
+  reg [`SRAM_1024x32_ADDR_WIDTH-1:0] call_stack[CALL_STACK_LEN-1:0];
   reg [CALL_STACK_BITS-1:0]  call_stack_idx;
 
   // Tracking jumps and halts through the core pipeline
   reg  [1:0]                  halt_counter;
-  reg  [`IMEM_ADDR_WIDTH-1:0] jump_bases [JUMP_STAGE-1:0]; // PC at the time the jump was taken
+  reg  [`SRAM_1024x32_ADDR_WIDTH-1:0] jump_bases [JUMP_STAGE-1:0]; // PC at the time the jump was taken
   reg  [`JUMP_WIDTH-1:0]      jump_offsets [JUMP_STAGE-1:0]; // Jump offset from instruction
   reg  [JUMP_STAGE-1:0]       jump_type;
-  wire [`IMEM_ADDR_WIDTH-1:0] jump_jal_offset = jump_bases[1] + $signed(jump_offsets[1][22:2]) + 1; // Add word offset, not byte offset
+  wire [`SRAM_1024x32_ADDR_WIDTH-1:0] jump_jal_offset = jump_bases[1] + $signed(jump_offsets[1][22:2]) + 1; // Add word offset, not byte offset
 
   // IMEM
   wire [`WORD_WIDTH-1:0]      imem_do;
-  wire [`IMEM_ADDR_WIDTH-1:0] imem_addr = (state == STATE_STOPPED) ? imem_addr_i : pc; // In *words*
+  wire [`SRAM_1024x32_ADDR_WIDTH-1:0] imem_addr = (state == STATE_STOPPED) ? imem_addr_i : pc; // In *words*
   wire                        imem_rw   = (state == STATE_STOPPED) ? imem_rw_i   : 1;
-`ifndef FPGA
-  CF_SRAM_1024x32_macro imem (
+  sram_1024x32_m imem (
 `ifdef USE_POWER_PINS
     .vpwrac(vpwrac),
     .vpwrpc(vpwrpc),
 `endif
-
-    .CLKin(clk_i),
-    .DO(imem_do),
-    .DI(imem_di_i),
-    .BEN(32'hFFFFFFFF), // Write mask
-    .AD(imem_addr),
-    .EN(1'b1),
-    .R_WB(imem_rw),
-
-    // Test signals
-    .WLBI(1'b0),
-    .WLOFF(1'b0),
-    .TM(1'b0),
-    .SM(1'b0),
-    .ScanInCC(1'b0),
-    .ScanInDL(1'b0),
-    .ScanInDR(1'b0),
-    .ScanOutCC()
-  );
-`else
-  (* ram_style = "block" *) reg [`WORD] imem [1023:0];
-  assign imem_do = imem[imem_addr];
-
-  always @(negedge nrst_i, posedge clk_i) begin
-    if (!nrst_i) begin : FUK_U_MICAL1
-      integer i;
-      for (i = 0; i < 1024; i=i+1)
-        imem[i] <= 0;
-    end
-    else if (clk_i) begin
-      if (!imem_rw)
-        imem[imem_addr] <= imem_di_i;
-    end
-  end
-`endif
+    .clk_i(clk_i),
+    .addr_i(imem_addr),
+    .read_en_i(imem_rw),
+    .en_i(1'b1),
+    .data_i(imem_di_i),
+    .data_o(imem_do)
+);
 
   // Instruction decode
   wire [`OPCODE_WIDTH-1:0]     inst_opcode      = imem_do[`OPCODE_IDX];
