@@ -13,7 +13,7 @@
 `define WORD_SMAX (1 << (`WORD_WIDTH - 2))
 
 `define DIVIDER_WIDTH (`DECIMAL_POS + `WORD_WIDTH)
-`define DIVIDER_USERS (3)
+`define DIVIDER_USERS (4)
 
 `define RAST_WAVG_OUT_WIDTH (`SC_WIDTH * 2 + `WORD_WIDTH * 3)
 `define RAST_DT_OUT_WIDTH (`SC_WIDTH * 2 + `WORD_WIDTH * 3)

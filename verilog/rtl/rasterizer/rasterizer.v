@@ -18,28 +18,88 @@ module rasterizer_m(
     input wire [`TEX_DIM] tex_width_i,
     input wire [`TEX_DIM] tex_height_i,
 
-    input wire [`WORD] t0x,
-    input wire [`WORD] t0y,
-    input wire [`WORD] t1x,
-    input wire [`WORD] t1y,
-    input wire [`WORD] t2x,
-    input wire [`WORD] t2y,
+    input wire [`WORD] t0x_i,
+    input wire [`WORD] t0y_i,
+    input wire [`WORD] t1x_i,
+    input wire [`WORD] t1y_i,
+    input wire [`WORD] t2x_i,
+    input wire [`WORD] t2y_i,
 
-    input wire signed [`WORD] v0x,
-    input wire signed [`WORD] v0y,
-    input wire signed [`WORD] v0z,
-    input wire signed [`WORD] v0w,
+    input wire signed [`WORD] v0x_i,
+    input wire signed [`WORD] v0y_i,
+    input wire signed [`WORD] v0z_i,
+    input wire signed [`WORD] v0w_i,
 
-    input wire signed [`WORD] v1x,
-    input wire signed [`WORD] v1y,
-    input wire signed [`WORD] v1z,
-    input wire signed [`WORD] v1w,
+    input wire signed [`WORD] v1x_i,
+    input wire signed [`WORD] v1y_i,
+    input wire signed [`WORD] v1z_i,
+    input wire signed [`WORD] v1w_i,
 
-    input wire signed [`WORD] v2x,
-    input wire signed [`WORD] v2y,
-    input wire signed [`WORD] v2z,
-    input wire signed [`WORD] v2w
+    input wire signed [`WORD] v2x_i,
+    input wire signed [`WORD] v2y_i,
+    input wire signed [`WORD] v2z_i,
+    input wire signed [`WORD] v2w_i
 );
+
+    wire [`STREAM_SIPORT(2 * `DIVIDER_WIDTH)] wdiv_div_si;
+    wire [`STREAM_SOPORT(2 * `DIVIDER_WIDTH)] wdiv_div_so;
+    wire [`STREAM_MIPORT(`DIVIDER_WIDTH)] wdiv_div_mi;
+    wire [`STREAM_MOPORT(`DIVIDER_WIDTH)] wdiv_div_mo;
+
+    wire run;
+
+    wire signed [`WORD] v0x;
+    wire signed [`WORD] v0y;
+    wire signed [`WORD] v0z;
+    wire signed [`WORD] v1x;
+    wire signed [`WORD] v1y;
+    wire signed [`WORD] v1z;
+    wire signed [`WORD] v2x;
+    wire signed [`WORD] v2y;
+    wire signed [`WORD] v2z;
+
+    wdiv_pipe_m wdiv_pipe(
+        .clk_i(clk_i),
+        .nrst_i(nrst_i),
+
+        .div_mstream_i(wdiv_div_so),
+        .div_mstream_o(wdiv_div_si),
+        
+        .div_sstream_i(wdiv_div_mo),
+        .div_sstream_o(wdiv_div_mi),
+
+        .busy_i(busy_o),
+
+        .run_i(run_i),
+        .run_o(run),
+
+        .v0x_i(v0x_i),
+        .v0y_i(v0y_i),
+        .v0z_i(v0z_i),
+        .v0w_i(v0w_i),
+
+        .v1x_i(v1x_i),
+        .v1y_i(v1y_i),
+        .v1z_i(v1z_i),
+        .v1w_i(v1w_i),
+
+        .v2x_i(v2x_i),
+        .v2y_i(v2y_i),
+        .v2z_i(v2z_i),
+        .v2w_i(v2w_i),
+
+        .v0x_o(v0x),
+        .v0y_o(v0y),
+        .v0z_o(v0z),
+
+        .v1x_o(v1x),
+        .v1y_o(v1y),
+        .v1z_o(v1z),
+
+        .v2x_o(v2x),
+        .v2y_o(v2y),
+        .v2z_o(v2z)
+    );
 
     reg signed [`WORD] bbx0;
     reg signed [`WORD] bby0;
@@ -156,7 +216,7 @@ module rasterizer_m(
         else if (clk_i) begin
             case (state)
                 STATE_READY: begin
-                    if (run_i) begin
+                    if (run) begin
                         state <= STATE_BARY_BOOT;
                         
                         posx  <= bbx0;
@@ -207,7 +267,7 @@ module rasterizer_m(
                 end
 
                 STATE_DONE: begin
-                    if (!busy_o && !run_i) state <= STATE_READY;
+                    if (!busy_o && !run) state <= STATE_READY;
                 end
             endcase
 
@@ -310,12 +370,12 @@ module rasterizer_m(
         .mstream_i(wavg_streami),
         .mstream_o(wavg_streamo),
 
-        .t0x(t0x),
-        .t0y(t0y),
-        .t1x(t1x),
-        .t1y(t1y),
-        .t2x(t2x),
-        .t2y(t2y),
+        .t0x(t0x_i),
+        .t0y(t0y_i),
+        .t1x(t1x_i),
+        .t1y(t1y_i),
+        .t2x(t2x_i),
+        .t2y(t2y_i),
 
         .v0z(v0z),
         .v1z(v1z),
@@ -383,11 +443,11 @@ module rasterizer_m(
         .clk_i(clk_i),
         .nrst_i(nrst_i),
 
-        .sstreams_i({ bary_div_si, wavg0_div_si, wavg1_div_si }),
-        .sstreams_o({ bary_div_so, wavg0_div_so, wavg1_div_so }),
+        .sstreams_i({ wdiv_div_si, bary_div_si, wavg0_div_si, wavg1_div_si }),
+        .sstreams_o({ wdiv_div_so, bary_div_so, wavg0_div_so, wavg1_div_so }),
         
-        .mstreams_i({ bary_div_mi, wavg0_div_mi, wavg1_div_mi }),
-        .mstreams_o({ bary_div_mo, wavg0_div_mo, wavg1_div_mo })
+        .mstreams_i({ wdiv_div_mi, bary_div_mi, wavg0_div_mi, wavg1_div_mi }),
+        .mstreams_o({ wdiv_div_mo, bary_div_mo, wavg0_div_mo, wavg1_div_mo })
     );
 
 endmodule
