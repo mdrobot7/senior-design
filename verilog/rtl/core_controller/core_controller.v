@@ -22,17 +22,17 @@ module core_controller_wrapper_m #(
   output reg [`WORD_WIDTH-1:0] wbs_dat_control_o,
 
   // Wishbone (IMEM)
-  input wire wbs_stb_imem_i,
-  output reg wbs_ack_imem_o,
-  output reg [`WORD_WIDTH-1:0] wbs_dat_imem_o,
+  input  wire wbs_stb_imem_i,
+  output wire wbs_ack_imem_o,
+  output wire [`WORD_WIDTH-1:0] wbs_dat_imem_o,
 
   // IRQs
-  output reg irq_jobdone_o,
-  output reg irq_batchdone_o,
+  output wire irq_jobdone_o,
+  output wire irq_batchdone_o,
 
   // PKBus
-  input wire [`BUS_MIPORT] mport_i,
-  output reg [`BUS_MOPORT] mport_o,
+  input  wire [`BUS_MIPORT] mport_i,
+  output wire [`BUS_MOPORT] mport_o,
 
   // Shaded vertex cache
   output wire [`WORD] vertcache_test_index_o,
@@ -85,9 +85,9 @@ module core_controller_wrapper_m #(
   wire [1:0]                   dispatch_ctrl;
   wire [`WORD]                 num_dispatches;
   wire                         job_done_clr;
-  reg                          job_done;
+  wire                         job_done;
   wire                         batch_done_clr;
-  reg                          batch_done;
+  wire                         batch_done;
   wire [2:0]                   cc_state;
   core_controller_m #(
     .INDEX_FETCH_CACHE_LEN_WORDS(INDEX_FETCH_CACHE_LEN_WORDS),
@@ -416,26 +416,29 @@ module core_controller_wrapper_m #(
   );
 
   // Global regfile defs
-  wire global_regs_wb_we;
   wire global_regs_wb_ack;
-  wire global_regs_wb_stb                      = (wbs_stbN & ({`NUM_GLOBAL_REGS{1'b1}} << NUM_CONTROL_REGS));
+  reg  global_regs_wb_stb;
 
   // Mux between the registers (similar to user_project_wrapper's addressing)
   wire [$clog2(NUM_REGS)-1:0] word_offset = {2'b00, wbs_adr_i[31:2]};
   always @ (*) begin
-    wbs_stbN = wbs_stb_control_i << word_offset; // Only one at a time
     if (word_offset >= NUM_CONTROL_REGS) begin
+      global_regs_wb_stb = wbs_stb_control_i;
+      wbs_stbN = 0;
       wbs_ack_control_o = global_regs_wb_ack;
       wbs_dat_control_o = global_regfile_read_data;
     end
     else begin
+      wbs_stbN = wbs_stb_control_i << word_offset; // Only one at a time
+      global_regs_wb_stb = 0;
       wbs_ack_control_o = wbs_ackN[word_offset];
       wbs_dat_control_o = wbs_datN[word_offset];
     end
   end
 
   // Global regfile
-  lib_wishbone_helper global_regs_wb_helper (
+  wire global_regs_wb_we;
+  wishbone_helper_m global_regs_wb_helper (
     .wb_clk_i(wb_clk_i),
     .wbs_we_i(wbs_we_i),
     .wbs_stb_i(global_regs_wb_stb),
@@ -452,7 +455,7 @@ module core_controller_wrapper_m #(
   // IMEM (handled separately from config registers, but still included here
   // so everything's in one place)
   wire imem_wb_we;
-  lib_wishbone_helper imem_wb_helper (
+  wishbone_helper_m imem_wb_helper (
     .wb_clk_i(wb_clk_i),
     .wbs_we_i(wbs_we_i),
     .wbs_stb_i(wbs_stb_imem_i),
@@ -694,7 +697,7 @@ module core_controller_m #(
   wire should_dispatch  = (dispatch_ctrl_i != `CORE_CTRL_DISPATCH_DISABLE && next_prog != STATE_FRAGMENT_SHADING);
 
   always @(posedge clk_i, negedge nrst_i) begin
-    if (!nrst_i) begin : FUK_U_MICAL2
+    if (!nrst_i) begin : RESET
       integer i;
       job_done_o <= 0;
       batch_done_o <= 0;

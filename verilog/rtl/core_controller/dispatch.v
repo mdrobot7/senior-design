@@ -16,8 +16,8 @@ module dispatch_m #(
   input wire nrst_i,
 
   // PKBus
-  input wire [`BUS_MIPORT] mport_i,
-  output reg [`BUS_MOPORT] mport_o,
+  input  wire [`BUS_MIPORT] mport_i,
+  output wire [`BUS_MOPORT] mport_o,
 
   // Shaded vertex cache
   output wire [`WORD] vertcache_test_index_o,
@@ -43,8 +43,8 @@ module dispatch_m #(
   output wire [`WORD]          inst_o,
   output  reg [`NUM_CORES-1:0] core_stall_o,
 
-  output reg dispatch_done_o, // 1: This round of dispatching is done
-  output reg model_done_o     // 1: Model or compute job is complete (dispatched num_dispatches_i jobs/indices)
+  output reg  dispatch_done_o, // 1: This round of dispatching is done
+  output wire model_done_o     // 1: Model or compute job is complete (dispatched num_dispatches_i jobs/indices)
 );
 
   localparam STATE_DISABLED            = 0;
