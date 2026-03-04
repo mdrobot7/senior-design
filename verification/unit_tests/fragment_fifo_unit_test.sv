@@ -23,8 +23,9 @@ module fragment_fifo_m_unit_test;
   reg  [`STREAM_SIPORT(SIZE)] sstream_i;
   wire [`STREAM_SOPORT(SIZE)] sstream_o;
 
-  reg  [MI_Size*`NUM_CORES] mstream_i;
-  wire [MO_Size*`NUM_CORES] mstream_o;
+  // Packed master streams for NUM_CORES cores
+  reg  [MI_Size*`NUM_CORES-1:0] mstream_i;
+  wire [MO_Size*`NUM_CORES-1:0] mstream_o;
 
   wire empty;
   wire full;
@@ -92,30 +93,23 @@ module fragment_fifo_m_unit_test;
   //===================================
   `SVUNIT_TESTS_BEGIN
 
-    // Basic test: single fragment delivered to core 0
     `SVTEST(single_fragment_core0)
-      // init inputs
       sstream_i = '0;
       mstream_i = '0;
 
-      // allow reset to propagate
-      clk_rst.WAIT_CYCLES(2);
 
-      // drive one fragment from rasterizer
+      //  data from rasterizer
       sstream_i[`STREAM_SI_DATA(SIZE)]  = 'h1;
       sstream_i[`STREAM_SI_VALID(SIZE)] = 1'b1;
       sstream_i[`STREAM_SI_LAST(SIZE)]  = 1'b0;
 
-      // only core 0 ready
       mstream_i = '0;
       mstream_i[`STREAM_MI_READY(SIZE)] = 1'b1;
 
-      // wait for delivery through FIFO
-      clk_rst.WAIT_CYCLES(4);
 
-      // core 0 (index 0) should see VALID and the data
-      `FAIL_UNLESS(mstream_o[`STREAM_MO_VALID(SIZE)] == 1'b1);
-      `FAIL_UNLESS_EQUAL(1, mstream_o[`STREAM_MO_DATA(SIZE)]);
+      // core 0 should have VALID and data
+      `FAIL_UNLESS(mstream_o[0*MO_Size + `STREAM_MO_VALID(SIZE)] == 1'b1);
+      `FAIL_UNLESS_EQUAL(1, mstream_o[0*MO_Size + `STREAM_MO_DATA(SIZE)]);
     `SVTEST_END
 
   `SVUNIT_TESTS_END
