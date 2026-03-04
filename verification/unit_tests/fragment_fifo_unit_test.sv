@@ -106,6 +106,7 @@ module fragment_fifo_m_unit_test;
       mstream_i = '0;
       mstream_i[`STREAM_MI_READY(SIZE)] = 1'b1;
 
+      clk_rst.WAIT_CYCLES(1);
 
       // core 0 should have VALID and data
       `FAIL_UNLESS(mstream_o[0*MO_Size + `STREAM_MO_VALID(SIZE)] == 1'b1);
