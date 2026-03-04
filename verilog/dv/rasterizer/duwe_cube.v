@@ -1,7 +1,7 @@
 run = 0;
 
 `define FIX(x) ((x) << (`DECIMAL_POS - 10))
-`define EX (1000)
+`define EX (10000)
 
 tex_addr <= `ADDR_FB1;
 tex_width <= 60;

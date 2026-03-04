@@ -86,27 +86,27 @@ module rasterizer_wrapper_m(
         .tex_width_i(tex_width),
         .tex_height_i(tex_height),
 
-        .t0x(t0x),
-        .t0y(t0y),
-        .t1x(t1x),
-        .t1y(t1y),
-        .t2x(t2x),
-        .t2y(t2y),
+        .t0x_i(t0x),
+        .t0y_i(t0y),
+        .t1x_i(t1x),
+        .t1y_i(t1y),
+        .t2x_i(t2x),
+        .t2y_i(t2y),
 
-        .v0x(v0x),
-        .v0y(v0y),
-        .v0z(v0z),
-        .v0w(v0w),
+        .v0x_i(v0x),
+        .v0y_i(v0y),
+        .v0z_i(v0z),
+        .v0w_i(v0w),
 
-        .v1x(v1x),
-        .v1y(v1y),
-        .v1z(v1z),
-        .v1w(v1w),
+        .v1x_i(v1x),
+        .v1y_i(v1y),
+        .v1z_i(v1z),
+        .v1w_i(v1w),
 
-        .v2x(v2x),
-        .v2y(v2y),
-        .v2z(v2z),
-        .v2w(v2w)
+        .v2x_i(v2x),
+        .v2y_i(v2y),
+        .v2z_i(v2z),
+        .v2w_i(v2w)
     );
 
     localparam STATE_READY = 2'd0;
