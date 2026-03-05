@@ -6,6 +6,7 @@
   Prioritizes low latency read hits. 
 */
 
+// uncomment for rtl sim
 // `default_nettype wire
 //   `include "../../ip/CF_SRAM_1024x32/hdl/beh_models/CF_SRAM_1024x32.tt_180V_25C.v"
 // `default_nettype none
@@ -89,38 +90,46 @@ reg sram_rw;              // 0 for write, 1 for read
 reg sram_en;            
 reg [31:0] sram_out_data; // data output from sram
 
-parameter BEN = 32'hFFFFFFFF;
-parameter WLBI = 1'b0;
-parameter WLOFF = 1'b0;
-parameter TM = 1'b0;
-parameter SM = 1'b0;
-parameter ScanInCC = 1'b0;
-parameter ScanInDL = 1'b0;
-parameter ScanInDR = 1'b0;
-parameter vpwrac = 1'b1;
-parameter vpwrpc = 1'b1;
+localparam BEN = 32'hFFFFFFFF;
+localparam WLBI = 1'b0;
+localparam WLOFF = 1'b0;
+localparam TM = 1'b0;
+localparam SM = 1'b0;
+localparam ScanInCC = 1'b0;
+localparam ScanInDL = 1'b0;
+localparam ScanInDR = 1'b0;
 wire ScanOutCC;
   
-// CF_SRAM_1024x32_macro
-CF_SRAM_1024x32_wrapper sram(
+// CF_SRAM_1024x32_macro for rtl sim
+CF_SRAM_1024x32 sram(
   .DO(sram_out_data),
-  .AD(sram_addr),
-  .DI(sram_in_data),
-  .R_WB(sram_rw),
-  .EN(sram_en),
-  .CLKin(clk_i),
+  .ScanOutCC(ScanOutCC),
 
+  .AD(sram_addr),
   .BEN(BEN),
+  .CLKin(clk_i),
+  .DI(sram_in_data),
+  .EN(sram_en),
+  .R_WB(sram_rw),
+
   .ScanInCC(ScanInCC),
   .ScanInDL(ScanInDL),
   .ScanInDR(ScanInDR),
   .SM(SM),
   .TM(TM),
   .WLBI(WLBI),
-  .WLOFF(WLOFF),
-  .vpwrac(vpwrac),
-  .vpwrpc(vpwrpc),
-  .ScanOutCC(ScanOutCC)
+  .WLOFF(WLOFF)
+
+  `ifdef USE_POWER_PINS
+    ,.vgnd(vssd1),
+    .vnb(vssd1), 
+    .vpb(vccd1), 
+    .vpwra(vccd1), 
+    .vpwrac(vccd1),
+    .vpwrm(vccd1),
+    .vpwrp(vccd1),
+    .vpwrpc(vccd1)
+  `endif  
 );
 
 integer i;
@@ -133,6 +142,7 @@ always @ (posedge clk_i) begin
     end
     state <= S_WAIT;
     s_core_o[`BUS_SO_ACK] <= 0;
+    s_core_o[`BUS_SO_SEQSLV] <= 0; // not used
     sram_en <= 0;
     mem_req_o <= 0;
     mem_seqmst_o <= 0;
@@ -318,3 +328,10 @@ always @ (posedge clk_i) begin
 end
 
 endmodule
+
+  // "FP_PDN_MACRO_HOOKS": [
+  //       "sram vccd1 vssd1 vpwra vgnd",
+  //       "sram vccd1 vssd1 vpb vnb",
+  //       "sram vccd1 vssd1 vpwrp vgnd",
+  //       "sram vccd1 vssd1 vpwrm vgnd"
+  //   ],

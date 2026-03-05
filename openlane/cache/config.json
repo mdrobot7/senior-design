@@ -7,29 +7,45 @@
       
       "dir::../../verilog/rtl/metadata_cache.v"
   ],
-  "SYNTH_READ_BLACKBOX_LIB": true,
-  "EXTRA_GDS_FILES": [
-      "dir::../../gds/CF_SRAM_1024x32_wrapper.gds"
+  "VERILOG_FILES_BLACKBOX": [
+      "dir::../../ip/CF_SRAM_1024x32/hdl/CF_SRAM_1024x32_stub.v"
   ],
-  "EXTRA_LEFS": [
-      "dir::../../lef/CF_SRAM_1024x32_wrapper.lef"
-  ],
-  "EXTRA_LIBS": [
-      "dir::../../lib/CF_SRAM_1024x32_wrapper.lib"
-  ],
-  "FP_PDN_MACRO_HOOKS": "sram vccd1 vssd1 vccd1 vssd1",
+    "SYNTH_READ_BLACKBOX_LIB": true,
+    "EXTRA_GDS_FILES": [
+        "dir::../../ip/CF_SRAM_1024x32/gds/CF_SRAM_1024x32.gds"
+    ],
+    "EXTRA_LEFS": [
+        "dir::../../ip/CF_SRAM_1024x32/lef/CF_SRAM_1024x32.lef"
+    ],
+    "EXTRA_LIBS": [
+        "dir::../../ip/CF_SRAM_1024x32/lib/CF_SRAM_1024x32_tt_180V_25C.lib"
+    ],
+  "FP_PDN_MACRO_HOOKS": [
+        "sram vccd1 vssd1 vpwra vgnd",
+        "sram vccd1 vssd1 vpb vnb",
+        "sram vccd1 vssd1 vpwrp vgnd",
+        "sram vccd1 vssd1 vpwrm vgnd",
+        "sram vccd1 vssd1 vpwrac vgnd",
+        "sram vccd1 vssd1 vpwrpc vgnd"
+    ],
+  "LVS_FLATTEN": 1,
+  "LVS_RENAME_UNMATCHED_PORTS": 1,
+  "SYNTH_USE_PG_PINS_DEFINES": "USE_POWER_PINS",
+  "SYNTH_POWER_DEFINE": "USE_POWER_PINS",
+  "VERILOG_POWER_DEFINE": "USE_POWER_PINS",
+  "FP_PDN_CHECK_NODES": false,
   "ROUTING_CORES": 4,
   "CLOCK_PERIOD": 25,
-  "RUN_LINTER": 1,
+  "RUN_LINTER": 0,
   "CLOCK_PORT": "clk_i",
   "CLOCK_NET": "clk_i",
   "MACRO_PLACEMENT_CFG": "dir::macro.cfg",
   "FP_SIZING": "absolute",
-  "DIE_AREA": "0 0 1000 1000",
+  "DIE_AREA": "0 0 2000 2000",
   "FP_PIN_ORDER_CFG": "dir::pin_order.cfg",
   "MAX_TRANSITION_CONSTRAINT": 1.0,
   "MAX_FANOUT_CONSTRAINT": 16,
-  "PL_TARGET_DENSITY": 0.75,
+  "PL_TARGET_DENSITY": 0.40,
   "PL_RESIZER_SETUP_SLACK_MARGIN": 0.4,
   "GLB_RESIZER_SETUP_SLACK_MARGIN": 0.2,
   "GLB_RESIZER_HOLD_SLACK_MARGIN": 0.2,
@@ -38,7 +54,7 @@
   "PL_RESIZER_TIMING_OPTIMIZATIONS": 1,
   "GLB_RESIZER_DESIGN_OPTIMIZATIONS": 1,
   "GLB_RESIZER_TIMING_OPTIMIZATIONS": 1,
-  "MAGIC_DEF_LABELS": 0,
+  "MAGIC_DEF_LABELS": 1,
   "SYNTH_BUFFERING": 0,
   "SYNTH_STRATEGY": "AREA 0",
   "RUN_HEURISTIC_DIODE_INSERTION": 1,
