@@ -8,10 +8,12 @@
 `define WORD_WIDTH (32)
 `define WORD `WORD_WIDTH - 1:0
 
-`define DECIMAL_POS (10)
+`define DECIMAL_POS (16)
 
 `define NUM_CORES (6)
 `define NUM_CORES_WIDTH ($clog2(`NUM_CORES))
+
+`define SRAM_1024x32_ADDR_WIDTH (10)
 
 // addresses
 `define ADDR_FB0          (0)
@@ -25,8 +27,13 @@
 `define FP_DIV(a, b) ((($signed({ {`WORD_WIDTH{a[`WORD_WIDTH - 1]}}, (a) }) << `DECIMAL_POS) / $signed({ {`WORD_WIDTH{b[`WORD_WIDTH - 1]}}, (b) })))
 `define FP_INV(x) ((1 << (2 * `DECIMAL_POS)) / $signed({ {`WORD_WIDTH{x[`WORD_WIDTH - 1]}}, x }))
 
+`define FP_SMAX (2 ** (`WORD_WIDTH - 1))
+
 // Wishbone reg
 `define WBREG_TYPE_REG (0)
 `define WBREG_TYPE_W1C (1) // Write 1 to clear
 `define WBREG_TYPE_W1S (2) // Write 1 to set
 `define WBREG_TYPE_W1T (3) // Write 1 to toggle
+
+`define SPI_MEM_SIZE (32000000 / 8)
+

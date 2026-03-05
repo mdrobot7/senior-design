@@ -1,3 +1,5 @@
+`timescale 1 ns / 1 ps // Required for commercial SRAM
+
 module clk_rst_m #(
   parameter CLK_PER = 20,
   parameter RESET_PER = 30

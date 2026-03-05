@@ -34,6 +34,10 @@
 `define MSB_16_IMM 15
 `define MSB_23_IMM 22
 
+// REGISTERS
+`define NUM_LOCAL_REGS  (16)
+`define NUM_GLOBAL_REGS (48)
+
 //ISA
 `define OPCODE_WIDTH            6
 `define OPCODE_IDX              31:26
@@ -149,3 +153,4 @@
 `define MAILBOX_STREAM_CYCLES ((`WORD_WIDTH*`CORE_MAILBOX_HEIGHT) /  `MAILBOX_STREAM_SIZE)
 `define MAILBOX_COUNTER_WIDTH ($clog2(`MAILBOX_STREAM_CYCLES))
 `define STAGE_SLICE(stage, size) (((stage+1)*(size))-1):((stage)*(size))
+

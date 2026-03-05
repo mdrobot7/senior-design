@@ -5,8 +5,8 @@ module tex_sample_m(
     input  wire [`STREAM_SIPORT(`RAST_DT_OUT_WIDTH)] sstream_i,
     output wire [`STREAM_SOPORT(`RAST_DT_OUT_WIDTH)] sstream_o,
 
-    input  wire [`STREAM_MIPORT(`RAST_TS_OUT_WIDTH)] mstream_i,
-    output wire [`STREAM_MOPORT(`RAST_TS_OUT_WIDTH)] mstream_o,
+    input  wire [`STREAM_MIPORT(`FRAGMENT_WIDTH)] mstream_i,
+    output wire [`STREAM_MOPORT(`FRAGMENT_WIDTH)] mstream_o,
 
     input  wire [`BUS_MIPORT] mport_i,
     output reg  [`BUS_MOPORT] mport_o,
@@ -21,15 +21,27 @@ module tex_sample_m(
     reg out_ready;
     reg [`COLOR] color;
     reg [`SC_WIDTH - 1:0] posx, posy;
-    reg [`WORD_WIDTH - 1:0] _tx, _ty;
     reg [`WORD_WIDTH - 1:0] tx, ty;
     reg [`WORD_WIDTH - 1:0] depth;
 
     reg [`BUS_ADDR_PORT] addr;
     reg [`BUS_ADDR_PORT] prev_addr;
 
-    assign mstream_o[`STREAM_MO_VALID(`RAST_TS_OUT_WIDTH)] = out_ready;
-    assign mstream_o[`STREAM_MO_DATA(`RAST_TS_OUT_WIDTH)]  = { color, posx, posy, tx, ty, depth };
+    wire [`WORD] color_ext;
+    assign color_ext = color;
+    
+    wire [`WORD] posx_ext, posy_ext;
+    assign posx_ext = posx;
+    assign posy_ext = posy;
+
+    assign mstream_o[`STREAM_MO_VALID(`FRAGMENT_WIDTH)] = out_ready;
+    assign mstream_o[`STREAM_MO_DATA(`FRAGMENT_WIDTH)]  = {
+        32'h00000000, 32'h00000000,
+        32'h00000000, 32'h00000000, 32'h00000000,
+        posx_ext, posy_ext,
+        color_ext
+    };
+    assign mstream_o[`STREAM_MO_LAST(`FRAGMENT_WIDTH)] = 1'b0;
 
     reg [7:0] state;
 
@@ -52,11 +64,11 @@ module tex_sample_m(
 
                         { posx, posy, tx, ty, depth } = sstream_i[`STREAM_SI_DATA(`RAST_DT_OUT_WIDTH)];
 
-                        if (_tx > tex_width_i) tx = tex_width_i - 1;
-                        if (_tx < 0) tx = 0;
+                        if (tx > tex_width_i) tx = tex_width_i - 1;
+                        if (tx < 0) tx = 0;
 
-                        if (_ty > tex_height_i) ty = tex_height_i - 1;
-                        if (_ty < 0) tx = 0;
+                        if (ty > tex_height_i) ty = tex_height_i - 1;
+                        if (ty < 0) ty = 0;
 
                         addr <= tex_addr_i + tx;
                     end
@@ -102,7 +114,7 @@ module tex_sample_m(
                 end
 
                 4: begin
-                    if (mstream_i[`STREAM_MI_READY(`RAST_TS_OUT_WIDTH)]) begin
+                    if (mstream_i[`STREAM_MI_READY(`FRAGMENT_WIDTH)]) begin
                         state <= 0;
 
                         out_ready <= 0;

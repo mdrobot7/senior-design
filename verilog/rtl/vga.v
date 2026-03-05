@@ -159,8 +159,8 @@ module vga_wrapper_m (
         .access_write_mask_i(32'hFFFFFFFF),
         .periph_read_mask_i(0),
 
-        .enable_prot_i(0), // fbaddr is special, it latches at the end of a frame
-        .enable_i(0),
+        .enable_prot_i(32'b0), // fbaddr is special, it latches at the end of a frame
+        .enable_i(1'b0),
 
         .reg_i(0),
         .reg_o(fbaddr_reg)
