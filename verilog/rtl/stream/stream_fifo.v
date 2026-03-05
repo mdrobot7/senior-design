@@ -17,12 +17,13 @@ module stream_fifo_m #(
     localparam DEPTH_LOG = $clog2(DEPTH);
 
     reg [DEPTH_LOG:0] head, size;
-    reg [SIZE - 1:0] buffer[DEPTH - 1:0];
+    reg [DEPTH - 1:0] last;
+    reg [SIZE - 1:0]  buffer [DEPTH - 1:0];
 
     assign sstream_o[`STREAM_SO_READY(SIZE)] = size != DEPTH;
 
     assign mstream_o[`STREAM_MO_VALID(SIZE)] = size != 0;
-    assign mstream_o[`STREAM_MO_LAST(SIZE)] = 0;
+    assign mstream_o[`STREAM_MO_LAST(SIZE)] = last[head];
     assign mstream_o[`STREAM_MO_DATA(SIZE)] = buffer[head];
 
     always @(posedge clk_i, negedge nrst_i) begin
@@ -32,7 +33,10 @@ module stream_fifo_m #(
             head <= 0;
             size <= 0;
 
-            for (i = 0; i < DEPTH; i = i + 1) buffer[i] <= 0;
+            for (i = 0; i < DEPTH; i = i + 1) begin
+                last[i]   <= 0;
+                buffer[i] <= 0;
+            end
         end
         else if (clk_i) begin : CLOCK
             reg [DEPTH_LOG:0] new_size;
@@ -40,6 +44,7 @@ module stream_fifo_m #(
             new_size = size;
 
             if (sstream_i[`STREAM_SI_VALID(SIZE)] && sstream_o[`STREAM_SO_READY(SIZE)]) begin
+                last[(head + size) % DEPTH] <= sstream_i[`STREAM_SI_LAST(SIZE)];
                 buffer[(head + size) % DEPTH] <= sstream_i[`STREAM_SI_DATA(SIZE)];
 
                 new_size = new_size + 1;
