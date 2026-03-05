@@ -47,20 +47,14 @@ module core_m(
     localparam MEM_STAGE =  3;
     localparam WB_STAGE =   4;
 
-    reg mem_stall;
-
     localparam MAILBOX_PREP_STATE = 0;
     localparam MAILBOX_WAIT_STATE = 1;
     localparam MAILBOX_TRANSACTION_STATE = 2;
     localparam MAILBOX_WRITE_STATE = 3;
-    reg[1:0] inbox_state;
-    reg[1:0] next_inbox_state;
-    reg inbox_stall;
-    reg inbox_write;
+    reg inbox_read;
 
     reg[1:0] outbox_state;
     reg[1:0] next_outbox_state;
-    reg outbox_stall;
 
     wire stall;
     //input pipeline regs
@@ -137,6 +131,11 @@ module core_m(
     reg[`REG_SOURCE_WIDTH-1:0] fwd_r1_addr;
     reg[`REG_SOURCE_WIDTH-1:0] fwd_r2_addr;
 
+    //stall
+    reg mem_stall;
+    reg outbox_stall;
+    reg inbox_stall;
+
     //decode modules
     decoder_m decoder (
         .instruction_i(dec_inst),
@@ -155,7 +154,7 @@ module core_m(
         .r1_data_o(regfile_r1_data),
         .r2_data_o(regfile_r2_data),
 
-        .inbox_write_i(inbox_write),
+        .inbox_write_i(inbox_read),
         .inbox_i(wb_inbox),
         .outbox_o(wb_outbox)
     );
@@ -214,6 +213,17 @@ module core_m(
         .repeated_acccess_condition(ex_ctl_sigs[`IS_LOAD_IDX] | ex_ctl_sigs[`IS_STORE_IDX])
     );
 
+    inbox_m inbox_module (
+        .clk_i(clk_i),
+        .nrst_i(nrst_i),
+        .nsync_rst_i(nsync_rst_i),
+        .inbox_read_req_i(inbox_read),
+        .inbox_sstream_i(inbox_sstream_i),
+        .inbox_sstream_o(inbox_sstream_o),
+        .stall_o(inbox_stall),
+        .inbox_o(wb_inbox)
+    );
+
     //forwarding module
     forward_m forward(
         .ex_r1_addr(fwd_r1_addr),
@@ -270,6 +280,7 @@ module core_m(
     assign wb_ctl_sigs = piped_ctl_sigs[`STAGE_SLICE(WB_STAGE, `CTL_SIGS_WIDTH)];
     assign wb_inst = piped_inst[`STAGE_SLICE(WB_STAGE, `WORD_WIDTH)];
     assign wb_addr = wb_inst[`REG_DEST_IDX];
+    assign inbox_read = wb_ctl_sigs[`WB_IS_IN_IDX];
 
     //fwd assignments
     assign stall = stall_o | stall_i;
@@ -396,79 +407,8 @@ module core_m(
         end
     end
 
-    //inbox clocked
-    always @(posedge clk_i, negedge nrst_i) begin
-        integer i;
-        if(!nrst_i) begin
-            for(i = 0; i < `CORE_MAILBOX_HEIGHT; i = i + 1) begin
-                inbox[i] <= 0;
-            end
-        end
-        else if (clk_i) begin
-            if(!nsync_rst_i) begin
-                for(i = 0; i < `CORE_MAILBOX_HEIGHT; i = i + 1) begin
-                    inbox[i] <= 0;
-                end
-            end 
-            else begin
-                if(inbox_sstream_i[`STREAM_SI_VALID(`MAILBOX_STREAM_SIZE)]) begin
-                    //store new value in highest idx, shift rest
-                    //this assumes a stream size of 1 word
-                    inbox[`CORE_MAILBOX_HEIGHT-1] <= inbox_sstream_i[`STREAM_SI_DATA(`MAILBOX_STREAM_SIZE)];
-                    for(i = 0; i < `CORE_MAILBOX_HEIGHT-1; i = i + 1) begin
-                        inbox[i] <= inbox[i + 1];
-                    end
-                end
-            end
-        end
-    end
 
-    //inbox fsm
-    always @(*) begin
-        integer i;
-        next_inbox_state <= inbox_state;
-        inbox_stall <= 0;
-        inbox_write <= 0;
-        case(inbox_state)
-            MAILBOX_PREP_STATE: begin
-                inbox_stall <= 0;
-                if(mem_ctl_sigs[`WB_IS_IN_IDX] & (~stall))
-                    next_inbox_state <= MAILBOX_WAIT_STATE;
-            end
-            MAILBOX_WAIT_STATE: begin
-                inbox_stall <= 1;
-                if(inbox_sstream_i[`STREAM_SI_VALID(`MAILBOX_STREAM_SIZE)])
-                    next_inbox_state <= MAILBOX_TRANSACTION_STATE;
-            end
-            MAILBOX_TRANSACTION_STATE:begin
-                inbox_stall <= 1;
-                if(inbox_sstream_i[`STREAM_SI_LAST(`MAILBOX_STREAM_SIZE)])
-                    next_inbox_state <= MAILBOX_WAIT_STATE;
-            end
-            MAILBOX_WRITE_STATE: begin
-                inbox_stall <= 1;
-                inbox_write <= 1;
-                next_inbox_state <= MAILBOX_PREP_STATE;
-            end
-            default: begin
-                inbox_stall <= 0;
-                next_inbox_state <= MAILBOX_PREP_STATE;
-            end
-        endcase
-
-        case(inbox_state)
-            MAILBOX_WAIT_STATE, MAILBOX_TRANSACTION_STATE: inbox_sstream_o[`STREAM_SO_READY(`MAILBOX_STREAM_SIZE)] <= 1;
-            default : inbox_sstream_o[`STREAM_SO_READY(`MAILBOX_STREAM_SIZE)] <= 0;
-        endcase
-
-        for(i = 0; i < `CORE_MAILBOX_HEIGHT; i = i + 1) begin
-            wb_inbox[i*`WORD_WIDTH +: `WORD_WIDTH] <= inbox[i];
-        end
-    end
-
-
-
-    reg[`OUTBOX_COUNTER_WIDTH-1:0] outbox_counter;
+    reg[`MAILBOX_COUNTER_WIDTH-1:0] outbox_counter;
     //outbox fsm
     always @(*) begin
         next_outbox_state <= outbox_state;
@@ -500,7 +440,7 @@ module core_m(
                 next_outbox_state <= MAILBOX_PREP_STATE;
             end
             default:
-                next_inbox_state <= MAILBOX_PREP_STATE;
+                next_outbox_state <= MAILBOX_PREP_STATE;
         endcase
 
         outbox_mstream_o[`STREAM_MO_DATA(`MAILBOX_STREAM_SIZE)] <= outbox[0];
@@ -549,16 +489,13 @@ module core_m(
 
     always @(posedge clk_i, negedge nrst_i) begin
         if(!nrst_i) begin
-            inbox_state <= MAILBOX_PREP_STATE;
             outbox_state <= MAILBOX_PREP_STATE;
         end
         else if (clk_i) begin
             if(!nsync_rst_i) begin
-                inbox_state <= MAILBOX_PREP_STATE;
                 outbox_state <= MAILBOX_PREP_STATE;
             end
             else begin
-                inbox_state <= next_inbox_state;
                 outbox_state <= next_outbox_state;
             end
         end
