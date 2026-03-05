@@ -20,14 +20,7 @@
     "EXTRA_LIBS": [
         "dir::../../ip/CF_SRAM_1024x32/lib/CF_SRAM_1024x32_tt_180V_25C.lib"
     ],
-  "FP_PDN_MACRO_HOOKS": [
-        "sram vccd1 vssd1 vpwra vgnd",
-        "sram vccd1 vssd1 vpb vnb",
-        "sram vccd1 vssd1 vpwrp vgnd",
-        "sram vccd1 vssd1 vpwrm vgnd",
-        "sram vccd1 vssd1 vpwrac vgnd",
-        "sram vccd1 vssd1 vpwrpc vgnd"
-    ],
+  "FP_PDN_MACRO_HOOKS": "sram vccd1 vssd1 vpwra vgnd,sram vccd1 vssd1 vpb vnb,sram vccd1 vssd1 vpwrp vgnd,sram vccd1 vssd1 vpwrm vgnd,sram vccd1 vssd1 vpwrac vgnd,sram vccd1 vssd1 vpwrpc vgnd",
   "LVS_FLATTEN": 1,
   "LVS_RENAME_UNMATCHED_PORTS": 1,
   "SYNTH_USE_PG_PINS_DEFINES": "USE_POWER_PINS",
