@@ -6,7 +6,7 @@ module inbox_m (
     input  wire[`STREAM_SIPORT(`MAILBOX_STREAM_SIZE)] inbox_sstream_i,
     output reg[`STREAM_SOPORT(`MAILBOX_STREAM_SIZE)] inbox_sstream_o,
     output reg stall_o,
-    output wire [`CORE_MAILBOX_HEIGHT*`WORD_WIDTH] inbox_o
+    output reg [`CORE_MAILBOX_HEIGHT*`WORD_WIDTH-1:0] inbox_o
 );
 
     reg ready;
@@ -16,24 +16,33 @@ module inbox_m (
     reg[`MAILBOX_COUNTER_WIDTH-1:0] counter;
 
 
+    always @(*) begin : ASSIGNMENT
+        integer i;
+        for(i = 0; i < `MAILBOX_STREAM_CYCLES; i = i + 1) begin
+            inbox_o[(i*`WORD_WIDTH) +: `WORD_WIDTH] <= inbox[i];
+        end
+
+        inbox_sstream_o <= ready;
+    end
+
     always @(posedge clk_i, negedge nrst_i) begin
         if(!nrst_i) begin : RESET
             integer i;
             for( i = 0; i < `MAILBOX_STREAM_CYCLES; i = i + 1)
                 inbox[i] = 0;
 
-            ready <= 0;
+            ready <= 1;
             counter <= 0;
             stall_o <= 0;
         end
         else if (clk_i) begin : CLOCK
             integer i;
-            if (nsync_rst_i) begin
+            if (!nsync_rst_i) begin
                 integer i;
                 for( i = 0; i < `MAILBOX_STREAM_CYCLES; i = i + 1)
                     inbox[i] = 0;
 
-                ready <= 0;
+                ready <= 1;
                 counter <= 0;
                 stall_o <= 0;
             end
@@ -43,10 +52,11 @@ module inbox_m (
                         inbox[counter] <= inbox_sstream_i[`STREAM_SI_DATA(`MAILBOX_STREAM_SIZE)];
                         counter = (counter + 1) % `MAILBOX_STREAM_CYCLES;
                     end
-                    if(inbox_sstream_i[`STREAM_SI_LAST(`MAILBOX_STREAM_SIZE)])
+                    if(inbox_sstream_i[`STREAM_SI_LAST(`MAILBOX_STREAM_SIZE)]) begin
                         stall_o <= 0;
                         ready <= 0;
-                    if(inbox_read_req_i)
+                    end
+                    else if(inbox_read_req_i)
                         ready <= 1;
                 end
                 else begin // !ready

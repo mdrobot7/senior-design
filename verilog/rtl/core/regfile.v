@@ -47,7 +47,6 @@ module regfile_m #(
             integer i;
             if(inbox_write_i) begin
                 for(i = 0; i < `CORE_MAILBOX_HEIGHT; i = i + 1) begin
-                    $display("mem write ");
                     mem[i + 1] <= inbox_i[(i*REGFILE_WIDTH) +: REGFILE_WIDTH];
                 end
             end
