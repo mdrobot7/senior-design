@@ -97,18 +97,5 @@ always @(*) begin
     done_mailing = sel_i[0];
 end
     
-/*
-    while (1){
-        while(idx != num_cores){
-            if(core[idx].ready && fifo.notempty){
-                core[idx].inbox <- fifo.data    
-            }
-            idx++
-        }
-        idx = 0;
-        done_mailing = 1;
-    }
-*/
-    
 
 endmodule
