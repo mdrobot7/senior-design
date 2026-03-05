@@ -135,6 +135,7 @@ module core_m(
     reg mem_stall;
     reg outbox_stall;
     reg inbox_stall;
+    wire halt_stall;
 
     //decode modules
     decoder_m decoder (
@@ -281,6 +282,7 @@ module core_m(
     assign wb_inst = piped_inst[`STAGE_SLICE(WB_STAGE, `WORD_WIDTH)];
     assign wb_addr = wb_inst[`REG_DEST_IDX];
     assign inbox_read = wb_ctl_sigs[`WB_IS_IN_IDX];
+    assign halt_stall = (wb_ctl_sigs[`OPCODE_IDX] == `HALT_OPCODE);
 
     //fwd assignments
     assign stall = stall_o | stall_i;
@@ -340,7 +342,7 @@ module core_m(
         else
             fwd_r2_addr = ex_inst[`R2_IDX];
 
-        stall_o = mem_stall | inbox_stall | outbox_stall;
+        stall_o = mem_stall | inbox_stall | outbox_stall | halt_stall;
     end
 
     always @ (posedge clk_i, negedge nrst_i) begin : BLOCK2

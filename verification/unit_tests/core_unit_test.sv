@@ -592,14 +592,15 @@ module core_m_unit_test;
       inst = 0;
       clk_rst.WAIT_CYCLES(10);
       
-      `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[1], 8);
-      `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[2], 7);
-      `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[3], 6);
-      `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[4], 5);
-      `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[5], 4);
-      `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[6], 3);
-      `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[7], 2);
-      `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[8], 1);
+
+      `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[1], 1);
+      `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[2], 2);
+      `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[3], 3);
+      `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[4], 4);
+      `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[5], 5);
+      `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[6], 6);
+      `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[7], 7);
+      `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[8], 8);
   `SVTEST_END
 
   `SVUNIT_TESTS_END
