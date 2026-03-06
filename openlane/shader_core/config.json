@@ -19,6 +19,8 @@
       "dir::../../verilog/rtl/math/mul.v",
       "dir::../../verilog/rtl/math/full_adder.v",
       "dir::../../verilog/rtl/math/add.v",
+      "dir::../../verilog/rtl/core/mem_bus.v",
+      "dir::../../verilog/rtl/core/inbox.v",
 
       "dir::../../verilog/rtl/core/core.v"
   ],

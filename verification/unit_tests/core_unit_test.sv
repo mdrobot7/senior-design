@@ -16,6 +16,8 @@
 `include "core/predicate.v"
 `include "core/regfile.v"
 `include "core/signext.v"
+`include "core/mem_bus.v"
+`include "core/inbox.v"
 
 `include "math/full_adder.v"
 `include "math/mul.v"
@@ -212,6 +214,7 @@ module core_m_unit_test;
     end
     clk_rst.WAIT_CYCLES(5);
 
+
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[0], 32'd0);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[1], -32'd1);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[2], 32'd2);
@@ -252,9 +255,9 @@ module core_m_unit_test;
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[8], 32'h5);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[9], 32'h1000);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[10], 32'hFFFFF371);
-    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[11], 32'hFFFF8E04);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[11], 32'hFFFFFFFF);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[12], 32'h1);
-    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[13], 32'hFFFF8B51);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[13], 32'hFFFFFAAA);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[14], 32'hFFFFFC18);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[15], 32'hFFFFFFFF);
 
@@ -291,9 +294,9 @@ module core_m_unit_test;
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[8], 32'h5);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[9], 32'h00001000);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[10], 32'hFFFFF371);
-    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[11], 32'hFFFF8E04);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[11], 32'hFFFFFFFF);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[12], 32'h00000001);
-    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[13], 32'hFFFF8B51);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[13], 32'hFFFFFAAA);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[14], 32'hFFFFFC18);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[15], 32'h55559090);
 
@@ -339,9 +342,9 @@ module core_m_unit_test;
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[10], 32'h00019000);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[11], 32'h000050C8);
 
-    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[12], 32'h000670D4);
-    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[13], 32'h002C5E5B);
-    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[14], 32'h002C5E5A);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[12], 32'h000019C3);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[13], 32'h0000B178);
+    `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[14], 32'h0000B177);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[15], 32'h00000000);
 
     `FAIL_UNLESS_EQUAL(outbox_slave.buffer[0], -32'd1);
@@ -555,9 +558,6 @@ module core_m_unit_test;
 
     wait(my_core_m.wb_inst == i_mem[46]); //halt
 
-    for(i = 0; i < 16; i = i + 1) begin
-      $display("mem[%d] = 0x%h", i, my_core_m.regfile.mem[i]);
-    end
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[0], 32'h00000008);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[1], 32'h00000010);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[2], 32'h00000002);
@@ -575,6 +575,32 @@ module core_m_unit_test;
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[14], 32'h00000034);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[15], 32'h00000012);
 
+  `SVTEST_END
+
+  `SVTEST(inbox)
+    integer i;
+    inst = 0;
+    clk_rst.RESET();
+    clk_rst.WAIT_CYCLES(3);
+
+    for(i = 0; i < 7; i = i + 1) begin
+      inbox_master.WRITE(32'h00000001 * (i+1));
+    end
+      inst = 32'hA0000000; //in instruction
+      inbox_master.WRITE_LAST(32'h00000001 * 8);
+      clk_rst.WAIT_CYCLES(2);
+      inst = 0;
+      clk_rst.WAIT_CYCLES(10);
+      
+
+      `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[1], 1);
+      `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[2], 2);
+      `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[3], 3);
+      `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[4], 4);
+      `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[5], 5);
+      `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[6], 6);
+      `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[7], 7);
+      `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[8], 8);
   `SVTEST_END
 
   `SVUNIT_TESTS_END
