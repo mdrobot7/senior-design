@@ -38,7 +38,10 @@ module rasterizer_m(
     input wire signed [`WORD] v2x_i,
     input wire signed [`WORD] v2y_i,
     input wire signed [`WORD] v2z_i,
-    input wire signed [`WORD] v2w_i
+    input wire signed [`WORD] v2w_i,
+
+    input wire [`WORD] u0_i,
+    input wire [`WORD] u1_i
 );
 
     wire [`STREAM_SIPORT(2 * `DIVIDER_WIDTH)] wdiv_div_si;
@@ -433,6 +436,9 @@ module rasterizer_m(
 
         .mport_i(tex_mport_i),
         .mport_o(tex_mport_o),
+
+        .u0_i(u0_i),
+        .u1_i(u1_i),
 
         .tex_addr_i(tex_addr_i),
         .tex_width_i(tex_width_i),

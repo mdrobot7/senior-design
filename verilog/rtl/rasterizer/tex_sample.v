@@ -11,6 +11,9 @@ module tex_sample_m(
     input  wire [`BUS_MIPORT] mport_i,
     output reg  [`BUS_MOPORT] mport_o,
 
+    input  wire [`WORD] u0_i,
+    input  wire [`WORD] u1_i,
+
     input  wire [`BUS_ADDR_PORT] tex_addr_i,
     input  wire [`TEX_DIM] tex_width_i,
     input  wire [`TEX_DIM] tex_height_i
@@ -36,7 +39,7 @@ module tex_sample_m(
 
     assign mstream_o[`STREAM_MO_VALID(`FRAGMENT_WIDTH)] = out_ready;
     assign mstream_o[`STREAM_MO_DATA(`FRAGMENT_WIDTH)]  = {
-        32'h00000000, 32'h00000000,
+        u1_i, u0_i,
         32'h00000000, 32'h00000000, 32'h00000000,
         posx_ext, posy_ext,
         color_ext
