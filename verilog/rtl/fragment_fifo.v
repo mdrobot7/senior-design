@@ -80,7 +80,7 @@ always @(*) begin
 
     // Override only  valid bit for selected core
     for (j = 0; j < `NUM_CORES; j = j + 1) begin
-        if (sel_i[j] && fifo_has_data)
+        if (sel_i[j] && fifo_has_data && internal_mstream_o[`STREAM_MO_VALID(SIZE)])
             mstream_o[j * MO_Size + `STREAM_MO_VALID(SIZE)] = 1'b1;
         else
             mstream_o[j * MO_Size + `STREAM_MO_VALID(SIZE)] = 1'b0;
