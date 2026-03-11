@@ -13,7 +13,7 @@ module fragment_fifo_m_unit_test;
   svunit_testcase svunit_ut;
 
   // Test configuration
-  localparam int SIZE  = 1;
+  localparam int SIZE  = `MAILBOX_STREAM_SIZE;
   localparam int DEPTH = 10;
   localparam int MI_Size = `STREAM_MIPORT_SIZE(SIZE);
   localparam int MO_Size = `STREAM_MOPORT_SIZE(SIZE);
@@ -63,6 +63,9 @@ module fragment_fifo_m_unit_test;
   task setup();
     svunit_ut.setup();
     /* Place Setup Code Here */
+    sstream_i = '0;
+    mstream_i = '0;
+
     clk_rst.RESET();
     clk_rst.WAIT_CYCLES(1);
   endtask
@@ -94,43 +97,67 @@ module fragment_fifo_m_unit_test;
   //===================================
   `SVUNIT_TESTS_BEGIN
 
-// This test only works when NUM_CORES = 1 in common_misc.v
-/*
-    `SVTEST(single_fragment_core0)
-      sstream_i = '0;
-      mstream_i = '0;
+  `SVTEST(mc_flags)
+    integer n;
+    `FAIL_UNLESS(empty == 1'b1)
+    `FAIL_UNLESS(full == 1'b0)
 
-      //  data from rasterizer
-      sstream_i[`STREAM_SI_DATA(SIZE)]  = 'h1;
-      sstream_i[`STREAM_SI_VALID(SIZE)] = 1'b1;
-      sstream_i[`STREAM_SI_LAST(SIZE)]  = 1'b0;
-      clk_rst.WAIT_CYCLES(1);
+      // Load FIFO with data
+      for (n = 0; n < DEPTH; n = n + 1) begin
+        sstream_i[`STREAM_SI_DATA(SIZE)]  = 32'hBEEFDEED;    
+        sstream_i[`STREAM_SI_VALID(SIZE)] = 1'b1;
+        sstream_i[`STREAM_SI_LAST(SIZE)]  = 1'b1;
+        clk_rst.WAIT_CYCLES(1);
+        `FAIL_UNLESS(empty == 1'b0)
+        if(n!=DEPTH-1) begin
+        `FAIL_UNLESS(full == 1'b0)
+        end
+      end
+      `FAIL_UNLESS(full == 1'b1)
+    `SVTEST_END
 
-      sstream_i[`STREAM_SI_DATA(SIZE)]  = 'h0;
-      sstream_i[`STREAM_SI_VALID(SIZE)] = 1'b1;
-      sstream_i[`STREAM_SI_LAST(SIZE)]  = 1'b1;
+  `SVTEST(round_robin_all_cores)
+      integer n, i, j;
+      reg [`NUM_CORES-1:0] seen_valid;
 
+      // Load FIFO with data
+      for (n = 0; n < DEPTH; n = n + 1) begin
+        if(n%2 == 0)
+          sstream_i[`STREAM_SI_DATA(SIZE)]  = 32'hDEADBEEF;    
+        else
+        sstream_i[`STREAM_SI_DATA(SIZE)]  = 32'hFEEDFEED;    
+        sstream_i[`STREAM_SI_VALID(SIZE)] = 1'b1;
+        sstream_i[`STREAM_SI_LAST(SIZE)]  = 1'b1;
+        clk_rst.WAIT_CYCLES(1);
+      end
 
-      clk_rst.WAIT_CYCLES(1);
       sstream_i[`STREAM_SI_VALID(SIZE)] = 1'b0;
       sstream_i[`STREAM_SI_LAST(SIZE)]  = 1'b0;
-
-      // core is ready, pop fifo
-      mstream_i = '0;
-      mstream_i[`STREAM_MI_READY(SIZE)] = 1'b1;
-  
       clk_rst.WAIT_CYCLES(1);
-      `FAIL_UNLESS(mstream_o[0*MO_Size + `STREAM_MO_VALID(SIZE)] == 1'b1);
-      `FAIL_UNLESS(mstream_o[0*MO_Size + `STREAM_MO_LAST(SIZE)]  == 1'b0);
-      `FAIL_UNLESS_EQUAL(1, mstream_o[0*MO_Size + `STREAM_MO_DATA(SIZE)]);
 
+      for (i = 0; i < `NUM_CORES; i = i + 1) begin 
+        mstream_i[MI_Size*i + `STREAM_MI_READY(SIZE)] = 1'b1;
 
+        while(1) begin
+        if (mstream_o[MO_Size*i + `STREAM_MO_VALID(SIZE)]) begin
+            seen_valid[i] = 1'b1;
+            break;
+        end
+        else begin
+          clk_rst.WAIT_CYCLES(1);
+        end
+        end
+        clk_rst.WAIT_CYCLES(1);
+        mstream_i[MI_Size*i + `STREAM_MI_READY(SIZE)] = 1'b0; 
+      end
       clk_rst.WAIT_CYCLES(1);
-      `FAIL_UNLESS(mstream_o[0*MO_Size + `STREAM_MO_VALID(SIZE)] == 1'b1);
-      `FAIL_UNLESS(mstream_o[0*MO_Size + `STREAM_MO_LAST(SIZE)]  == 1'b1);
-      `FAIL_UNLESS_EQUAL(0, mstream_o[0*MO_Size + `STREAM_MO_DATA(SIZE)]);
+      for (i = 0; i < `NUM_CORES; i = i + 1) begin 
+        `FAIL_UNLESS(seen_valid[i] == 1'b1);
+      end
+
     `SVTEST_END
-*/
+
+
 
   `SVUNIT_TESTS_END
 

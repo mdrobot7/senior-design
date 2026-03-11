@@ -58,7 +58,7 @@ end
 wire fifo_has_data   = internal_mstream_o[`STREAM_MO_VALID(SIZE)];
 wire cur_core_ready  = |(core_ready & sel_i);
 
-// Select idx core, increment to next core if not ready
+// Select core, increment to next core if not ready
 always @(posedge clk_i or negedge nrst_i) begin
     if (!nrst_i) begin
         // 0th core selected
@@ -73,7 +73,7 @@ end
 // Assign mstream_o VALID bit for selected core
 integer j;
 always @(*) begin
-    // Assign all outputs from internal FIFO default (clone the FIFO output data for all cores)
+    // Assign all outputs from internal FIFO default 
     for (j = 0; j < `NUM_CORES; j = j + 1) begin
         mstream_o[j * MO_Size +: MO_Size] = internal_mstream_o;
     end
