@@ -34,7 +34,7 @@
   "CLOCK_NET": "clk_i",
   "MACRO_PLACEMENT_CFG": "dir::macro.cfg",
   "FP_SIZING": "absolute",
-  "DIE_AREA": "0 0 2000 2000",
+  "DIE_AREA": "0 0 1000 1000",
   "FP_PIN_ORDER_CFG": "dir::pin_order.cfg",
   "MAX_TRANSITION_CONSTRAINT": 1.0,
   "MAX_FANOUT_CONSTRAINT": 16,

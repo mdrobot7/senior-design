@@ -29,6 +29,37 @@ module sram_1024x32_m (
     .di(data_i),
     .dout(data_o)
   );
+`elsif macro
+  CF_SRAM_1024x32 sram(
+    .DO(sram_out_data),
+    .ScanOutCC(ScanOutCC),
+
+    .AD(sram_addr),
+    .BEN(BEN),
+    .CLKin(clk_i),
+    .DI(sram_in_data),
+    .EN(sram_en),
+    .R_WB(sram_rw),
+
+    .ScanInCC(ScanInCC),
+    .ScanInDL(ScanInDL),
+    .ScanInDR(ScanInDR),
+    .SM(SM),
+    .TM(TM),
+    .WLBI(WLBI),
+    .WLOFF(WLOFF)
+
+    `ifdef USE_POWER_PINS
+      ,.vgnd(vssd1),
+      .vnb(vssd1), 
+      .vpb(vccd1), 
+      .vpwra(vccd1), 
+      .vpwrac(vccd1),
+      .vpwrm(vccd1),
+      .vpwrp(vccd1),
+      .vpwrpc(vccd1)
+    `endif  
+  );
 `else
   `define functional // Use this for RTL tests (we think), disables the $setuphold tests that can't be checked with RTL
   CF_SRAM_1024x32_macro sram (
