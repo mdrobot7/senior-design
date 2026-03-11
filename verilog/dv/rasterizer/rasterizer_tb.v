@@ -152,6 +152,8 @@ module rasterizer_tb();
     reg [31:0] v2y;
     reg [31:0] v2z;
 
+    reg [`WORD] u0, u1;
+
     image_m image();
 
     wire [`STREAM_MIPORT(`FRAGMENT_WIDTH)] tex_mstreami;
@@ -195,7 +197,10 @@ module rasterizer_tb();
         .v2x_i(v2x),
         .v2y_i(v2y),
         .v2z_i(v2z),
-        .v2w_i(32'h00010000)
+        .v2w_i(32'h00010000),
+
+        .u0_i(u0),
+        .u1_i(u1)
     );
 
     mem_write_m mem_write(
@@ -256,6 +261,9 @@ module rasterizer_tb();
 		$dumpvars(0, rasterizer_tb);
 
         run = 0;
+
+        u0 = 910;
+        u1 = 21;
 
         tex_addr = `ADDR_FB1;
         tex_width = 60;
