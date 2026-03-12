@@ -14,8 +14,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-
- 
 PWDD := $(shell pwd)
 BLOCKS := $(shell basename $(PWDD))
 
@@ -27,3 +25,10 @@ include $(MCW_ROOT)/verilog/dv/make/env.makefile
 include $(MCW_ROOT)/verilog/dv/make/var.makefile
 include $(MCW_ROOT)/verilog/dv/make/cpu.makefile
 include $(MCW_ROOT)/verilog/dv/make/sim.makefile
+
+# ---- Include RISC-V Deps ----
+
+LIBRARY_DIR := $(PWDD)/../../../library
+include $(LIBRARY_DIR)/firmware_vexriscv/verilog/dv/make/lib-overrides.makefile
+
+# ---- Include Firmware Files ----

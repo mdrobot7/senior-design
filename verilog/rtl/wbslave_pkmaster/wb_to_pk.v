@@ -17,6 +17,9 @@ module wb_to_pk_m
     output reg [`BUS_MOPORT] mport_o
 );
 
+
+
+
     //wires for wishbone reg communication
     localparam NUM_REGS = 5;
 
@@ -28,6 +31,50 @@ module wb_to_pk_m
     wire [NUM_REGS-1:0] wbs_ackN;
     wire [`WORD_WIDTH-1:0] wbs_datN [NUM_REGS-1:0];
 
+
+    //h30123000 -> 0000 : 0011 0000 0000 0000
+    //h30123400 -> 0400 : 0011 0100 0000 0000
+    //h30123800 -> 0800 : 0011 1000 0000 0000
+    //h30123C00 -> 0C00 : 0011 1100 0000 0000
+    //h30124000 -> 1000 : 0100 0000 0000 0000
+
+    //wire mux/decoder logic
+    // Mux between the registers (similar to user_project_wrapper's addressing)
+    wire [$clog2(NUM_REGS)-1:0] word_offset = { ~wbs_adr_i[12], wbs_adr_i[11:10] };; // leaves bits of addr 4:2 as word offset 000 001 010 100 101
+    always @ (*) begin
+        wbs_stbN = wbs_stb_i << word_offset; // shifts by offset, thereore provides proper stb 00001, 00010, 00100, 01000, 10000 
+        wbs_ack_o = wbs_ackN[word_offset];  //views ackN signals at the offset value, so if offset = 100 (00100), the 'middle' ack line and see what that value is
+        wbs_dat_o = wbs_datN[word_offset]; // same as ack
+    end
+
+
+
+    reg [`WORD] status_reg;
+    wire [`WORD] status_reg_unused;
+
+
+    wishbone_register_m #(32'h00000000, 1, `WBREG_TYPE_REG) status (
+        .wb_clk_i(wb_clk_i),
+        .wb_rst_i(wb_rst_i),
+        .wbs_stb_i(wbs_stbN[0]),
+        .wbs_cyc_i(wbs_cyc_i),
+        .wbs_we_i(wbs_we_i),
+        .wbs_sel_i(wbs_sel_i),
+        .wbs_dat_i(wbs_dat_i),
+        .wbs_adr_i(wbs_adr_i),
+        .wbs_ack_o(wbs_ackN[0]),
+        .wbs_dat_o(wbs_datN[0]),
+
+        .access_read_mask_i(32'hFFFFFFFF), // assuming masks dont change since this reg contains 1 numbers
+        .access_write_mask_i(32'hFFFFFFFF),
+        .periph_read_mask_i(0),
+
+        .enable_prot_i(32'h00000000), 
+        .enable_i(0), 
+
+        .reg_i(status_reg), 
+        .reg_o(status_reg_unused) 
+    );
 
     wire [`WORD] addr_reg;
 
@@ -82,7 +129,7 @@ module wb_to_pk_m
 
 
     wire [`WORD] wcount_reg;
-    reg [`WORD] wcount_dec_reg;
+    reg [`WORD] wcount_inc_reg;
 
     wishbone_register_m #(32'h00000000, 1, `WBREG_TYPE_REG) wcount (
         .wb_clk_i(wb_clk_i),
@@ -103,20 +150,9 @@ module wb_to_pk_m
         .enable_prot_i(32'h00000000), //confused
         .enable_i(0), // what does this exactly mean
 
-        .reg_i(wcount_dec_reg), // new count 
+        .reg_i(wcount_inc_reg), // new count 
         .reg_o(wcount_reg) // updated count
     );
-
-
-
-    //wire mux/decoder logic
-    // Mux between the registers (similar to user_project_wrapper's addressing)
-    wire [$clog2(NUM_REGS)-1:0] word_offset = {2'b00, wbs_adr_i[31:2]}; // leaves bits of addr 4:2 as word offset 000 001 010 100 101
-    always @ (*) begin
-        wbs_stbN = wbs_stb_i << word_offset; // shifts by offset, thereore provides proper stb 00001, 00010, 00100, 01000, 10000 
-        wbs_ack_o = wbs_ackN[word_offset];  //views ackN signals at the offset value, so if offset = 100 (00100), the 'middle' ack line and see what that value is
-        wbs_dat_o = wbs_datN[word_offset]; // same as ack
-    end
 
 
     localparam STANDBY = 0; 
@@ -125,6 +161,8 @@ module wb_to_pk_m
     localparam PK_STREAM_WRITE = 3;
     localparam PK_WRITE_CLEANUP = 4;
     localparam TRANSACTION_COMPLETE = 5; 
+    localparam WISHBONE_READ_PREP = 6;
+    localparam PK_STREAM_READ = 7;
 
     reg [16:0] state;
     reg [4:0] write_size;
@@ -133,34 +171,49 @@ module wb_to_pk_m
     always@ (posedge wb_clk_i or posedge wb_rst_i) begin
         if (wb_rst_i) begin
             mport_o <= 0;
-            wbs_ack_o   <= 0; 
-
+            // wbs_ack_o   <= 0; 
+            status_reg <= 0;
             bridge_write_status <= 0; 
-            wcount_dec_reg <= 0;
-
+            wcount_inc_reg <= 1;
             state <= STANDBY;
         end
 	else begin
         case (state) 
             STANDBY: begin  //wait until wishbone master wants to use bridge
-                wbs_ack_o   <= 1'b0; 
+                // wbs_ack_o   <=0; 
                 mport_o[`BUS_MO_REQ]  <= 0;
-                
-                if (wbs_stb_i)    
+                status_reg <= 0;
+                if (wbs_stb_i && wbs_we_i)    
                     state  <= WISHBONE_WRITE_PREP;
+                else if (wbs_stb_i && !wbs_we_i)
+                    state <= WISHBONE_READ_PREP;
             end
             WISHBONE_WRITE_PREP: begin //wait until a wb data reg slave is ready (ack_o is 1)
-                if (wbs_ack[WBS_ACK_WDATA] == 1) 
+                status_reg <= 1;
+                if (wbs_ackN[WBS_ACK_WDATA] == 1) begin
                     state <= PK_WRITE_PREP;  
+                end
+                else if (wbs_ackN[WBS_ACK_ADDR] == 1)
+                    state <= STANDBY;
+                else if (wbs_ackN[WBS_ACK_WCOUNT] == 1)
+                    state <= STANDBY;
             end  
+            WISHBONE_READ_PREP: begin //wait until a wb data reg slave is ready (ack_o is 1)
+                status_reg <= 6;
+                if (wbs_ackN[WBS_ACK_WDATA] == 1)
+                    state <= STANDBY;  
+                else if (wbs_ackN[WBS_ACK_ADDR] == 1)
+                    state <= STANDBY;
+            end 
             PK_WRITE_PREP: begin //data now on wishbone, pk stream write now occurs
                 mport_o[`BUS_MO_REQ] <= 1;
                 mport_o[`BUS_MO_RW] <= `BUS_WRITE;
                 mport_o[`BUS_MO_SEQMST] <= 0;
-
                 mport_o[`BUS_MO_SIZE]   <= `BUS_SIZE_STREAM;
                 mport_o[`BUS_MO_ADDR]   <= addr_reg;
                 mport_o[`BUS_MO_DATA]   <= wdata_reg;
+
+                status_reg <= 2;
 
                 if(mport_i[`BUS_MI_ACK] == 1)
                     state <= PK_STREAM_WRITE;
@@ -168,20 +221,26 @@ module wb_to_pk_m
                     state <= PK_WRITE_PREP;
             end
             PK_STREAM_WRITE: begin
+                status_reg <= 3;
                 if (mport_i[`BUS_MI_SEQSLV] == 0) begin
-                    if (wcount_reg > 0)
-                        mport_o[`BUS_MO_DATA]   <= wdata_reg;
-                    else begin
+                    if(wcount_inc_reg + 1 == wcount_reg) // the cycle before we transition out
                         mport_o[`BUS_MO_SEQMST] <= 1;
+                    if (wcount_reg >= wcount_inc_reg) begin
+                        mport_o[`BUS_MO_DATA]   <= wdata_reg;
+                        wcount_inc_reg <= wcount_inc_reg + 1;
+                    end
+                    else begin
                         state <= PK_WRITE_CLEANUP;
                     end
-                    wcount_dec_reg <= wcount_reg - 1;
                 end
             end
             PK_WRITE_CLEANUP: begin
+                status_reg <= 4;
                 if(!mport_i[`BUS_MI_ACK]) begin
                     mport_o[`BUS_MO_REQ] <= 0;
                     mport_o[`BUS_MO_SEQMST] <= 0;
+                    mport_o[`BUS_MO_DATA] <= 0;
+
                     state <= STANDBY;
                 end
             end
@@ -189,6 +248,8 @@ module wb_to_pk_m
     end
 end
 endmodule
+
+//PAST
 
 //cases to watch for:
 //What happens to wb side if managment core whats to update any wb regs during a pk stream write?
@@ -201,3 +262,32 @@ endmodule
 
 //Include all wishbone signals (from top of user project wrapper)
 //pk bus only include mport_i and mport_o, since it includes all the other wires, user_defs at 124
+
+//issue, count seems not to decrement, we are stuck on streaming data, since seqmst is continously high.fixed.
+
+
+//Questions:
+// While a stream write on pk is occuring, do we halt wishbone? I believe so
+//Hypothetical: If a long pkstream write occurs (pk is not ready or a large count), and wishbone sets up for a new write sequence, we can entirely miss it.
+//However, this may not be possible since technically, wishone will continue to run strobe high until the bridge acknowledges, therefore we do not need to "halt" wb.
+
+// Complete Bugs
+// 1.
+//Pk stream write looks like its working, however PK slave in ack hangs high for an additional cycle. Not as matching to the diagram.
+//Cont: MO signals match diagram. Only discrepency is MI ack in hangs for 1 cycle until finishing. THIS IS OKAY
+
+
+//CURRENT
+
+//Bugs:
+
+// 1.
+// If i am in state 2, pk write prep (wishbone regs all set) and I change the address register, it actually changes the ADDR reg in bridge while it is not 
+// supposed to (ADDR is supposed to be locked). Is this because wishbone helper? Thought the states are the entire reason behind this.
+//What is supposed to happen is wishbone needs to wait until it receives an ack from from slave. Can i add an AND to the ack signals from wb reg while 
+// anything pk is occuring? Soltuion, status reg at the very least to make this a software issue, if need be more, we protection masking will help
+
+
+
+
+
