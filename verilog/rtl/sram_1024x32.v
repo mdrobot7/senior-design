@@ -63,6 +63,7 @@ endmodule
 // Vivado Single-Port Block RAM Write-First Mode (recommended template)
 // File: rams_sp_wf.v
 `ifdef FPGA
+`default_nettype wire // bad vivado
 module rams_sp_wf (clk, we, en, addr, di, dout);
   input clk;
   input we;
@@ -84,4 +85,5 @@ module rams_sp_wf (clk, we, en, addr, di, dout);
     end
   end
 endmodule
+`default_nettype none
 `endif
