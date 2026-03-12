@@ -80,6 +80,7 @@ module core_controller_wrapper_m #(
   wire [`SRAM_1024x32_ADDR_WIDTH-1:0]  pc_gpgpu_compute;
   wire [`NUM_CORES-1:0]        core_enable;
   wire [1:0]                   cmd;
+  reg                          cmd_written;
   wire                         pause_at_halt;
   wire [`WORD]                 index_buffer_addr;
   wire [1:0]                   dispatch_ctrl;
@@ -132,6 +133,7 @@ module core_controller_wrapper_m #(
 
     .core_enable_i(core_enable),
     .cmd_i(cmd),
+    .cmd_written_i(cmd_written),
     .pause_at_halt_i(pause_at_halt),
     .index_buffer_addr_i(index_buffer_addr),
     .dispatch_ctrl_i(dispatch_ctrl),
@@ -156,6 +158,16 @@ module core_controller_wrapper_m #(
 
   wire [`WORD] ctrl_reg;
   assign {pause_at_halt, dispatch_ctrl, cmd} = ctrl_reg[3:0];
+  always @(posedge wb_clk_i, posedge wb_rst_i) begin
+    if (wb_rst_i)
+      cmd_written <= 0;
+    else if (wb_clk_i) begin
+      if (wbs_stbN[0])
+        cmd_written <= 1;
+      else
+        cmd_written <= 0;
+    end
+  end
   wishbone_register_m #(32'h00000000, 1, `WBREG_TYPE_REG) ctrl (
     .wb_clk_i(wb_clk_i),
     .wb_rst_i(wb_rst_i),
@@ -533,6 +545,7 @@ module core_controller_m #(
   // Config/control
   input  wire [`NUM_CORES-1:0] core_enable_i,
   input  wire [1:0]            cmd_i,
+  input  wire                  cmd_written_i,
   input  wire                  pause_at_halt_i,     // 0: continue to next state after halt. 1: pause at halt instruction
   input  wire [`WORD]          index_buffer_addr_i,
   input  wire [1:0]            dispatch_ctrl_i,
@@ -554,14 +567,7 @@ module core_controller_m #(
   output wire [`WORD]           global_regfile_rs2_data_o
 );
 
-  localparam CALL_STACK_BITS = $clog2(CALL_STACK_LEN);
-
   localparam INST_NOP        = 32'h04000000;
-
-  localparam HALT_STAGE     = 3; // 1 = decode, 4 = writeback
-  localparam JUMP_STAGE     = 2; // 1 = decode, 2 = exec
-  localparam JUMP_TYPE_JUMP = 0;
-  localparam JUMP_TYPE_JAL  = 1;
 
   localparam STATE_STOPPED          = 0; // Waiting for program to start from beginning
   localparam STATE_DISPATCHING      = 1; // Dispatching jobs
@@ -577,44 +583,7 @@ module core_controller_m #(
   reg [2:0] cur_prog;
   reg [2:0] next_prog;
 
-  reg last_cmd_step; // 1: last command was a step
-
-  // PC, in *words*
-  reg [`SRAM_1024x32_ADDR_WIDTH-1:0] pc;
-
-  // Call stack
-  reg [`SRAM_1024x32_ADDR_WIDTH-1:0] call_stack[CALL_STACK_LEN-1:0];
-  reg [CALL_STACK_BITS-1:0]  call_stack_idx;
-
-  // Tracking jumps and halts through the core pipeline
-  reg  [1:0]                  halt_counter;
-  reg  [`SRAM_1024x32_ADDR_WIDTH-1:0] jump_bases [JUMP_STAGE-1:0]; // PC at the time the jump was taken
-  reg  [`JUMP_WIDTH-1:0]      jump_offsets [JUMP_STAGE-1:0]; // Jump offset from instruction
-  reg  [JUMP_STAGE-1:0]       jump_type;
-  wire [`SRAM_1024x32_ADDR_WIDTH-1:0] jump_jal_offset = jump_bases[1] + $signed(jump_offsets[1][22:2]) + 1; // Add word offset, not byte offset
-
-  // IMEM
-  wire [`WORD_WIDTH-1:0]      imem_do;
-  wire [`SRAM_1024x32_ADDR_WIDTH-1:0] imem_addr = (state == STATE_STOPPED) ? imem_addr_i : pc; // In *words*
-  wire                        imem_rw   = (state == STATE_STOPPED) ? imem_rw_i   : 1;
-  sram_1024x32_m imem (
-`ifdef USE_POWER_PINS
-    .vpwrac(vpwrac),
-    .vpwrpc(vpwrpc),
-`endif
-    .clk_i(clk_i),
-    .addr_i(imem_addr),
-    .read_en_i(imem_rw),
-    .en_i(1'b1),
-    .data_i(imem_di_i),
-    .data_o(imem_do)
-);
-
-  // Instruction decode
-  wire [`OPCODE_WIDTH-1:0]     inst_opcode      = imem_do[`OPCODE_IDX];
-  wire [`REG_SOURCE_WIDTH-1:0] inst_rs1         = imem_do[`R1_IDX];
-  wire [`REG_SOURCE_WIDTH-1:0] inst_rs2         = imem_do[`R2_IDX];
-  wire [`JUMP_WIDTH-1:0]       inst_jump_offset = imem_do[`JUMP_IDX];
+  reg step_handled;
 
   // Dispatch
   wire         dispatch_index_fetch_enable = (state != STATE_STOPPED);
@@ -660,34 +629,40 @@ module core_controller_m #(
     .model_done_o(dispatch_model_done)
   );
 
-  // Global regfile
-  wire                         global_regfile_write_en    = (state == STATE_STOPPED)     ? global_regfile_write_en_i  : 0;
-  wire [`REG_SOURCE_WIDTH-1:0] global_regfile_r1_addr     = (state == STATE_STOPPED)     ? global_regfile_addr_i : inst_rs1;
-  wire [`WORD_WIDTH-1:0]       global_regfile_r1_data;
-  assign                       global_regfile_read_data_o = (state == STATE_STOPPED)     ? global_regfile_r1_data     : 0;
-  assign                       global_regfile_rs1_data_o  = (state == STATE_DISPATCHING) ? dispatch_thread_id         : global_regfile_r1_data;
-  regfile_m #(
-    `WORD_WIDTH,
-    `NUM_GLOBAL_REGS,
-    `NUM_LOCAL_REGS,
-    1,
-    `REG_SOURCE_WIDTH
-  ) global_regfile (
+  reg [`SRAM_1024x32_ADDR_WIDTH-1:0] instfetch_prog_entry;
+  reg                                instfetch_enable;
+  reg                                instfetch_reset_prog;
+  wire                               instfetch_step_done;
+  wire                               instfetch_prog_done;
+  wire [`WORD]                       instfetch_inst;
+  inst_fetch_m #(
+    CALL_STACK_LEN
+  ) inst_fetch (
     .clk_i(clk_i),
     .nrst_i(nrst_i),
 
-    .wr_en_i(global_regfile_write_en),
-    .wr_addr_i(global_regfile_addr_i),
-    .wr_data_i(global_regfile_write_data_i),
+    .imem_rw_i(imem_rw_i),
+    .imem_do_o(imem_do_o),
+    .imem_di_i(imem_di_i),
+    .imem_addr_i(imem_addr_i),
 
-    .r1_addr_i(global_regfile_r1_addr),  // Muxed between the shader cores and wishbone interface
-    .r2_addr_i(inst_rs2),
-    .r1_data_o(global_regfile_r1_data),  // Muxed between the shader cores and wishbone interface
-    .r2_data_o(global_regfile_rs2_data_o),
+    .global_regfile_addr_i(global_regfile_addr_i),
+    .global_regfile_write_en_i(global_regfile_write_en_i),
+    .global_regfile_write_data_i(global_regfile_write_data_i),
+    .global_regfile_read_data_o(global_regfile_read_data_o),
 
-    .inbox_write_i(1'b0),
-    .inbox_i({`WORD_WIDTH * `CORE_MAILBOX_HEIGHT{1'b0}}),
-    .outbox_o()
+    .prog_entry_i(instfetch_prog_entry),
+
+    .enable_i(instfetch_enable),
+    .reset_prog_i(instfetch_reset_prog),
+    .step_done_o(instfetch_step_done),
+    .prog_done_o(instfetch_prog_done),
+
+    .inst_o(instfetch_inst),
+    .core_stall_i(core_stall_i),
+    .core_jump_i(core_jump_i),
+    .global_regfile_rs1_data_o(global_regfile_rs1_data_o),
+    .global_regfile_rs2_data_o(global_regfile_rs2_data_o)
   );
 
   assign imem_do_o = (state == STATE_STOPPED) ? imem_do : 0;
@@ -709,8 +684,6 @@ module core_controller_m #(
       end
       jump_type <= 0;
 
-      pc <= 0;
-
       for (i = 0; i < CALL_STACK_LEN; i = i + 1)
         call_stack[i] <= 0;
       call_stack_idx <= 0;
@@ -719,27 +692,23 @@ module core_controller_m #(
 
       cur_prog      <= STATE_STOPPED;
       state         <= STATE_STOPPED;
-      last_cmd_step <= 0;
+      step_handled  <= 0;
     end
     else if (clk_i) begin
       if (job_done_clr_i)
         job_done_o <= 0;
       if (batch_done_clr_i)
         batch_done_o <= 0;
+      if (cmd_written_i)
+        step_handled <= 0;
 
       case (state)
         STATE_STOPPED: begin
           if (cmd_i == `CORE_CTRL_CMD_RUN || cmd_i == `CORE_CTRL_CMD_STEP) begin
-            last_cmd_step = (cmd_i == `CORE_CTRL_CMD_STEP);
-
-            if (is_rasterization) begin
+            if (is_rasterization)
               cur_prog <= STATE_VERTEX_SHADING;
-              pc <= pc_vertex_shading_i;
-            end
-            else begin
+            else
               cur_prog <= STATE_GPGPU_COMPUTE;
-              pc <= pc_gpgpu_compute_i;
-            end
 
             if (should_dispatch) begin
               dispatch_enable <= 1;
@@ -750,85 +719,49 @@ module core_controller_m #(
           end
         end
         STATE_DISPATCHING: begin
-          if (dispatch_done) begin
-            case (next_prog)
-              STATE_VERTEX_SHADING:
-                pc <= pc_vertex_shading_i;
-              STATE_FRAGMENT_SHADING:
-                pc <= pc_fragment_shading_i;
-              STATE_GPGPU_COMPUTE:
-                pc <= pc_gpgpu_compute_i;
-            endcase
-
+          if (cmd_i == `CORE_CTRL_CMD_STOP) begin
             dispatch_enable <= 0;
-            state <= next_prog;
+            state <= STATE_STOPPED;
+          end
+          else if (dispatch_done) begin
+            dispatch_enable <= 0;
+            instfetch_enable <= 1;
+            state <= cur_prog;
           end
         end
         STATE_VERTEX_SHADING, STATE_FRAGMENT_SHADING, STATE_GPGPU_COMPUTE: begin
+          instfetch_enable <= 0;
           case (cmd_i)
-            `CORE_CTRL_CMD_STOP:  state <= STATE_STOPPED;
-            `CORE_CTRL_CMD_PAUSE: state <= STATE_PAUSED;
-            `CORE_CTRL_CMD_RUN, `CORE_CTRL_CMD_STEP: begin
-              if (!core_stall_i && ((cmd_i == `CORE_CTRL_CMD_STEP && last_cmd_step) || cmd_i == `CORE_CTRL_CMD_RUN)) begin
-                pc <= pc + 1;
-
-                if (last_cmd_step)
-                  last_cmd_step <= 0;
-
-                // Handle halt and program switchover
-                if (inst_opcode == `HALT_OPCODE || halt_counter)
-                  halt_counter <= halt_counter + 1;
-                if (halt_counter == HALT_STAGE - 1)
-                  state <= STATE_DONE;
-
-                // Handle jump, jal: Record jump offsets and wait for jump sig
-                // from any core. If jal, push to call stack.
-                jump_bases[1]   <= jump_bases[0];
-                jump_offsets[1] <= jump_offsets[0];
-                jump_type[1]    <= jump_type[0];
-                if (inst_opcode == `JUMP_OPCODE || inst_opcode == `JAL_OPCODE) begin
-                  jump_bases[0]   <= pc;
-                  jump_offsets[0] <= inst_jump_offset;
-                  jump_type[0]    <= (inst_opcode == `JAL_OPCODE) ? JUMP_TYPE_JAL : JUMP_TYPE_JUMP;
-                end
-                else begin
-                  jump_bases[0]   <= 0;
-                  jump_offsets[0] <= 0;
-                  jump_type[0]    <= 0;
-                end
-                if (core_jump_i) begin
-                  halt_counter <= 0; // jump/jal was taken before halt reaches writeback, no halt
-                  if (jump_type[1] == JUMP_TYPE_JAL && call_stack_idx != CALL_STACK_LEN - 1) begin
-                    // Call stack overflow is a nop
-                    pc <= jump_jal_offset;
-                    call_stack[call_stack_idx] <= pc - 1;
-                    call_stack_idx <= call_stack_idx + 1;
-                  end
-                  else if (jump_type[1] == JUMP_TYPE_JUMP)
-                    pc <= jump_jal_offset;
-                end
-
-                // Handle jret: Jump immediately, jret can't be predicated.
-                // If there are jumps in the previous 2 cycles, make sure they
-                // clear exec stage and aren't taken.
-                if (inst_opcode == `JRET_OPCODE && call_stack_idx != 0 && !jump_offsets[0] && !jump_offsets[1]) begin
-                  // Call stack underflow is a nop
-                  pc <= call_stack[call_stack_idx - 1];
-                  call_stack_idx <= call_stack_idx - 1;
-                end
-              end
+            `CORE_CTRL_CMD_STOP:
+              state <= STATE_STOPPED;
+            `CORE_CTRL_CMD_PAUSE:
+              state <= STATE_PAUSED;
+            `CORE_CTRL_CMD_RUN: begin
+              if (instfetch_prog_done)
+                state <= STATE_STOPPED;
+              else
+                instfetch_enable <= 1;
+            end
+            `CORE_CTRL_CMD_STEP: begin
+              if (instfetch_step_done)
+                state <= STATE_PAUSED;
+              else
+                instfetch_enable <= 1;
             end
           endcase
         end
         STATE_PAUSED: begin
           case (cmd_i)
-            `CORE_CTRL_CMD_RUN, `CORE_CTRL_CMD_STEP: begin
-              last_cmd_step <= (cmd_i == `CORE_CTRL_CMD_STEP);
+            `CORE_CTRL_CMD_RUN:
               state <= cur_prog;
+            `CORE_CTRL_CMD_STEP: begin
+              if (!step_handled) begin
+                step_handled <= 1;
+                state <= cur_prog;
+              end
             end
-            `CORE_CTRL_CMD_STOP: begin
+            `CORE_CTRL_CMD_STOP:
               state <= STATE_STOPPED;
-            end
           endcase
         end
         STATE_DONE: begin
@@ -853,15 +786,12 @@ module core_controller_m #(
 
   always @(*) begin
     // Instruction muxing
-    if (state == STATE_STOPPED || halt_counter || state == STATE_DONE)
-      // Feed nops after a halt
+    if (state == STATE_STOPPED || state == STATE_DONE)
       inst_o = INST_NOP;
     else if (state == STATE_DISPATCHING)
       inst_o = dispatch_inst;
-    else if (core_jump_i)
-      inst_o = INST_NOP; // Flush "fetch" stage on a jump
     else
-      inst_o = imem_do;
+      inst_o = instfetch_inst;
 
     // Core control signals
     if (state == STATE_STOPPED)
@@ -902,6 +832,16 @@ module core_controller_m #(
     end
     else
       next_prog = STATE_STOPPED;
+
+    // Entry point
+    case (cur_prog)
+      STATE_GPGPU_COMPUTE:
+        instfetch_prog_entry = pc_gpgpu_compute_i;
+      STATE_VERTEX_SHADING:
+        instfetch_prog_entry = pc_vertex_shading_i;
+      STATE_FRAGMENT_SHADING:
+        instfetch_prog_entry = pc_fragment_shading_i;
+    endcase
   end
 
 endmodule
