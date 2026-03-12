@@ -4,7 +4,8 @@
 `include "stream/stream_fifo.v"
 `include "fragment_fifo.v"
 
-// `define NUM_CORES (1) // Does not work :(
+`include "test/stream_slave.v"
+// `include "test/stream_master.v"
 
 module fragment_fifo_m_unit_test;
   import svunit_pkg::svunit_testcase;
@@ -48,6 +49,19 @@ module fragment_fifo_m_unit_test;
     .done_mailing(done_mailing)
   );
 
+  stream_master_m #(SIZE) fake_raster (
+    .clk_i(clk),
+    .mstream_i(sstream_o),
+    .mstream_o(sstream_i)
+  );
+
+  // stream_slave_m #(.SIZE(SIZE * `NUM_CORES)) fake_cores (
+  //   .clk_i(clk),
+  //   .sstream_o(mstream_i),
+  //   .sstream_i(mstream_o)
+  // );
+
+  
 
   //===================================
   // Build
@@ -63,8 +77,6 @@ module fragment_fifo_m_unit_test;
   task setup();
     svunit_ut.setup();
     /* Place Setup Code Here */
-    sstream_i = '0;
-    mstream_i = '0;
 
     clk_rst.RESET();
     clk_rst.WAIT_CYCLES(1);
@@ -104,9 +116,7 @@ module fragment_fifo_m_unit_test;
 
       // Load FIFO with data
       for (n = 0; n < DEPTH; n = n + 1) begin
-        sstream_i[`STREAM_SI_DATA(SIZE)]  = 32'hBEEFDEED;    
-        sstream_i[`STREAM_SI_VALID(SIZE)] = 1'b1;
-        sstream_i[`STREAM_SI_LAST(SIZE)]  = 1'b1;
+        fake_raster.WRITE_LAST(32'hDEADBEEF);
         clk_rst.WAIT_CYCLES(1);
         `FAIL_UNLESS(empty == 1'b0)
         if(n!=DEPTH-1) begin
@@ -123,21 +133,17 @@ module fragment_fifo_m_unit_test;
       // Load FIFO with data
       for (n = 0; n < DEPTH; n = n + 1) begin
         if(n%2 == 0)
-          sstream_i[`STREAM_SI_DATA(SIZE)]  = 32'hDEADBEEF;    
+          fake_raster.WRITE_LAST(32'hDEADBEEF); 
         else
-        sstream_i[`STREAM_SI_DATA(SIZE)]  = 32'hFEEDFEED;    
-        sstream_i[`STREAM_SI_VALID(SIZE)] = 1'b1;
-        sstream_i[`STREAM_SI_LAST(SIZE)]  = 1'b1;
-        clk_rst.WAIT_CYCLES(1);
+          fake_raster.WRITE_LAST(32'hBEEFDEAD);  
+      clk_rst.WAIT_CYCLES(1);
       end
 
-      sstream_i[`STREAM_SI_VALID(SIZE)] = 1'b0;
-      sstream_i[`STREAM_SI_LAST(SIZE)]  = 1'b0;
-      clk_rst.WAIT_CYCLES(1);
 
       for (i = 0; i < `NUM_CORES; i = i + 1) begin 
+        // Sets core i core to ready
         mstream_i[MI_Size*i + `STREAM_MI_READY(SIZE)] = 1'b1;
-
+        // Waits until frag fifo selects that ready core and "sends" to core
         while(1) begin
         if (mstream_o[MO_Size*i + `STREAM_MO_VALID(SIZE)]) begin
             seen_valid[i] = 1'b1;
@@ -147,9 +153,13 @@ module fragment_fifo_m_unit_test;
           clk_rst.WAIT_CYCLES(1);
         end
         end
+
         clk_rst.WAIT_CYCLES(1);
-        mstream_i[MI_Size*i + `STREAM_MI_READY(SIZE)] = 1'b0; 
+        // Deassert ready bit
+        mstream_i[MI_Size*i + `STREAM_MI_READY(SIZE)] = 1'b0;  
+
       end
+
       clk_rst.WAIT_CYCLES(1);
       for (i = 0; i < `NUM_CORES; i = i + 1) begin 
         `FAIL_UNLESS(seen_valid[i] == 1'b1);
