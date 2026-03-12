@@ -103,6 +103,8 @@ module wb_to_pk_m
 
 
     wire [`WORD] wdata_reg;
+    reg [`WORD] rdata_reg;
+
 
     wishbone_register_m #(32'h00000000, 1, `WBREG_TYPE_REG) wdata (
         .wb_clk_i(wb_clk_i),
@@ -123,7 +125,7 @@ module wb_to_pk_m
         .enable_prot_i(32'h00000000), //confused
         .enable_i(0), // 
 
-        .reg_i(0), //will need for pk read later
+        .reg_i(rdata_reg), //will need for pk read later
         .reg_o(wdata_reg) 
     );
 
@@ -162,7 +164,8 @@ module wb_to_pk_m
     localparam PK_WRITE_CLEANUP = 4;
     localparam TRANSACTION_COMPLETE = 5; 
     localparam WISHBONE_READ_PREP = 6;
-    localparam PK_STREAM_READ = 7;
+    localparam PK_READ_PREP = 7;
+    localparam PK_READ = 8;
 
     reg [16:0] state;
     reg [4:0] write_size;
@@ -230,11 +233,11 @@ module wb_to_pk_m
                         wcount_inc_reg <= wcount_inc_reg + 1;
                     end
                     else begin
-                        state <= PK_WRITE_CLEANUP;
+                        state <= PK_CLEANUP;
                     end
                 end
             end
-            PK_WRITE_CLEANUP: begin
+            PK_CLEANUP: begin
                 status_reg <= 4;
                 if(!mport_i[`BUS_MI_ACK]) begin
                     mport_o[`BUS_MO_REQ] <= 0;
@@ -243,6 +246,24 @@ module wb_to_pk_m
 
                     state <= STANDBY;
                 end
+            end
+            PK_READ_PREP: begin 
+                    status_reg <= 8;
+                    mport_o[`BUS_MO_REQ] <= 1;
+                    mport_o[`BUS_MO_RW] <= 0;
+                    mport_o[`BUS_MO_SEQMST] <= 0;
+                    mport_o[`BUS_MO_SIZE]   <= `BUS_SIZE_STREAM;
+                    mport_o[`BUS_MO_ADDR]  <= addr_reg;
+
+                    if(`BUS_MI_ACK && !`BUS_MI_SEQSLV)
+                        state <= PK_READ;
+            end
+            PK_READ: begin
+                status_reg <= 8;
+                rdata_reg <= mport_i[`BUS_MI_DATA];
+
+                if(!`BUS_MI_ACK && !`BUS_MI_SEQSLV)
+                    state <= PK_CLEANUP;
             end
         endcase
     end
