@@ -55,7 +55,7 @@ module stream_fifo_m #(
                 new_size = new_size - 1;
             end
 
-            size = new_size;
+            size <= new_size;
         end
     end
 
