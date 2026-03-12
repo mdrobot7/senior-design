@@ -4,8 +4,8 @@
 `include "stream/stream_fifo.v"
 `include "fragment_fifo.v"
 
-`include "test/stream_slave.v"
-// `include "test/stream_master.v"
+// `include "test/stream_slave.v"
+`include "test/stream_master.v"
 
 module fragment_fifo_m_unit_test;
   import svunit_pkg::svunit_testcase;
@@ -116,7 +116,7 @@ module fragment_fifo_m_unit_test;
 
       // Load FIFO with data
       for (n = 0; n < DEPTH; n = n + 1) begin
-        fake_raster.WRITE_LAST(32'hDEADBEEF);
+        fake_raster.WRITE_LAST(n);
         clk_rst.WAIT_CYCLES(1);
         `FAIL_UNLESS(empty == 1'b0)
         if(n!=DEPTH-1) begin
@@ -132,11 +132,8 @@ module fragment_fifo_m_unit_test;
 
       // Load FIFO with data
       for (n = 0; n < DEPTH; n = n + 1) begin
-        if(n%2 == 0)
-          fake_raster.WRITE_LAST(32'hDEADBEEF); 
-        else
-          fake_raster.WRITE_LAST(32'hBEEFDEAD);  
-      clk_rst.WAIT_CYCLES(1);
+        fake_raster.WRITE_LAST(n); 
+        clk_rst.WAIT_CYCLES(1);
       end
 
 
@@ -147,6 +144,7 @@ module fragment_fifo_m_unit_test;
         while(1) begin
         if (mstream_o[MO_Size*i + `STREAM_MO_VALID(SIZE)]) begin
             seen_valid[i] = 1'b1;
+            $display("i=%0d data=%h", i, mstream_o[(MO_Size*i) +: SIZE]);
             break;
         end
         else begin
