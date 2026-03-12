@@ -682,6 +682,9 @@ module core_controller_m #(
 
       dispatch_enable <= 0;
 
+      instfetch_enable <= 0;
+      instfetch_reset_prog <= 0;
+
       cur_prog      <= STATE_STOPPED;
       state         <= STATE_STOPPED;
       step_handled  <= 0;
@@ -696,6 +699,7 @@ module core_controller_m #(
 
       case (state)
         STATE_STOPPED: begin
+          instfetch_reset_prog <= 1;
           if (cmd_i == `CORE_CTRL_CMD_RUN || cmd_i == `CORE_CTRL_CMD_STEP) begin
             if (is_rasterization)
               cur_prog <= STATE_VERTEX_SHADING;
@@ -711,6 +715,8 @@ module core_controller_m #(
           end
         end
         STATE_DISPATCHING: begin
+          instfetch_reset_prog <= 0;
+
           if (cmd_i == `CORE_CTRL_CMD_STOP) begin
             dispatch_enable <= 0;
             state <= STATE_STOPPED;
@@ -729,8 +735,10 @@ module core_controller_m #(
             `CORE_CTRL_CMD_PAUSE:
               state <= STATE_PAUSED;
             `CORE_CTRL_CMD_RUN: begin
-              if (instfetch_prog_done)
-                state <= STATE_STOPPED;
+              if (instfetch_prog_done) begin
+                instfetch_reset_prog <= 1;
+                state <= STATE_DONE;
+              end
               else
                 instfetch_enable <= 1;
             end
@@ -761,13 +769,17 @@ module core_controller_m #(
           if (dispatch_model_done)
             batch_done_o <= 1;
 
+          instfetch_reset_prog <= 0;
+
           cur_prog <= next_prog;
           if (pause_at_halt_i || next_prog == STATE_STOPPED)
             state <= STATE_STOPPED;
           else if (should_dispatch)
             state <= STATE_DISPATCHING;
-          else
+          else begin
+            instfetch_enable <= 1;
             state <= next_prog;
+          end
 
           if (cmd_i == `CORE_CTRL_CMD_STOP)
             state <= STATE_STOPPED;

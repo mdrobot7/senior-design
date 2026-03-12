@@ -2,11 +2,6 @@
 
 `include "user_defines.v"
 
-`undef NUM_CORES
-`define NUM_CORES (1)
-`undef NUM_CORES_WIDTH
-`define NUM_CORES_WIDTH (1)
-
 `include "bus/busarb.v"
 `include "stream/stream_fifo.v"
 `include "vertex_order_buffer.v"
@@ -23,6 +18,8 @@
 `include "core/alu.v"
 `include "core/decoder.v"
 `include "core/forward.v"
+`include "core/inbox.v"
+`include "core/mem_bus.v"
 `include "core/predicate.v"
 `include "core/regfile.v"
 `include "core/signext.v"
@@ -30,14 +27,13 @@
 `default_nettype wire
 `define functional
   `include "../../ip/CF_SRAM_1024x32/hdl/beh_models/CF_SRAM_1024x32.tt_180V_25C.v"
-`undef functional
 `default_nettype none
+`include "sram_1024x32.v"
 
 `include "core_controller/index_fetch.v"
 `include "core_controller/dispatch.v"
-`define FPGA
+`include "core_controller/inst_fetch.v"
 `include "core_controller/core_controller.v"
-`undef FPGA
 
 module core_controller_m_unit_test;
   import svunit_pkg::svunit_testcase;
@@ -93,13 +89,13 @@ module core_controller_m_unit_test;
     .bad_read_o()
   );
 
-  wire [`STREAM_SIPORT(`NUM_CORES_WIDTH)] vertorder_sstreami;
-  wire [`STREAM_SOPORT(`NUM_CORES_WIDTH)] vertorder_sstreamo;
+  wire [`STREAM_SIPORT(`VERTEX_ORDER_WIDTH)] vertorder_sstreami;
+  wire [`STREAM_SOPORT(`VERTEX_ORDER_WIDTH)] vertorder_sstreamo;
   wire                               vertorder_full;
   wire                               vertorder_empty;
   vertex_order_buffer_m #(
     .ENTRIES(16),
-    .INDEX_WIDTH(`NUM_CORES_WIDTH)
+    .INDEX_WIDTH(`VERTEX_ORDER_WIDTH)
   ) vertorder (
     .clk_i(clk),
     .nrst_i(nrst),
@@ -139,38 +135,39 @@ module core_controller_m_unit_test;
     .mstream_o()
   );
 
-  reg                          imem_rw;
-  wire [`WORD]                 imem_do;
-  reg  [`WORD]                 imem_di;
-  reg  [`IMEM_ADDR_WIDTH-1:0]  imem_addr;
-  reg  [`REG_SOURCE_WIDTH-1:0] global_regfile_addr;
-  reg                          global_regfile_write_en;
-  reg  [`WORD]                 global_regfile_write_data;
-  wire [`WORD]                 global_regfile_read_data;
-  reg  [`IMEM_ADDR_WIDTH-1:0]  pc_vertex_shading;
-  reg  [`IMEM_ADDR_WIDTH-1:0]  pc_fragment_shading;
-  reg  [`IMEM_ADDR_WIDTH-1:0]  pc_gpgpu_compute;
-  reg                          fragfifo_full;
-  reg  [`NUM_CORES_WIDTH-1:0]  fragfifo_cores_dispatched;
-  reg  [`NUM_CORES-1:0]        core_enable;
-  reg  [1:0]                   cmd;
-  reg                          pause_at_halt;
-  reg  [`WORD]                 index_buffer_addr;
-  reg  [1:0]                   dispatch_ctrl;
-  reg  [`WORD]                 num_dispatches;
-  reg                          job_done_clr;
-  wire                         job_done;
-  reg                          batch_done_clr;
-  wire                         batch_done;
-  wire [2:0]                   state;
-  wire [`WORD]                 inst;
-  wire [`NUM_CORES-1:0]        core_reset;
-  reg  [`NUM_CORES-1:0]        core_stalli;
-  wire [`NUM_CORES-1:0]        core_stallo;
-  reg  [`NUM_CORES-1:0]        core_jumpi;
-  wire                         core_jumpo;
-  wire [`WORD]                 global_regfile_rs1_data;
-  wire [`WORD]                 global_regfile_rs2_data;
+  reg                                 imem_rw;
+  wire [`WORD]                        imem_do;
+  reg  [`WORD]                        imem_di;
+  reg  [`SRAM_1024x32_ADDR_WIDTH-1:0] imem_addr;
+  reg  [`REG_SOURCE_WIDTH-1:0]        global_regfile_addr;
+  reg                                 global_regfile_write_en;
+  reg  [`WORD]                        global_regfile_write_data;
+  wire [`WORD]                        global_regfile_read_data;
+  reg  [`SRAM_1024x32_ADDR_WIDTH-1:0] pc_vertex_shading;
+  reg  [`SRAM_1024x32_ADDR_WIDTH-1:0] pc_fragment_shading;
+  reg  [`SRAM_1024x32_ADDR_WIDTH-1:0] pc_gpgpu_compute;
+  reg                                 fragfifo_full;
+  reg  [`NUM_CORES_WIDTH-1:0]         fragfifo_cores_dispatched;
+  reg  [`NUM_CORES-1:0]               core_enable;
+  reg  [1:0]                          cmd;
+  reg                                 cmd_written;
+  reg                                 pause_at_halt;
+  reg  [`WORD]                        index_buffer_addr;
+  reg  [1:0]                          dispatch_ctrl;
+  reg  [`WORD]                        num_dispatches;
+  reg                                 job_done_clr;
+  wire                                job_done;
+  reg                                 batch_done_clr;
+  wire                                batch_done;
+  wire [2:0]                          state;
+  wire [`WORD]                        inst;
+  wire [`NUM_CORES-1:0]               core_reset;
+  reg  [`NUM_CORES-1:0]               core_stalli;
+  wire [`NUM_CORES-1:0]               core_stallo;
+  reg  [`NUM_CORES-1:0]               core_jumpi;
+  wire                                core_jumpo;
+  wire [`WORD]                        global_regfile_rs1_data;
+  wire [`WORD]                        global_regfile_rs2_data;
   core_controller_m #(
     .INDEX_FETCH_CACHE_LEN_WORDS(64),
     .CALL_STACK_LEN(8)
@@ -209,6 +206,7 @@ module core_controller_m_unit_test;
 
     .core_enable_i(core_enable),
     .cmd_i(cmd),
+    .cmd_written_i(cmd_written),
     .pause_at_halt_i(pause_at_halt),
     .index_buffer_addr_i(index_buffer_addr),
     .dispatch_ctrl_i(dispatch_ctrl),
@@ -333,9 +331,9 @@ module core_controller_m_unit_test;
       global_regfile_addr = i;
       clk_rst.WAIT_CYCLES(1);
       if (i != `NUM_LOCAL_REGS + `NUM_GLOBAL_REGS - 1) begin
-        if (global_regfile_write_data != dut.global_regfile.mem[i]) begin
-          $display("Global regfile r%d data mismatch, expected 0x%x, got 0x%x", i, dut.global_regfile.mem[i], global_regfile_write_data);
-          `FAIL_UNLESS_EQUAL(global_regfile_write_data, dut.global_regfile.mem[i]);
+        if (global_regfile_write_data != dut.inst_fetch.global_regfile.mem[i]) begin
+          $display("Global regfile r%d data mismatch, expected 0x%x, got 0x%x", i, global_regfile_write_data, dut.inst_fetch.global_regfile.mem[i]);
+          `FAIL_UNLESS_EQUAL(global_regfile_write_data, dut.inst_fetch.global_regfile.mem[i]);
         end
       end
     end
@@ -344,7 +342,7 @@ module core_controller_m_unit_test;
     // Read test: data should appear on the same cycle
     global_regfile_write_en = 0;
     clk_rst.WAIT_CYCLES(1);
-for (int i = `NUM_LOCAL_REGS; i < `NUM_LOCAL_REGS + `NUM_GLOBAL_REGS; i++) begin
+    for (int i = `NUM_LOCAL_REGS; i < `NUM_LOCAL_REGS + `NUM_GLOBAL_REGS; i++) begin
       global_regfile_addr = i;
       #1;
       if (i == `NUM_LOCAL_REGS + `NUM_GLOBAL_REGS - 1) begin
@@ -354,37 +352,53 @@ for (int i = `NUM_LOCAL_REGS; i < `NUM_LOCAL_REGS + `NUM_GLOBAL_REGS; i++) begin
         end
       end
       else begin
-        if (global_regfile_read_data != dut.global_regfile.mem[i]) begin
-          $display("Global regfile r%d data mismatch, expected 0x%x, got 0x%x", i, dut.global_regfile.mem[i], global_regfile_read_data);
-          `FAIL_UNLESS_EQUAL(global_regfile_read_data, dut.global_regfile.mem[i]);
+        if (global_regfile_read_data != dut.inst_fetch.global_regfile.mem[i]) begin
+          $display("Global regfile r%d data mismatch, expected 0x%x, got 0x%x", i, dut.inst_fetch.global_regfile.mem[i], global_regfile_read_data);
+          `FAIL_UNLESS_EQUAL(global_regfile_read_data, dut.inst_fetch.global_regfile.mem[i]);
         end
       end
     end
   `SVTEST_END
 
   `SVTEST(imem_test)
-    clk_rst.WAIT_CYCLES(1);
+    // Manual clock control here, timing matters
+    wait(clk);
 
     // Write
     imem_rw = 0;
     for (int i = 0; i < 1024; i++) begin
       imem_addr = i;
       imem_di = 1024 + i;
-      clk_rst.WAIT_CYCLES(1);
+      wait(!clk);
+      wait(clk);
     end
-    clk_rst.WAIT_CYCLES(1);
+    wait(!clk);
+    wait(clk);
 
-    // Read: data should appear on the same cycle
+    // Read: data should appear on the next cycle
     imem_rw = 1;
-    for (int i = 0; i < 1024; i++) begin
-      imem_addr = i;
-      #15; // NOTE: Data doesn't come back immediately, comes back 3/4 of a cycle later
-      if (imem_do != 1024 + i) begin
-        $display("IMEM data mismatch at word 0x%x, expected 0x%x, got 0x%x", i, 1024 + i, imem_do);
-        `FAIL_UNLESS_EQUAL(imem_do, 1024 + i);
+    wait(!clk);
+    wait(clk);
+    fork
+    begin
+      for (int i = 0; i < 1024; i++) begin
+        imem_addr = i;
+        wait(!clk);
+        wait(clk);
       end
-      #5; // Wait the last 1/4 cycle
     end
+    begin
+      for (int i = 0; i < 1024; i++) begin
+        wait(!clk);
+        wait(clk);
+        #1;
+        if (imem_do != 1024 + i) begin
+          $display("IMEM data mismatch at word 0x%x, expected 0x%x, got 0x%x", i, 1024 + i, imem_do);
+          `FAIL_UNLESS_EQUAL(imem_do, 1024 + i);
+        end
+      end
+    end
+    join
   `SVTEST_END
 
   `SVTEST(exec_gpgpu)
