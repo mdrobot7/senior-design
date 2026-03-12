@@ -1,6 +1,6 @@
 module vertex_order_buffer_m #(
     parameter ENTRIES = 1,
-    parameter INDEX_WIDTH = `NUM_CORES_WIDTH
+    parameter INDEX_WIDTH = `VERTEX_ORDER_WIDTH
 ) (
     input wire clk_i,
     input wire nrst_i,

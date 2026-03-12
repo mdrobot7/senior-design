@@ -40,8 +40,8 @@ module core_controller_wrapper_m #(
   input  wire         vertcache_test_found_i,
 
   // Vertex order buffer
-  input  wire [`STREAM_SOPORT(`NUM_CORES_WIDTH)] vertorder_sstreamo_i,
-  output wire [`STREAM_SIPORT(`NUM_CORES_WIDTH)] vertorder_sstreami_o,
+  input  wire [`STREAM_SOPORT(`VERTEX_ORDER_WIDTH)] vertorder_sstreamo_i,
+  output wire [`STREAM_SIPORT(`VERTEX_ORDER_WIDTH)] vertorder_sstreami_o,
   input  wire                                    vertorder_full_i,
   input  wire                                    vertorder_empty_i,
 
@@ -159,10 +159,14 @@ module core_controller_wrapper_m #(
   wire [`WORD] ctrl_reg;
   assign {pause_at_halt, dispatch_ctrl, cmd} = ctrl_reg[3:0];
   always @(posedge wb_clk_i, posedge wb_rst_i) begin
-    if (wb_rst_i)
+    reg prev_wbs_stbN0;
+    if (wb_rst_i) begin
       cmd_written <= 0;
+      prev_wbs_stbN0 <= 0;
+    end
     else if (wb_clk_i) begin
-      if (wbs_stbN[0])
+      prev_wbs_stbN0 <= wbs_stbN[0];
+      if (!prev_wbs_stbN0 && wbs_stbN[0])
         cmd_written <= 1;
       else
         cmd_written <= 0;
@@ -533,8 +537,8 @@ module core_controller_m #(
   input  wire         vertcache_test_found_i,
 
   // Vertex order buffer
-  input  wire [`STREAM_SOPORT(`NUM_CORES_WIDTH)] vertorder_sstreamo_i,
-  output wire [`STREAM_SIPORT(`NUM_CORES_WIDTH)] vertorder_sstreami_o,
+  input  wire [`STREAM_SOPORT(`VERTEX_ORDER_WIDTH)] vertorder_sstreamo_i,
+  output wire [`STREAM_SIPORT(`VERTEX_ORDER_WIDTH)] vertorder_sstreami_o,
   input  wire                                    vertorder_full_i,
   input  wire                                    vertorder_empty_i,
 
@@ -665,7 +669,6 @@ module core_controller_m #(
     .global_regfile_rs2_data_o(global_regfile_rs2_data_o)
   );
 
-  assign imem_do_o = (state == STATE_STOPPED) ? imem_do : 0;
   assign state_o  = state;
 
   wire is_rasterization = (dispatch_ctrl_i == `CORE_CTRL_DISPATCH_INDEX);
@@ -676,17 +679,6 @@ module core_controller_m #(
       integer i;
       job_done_o <= 0;
       batch_done_o <= 0;
-
-      halt_counter <= 0;
-      for (i = 0; i < JUMP_STAGE; i = i + 1) begin
-        jump_bases[i] <= 0;
-        jump_offsets[i] <= 0;
-      end
-      jump_type <= 0;
-
-      for (i = 0; i < CALL_STACK_LEN; i = i + 1)
-        call_stack[i] <= 0;
-      call_stack_idx <= 0;
 
       dispatch_enable <= 0;
 

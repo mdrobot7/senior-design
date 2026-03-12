@@ -25,8 +25,8 @@ module dispatch_m #(
   input  wire         vertcache_test_found_i,
 
   // Vertex order buffer
-  input wire [`STREAM_SOPORT(`NUM_CORES_WIDTH)] vertorder_sstreamo_i,
-  output reg [`STREAM_SIPORT(`NUM_CORES_WIDTH)] vertorder_sstreami_o,
+  input wire [`STREAM_SOPORT(`VERTEX_ORDER_WIDTH)] vertorder_sstreamo_i,
+  output reg [`STREAM_SIPORT(`VERTEX_ORDER_WIDTH)] vertorder_sstreami_o,
   input wire                                    vertorder_full_i,
 
   // Index fetcher
@@ -149,13 +149,13 @@ module dispatch_m #(
             if (!vertcache_test_found_i) begin
               // Dispatch to core
               thread_id_o <= index_fetch_mstreamo[`STREAM_MO_DATA(`WORD_WIDTH)];
-              vertorder_sstreami_o[`STREAM_SI_DATA(`NUM_CORES_WIDTH)] <= core_idx;
+              vertorder_sstreami_o[`STREAM_SI_DATA(`VERTEX_ORDER_WIDTH)] <= core_idx;
               core_stall_o <= core_stall;
               core_idx <= core_idx + 1;
             end
             else begin
               // Grab from cache
-              vertorder_sstreami_o[`STREAM_SI_DATA(`NUM_CORES_WIDTH)] <= `NUM_CORES;
+              vertorder_sstreami_o[`STREAM_SI_DATA(`VERTEX_ORDER_WIDTH)] <= `NUM_CORES;
               index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
             end
           end
