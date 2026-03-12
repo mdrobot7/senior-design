@@ -3,42 +3,48 @@
   "DESIGN_IS_CORE": 0,
   "VERILOG_FILES": [
       "dir::../../verilog/rtl/defines.v",
+      "dir::../../verilog/rtl/user_defines/bus_stream.v",
+      "dir::../../verilog/rtl/user_defines/common_misc.v",
+      "dir::../../verilog/rtl/user_defines/core.v",
+      "dir::../../verilog/rtl/user_defines/rasterizer.v",
+      "dir::../../verilog/rtl/user_defines/vga.v",
       "dir::../../verilog/rtl/user_defines.v",
       
       "dir::../../verilog/rtl/metadata_cache.v"
   ],
   "VERILOG_FILES_BLACKBOX": [
-      "dir::../../ip/CF_SRAM_1024x32/hdl/CF_SRAM_1024x32_stub.v"
+      "dir::../../verilog/rtl/sram_wrapper_bb.v"
   ],
     "SYNTH_READ_BLACKBOX_LIB": true,
     "EXTRA_GDS_FILES": [
-        "dir::../../ip/CF_SRAM_1024x32/gds/CF_SRAM_1024x32.gds"
+        "dir::../../gds/CF_SRAM_1024x32_wrapper.gds"
     ],
     "EXTRA_LEFS": [
-        "dir::../../ip/CF_SRAM_1024x32/lef/CF_SRAM_1024x32.lef"
+        "dir::../../lef/CF_SRAM_1024x32_wrapper.lef"
     ],
     "EXTRA_LIBS": [
-        "dir::../../ip/CF_SRAM_1024x32/lib/CF_SRAM_1024x32_tt_180V_25C.lib"
+        "dir::../../lib/CF_SRAM_1024x32_wrapper.lib"
     ],
-  "FP_PDN_MACRO_HOOKS": "sram vccd1 vssd1 vpwra vgnd,sram vccd1 vssd1 vpb vnb,sram vccd1 vssd1 vpwrp vgnd,sram vccd1 vssd1 vpwrm vgnd,sram vccd1 vssd1 vpwrac vgnd,sram vccd1 vssd1 vpwrpc vgnd",
-  "LVS_FLATTEN": 1,
-  "LVS_RENAME_UNMATCHED_PORTS": 1,
+  "FP_PDN_MACRO_HOOKS": "sram vccd1 vssd1 vccd1 vssd1,sram vccd1 vssd1 vpwrac vssd1,sram vccd1 vssd1 vpwrpc vssd1",
   "SYNTH_USE_PG_PINS_DEFINES": "USE_POWER_PINS",
   "SYNTH_POWER_DEFINE": "USE_POWER_PINS",
   "VERILOG_POWER_DEFINE": "USE_POWER_PINS",
+  "ERROR_ON_LINTER_ERRORS": false,
+  "FP_PDN_MULTILAYER": true,
   "FP_PDN_CHECK_NODES": false,
+  "RUN_IRDROP_REPORT": false,
   "ROUTING_CORES": 4,
   "CLOCK_PERIOD": 25,
-  "RUN_LINTER": 0,
+  "RUN_LINTER": 1,
   "CLOCK_PORT": "clk_i",
   "CLOCK_NET": "clk_i",
   "MACRO_PLACEMENT_CFG": "dir::macro.cfg",
   "FP_SIZING": "absolute",
   "DIE_AREA": "0 0 1000 1000",
+  "PL_TARGET_DENSITY": 0.15,
   "FP_PIN_ORDER_CFG": "dir::pin_order.cfg",
   "MAX_TRANSITION_CONSTRAINT": 1.0,
   "MAX_FANOUT_CONSTRAINT": 16,
-  "PL_TARGET_DENSITY": 0.40,
   "PL_RESIZER_SETUP_SLACK_MARGIN": 0.4,
   "GLB_RESIZER_SETUP_SLACK_MARGIN": 0.2,
   "GLB_RESIZER_HOLD_SLACK_MARGIN": 0.2,

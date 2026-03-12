@@ -1070,127 +1070,27 @@ MACRO CF_SRAM_1024x32_wrapper
         RECT 40.570 431.000 40.850 435.000 ;
     END
   END TM
-  PIN VGND
-    DIRECTION INOUT ;
-    USE GROUND ;
+  PIN WLBI
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.213000 ;
+    ANTENNADIFFAREA 0.434700 ;
     PORT
       LAYER met2 ;
-        RECT 20.940 5.200 22.700 29.720 ;
+        RECT 48.850 431.000 49.130 435.000 ;
     END
+  END WLBI
+  PIN WLOFF
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.247500 ;
+    ANTENNADIFFAREA 0.434700 ;
     PORT
       LAYER met2 ;
-        RECT 70.940 5.200 72.700 29.720 ;
+        RECT 57.130 431.000 57.410 435.000 ;
     END
-    PORT
-      LAYER met2 ;
-        RECT 120.940 5.200 122.700 29.720 ;
-    END
-    PORT
-      LAYER met2 ;
-        RECT 170.940 5.200 172.700 29.720 ;
-    END
-    PORT
-      LAYER met2 ;
-        RECT 220.940 5.200 222.700 29.720 ;
-    END
-    PORT
-      LAYER met2 ;
-        RECT 270.940 5.200 272.700 29.720 ;
-    END
-    PORT
-      LAYER met2 ;
-        RECT 320.940 5.200 322.700 29.720 ;
-    END
-    PORT
-      LAYER met2 ;
-        RECT 370.940 5.200 372.700 430.000 ;
-    END
-    PORT
-      LAYER met3 ;
-        RECT 4.820 21.320 375.140 23.080 ;
-    END
-    PORT
-      LAYER met3 ;
-        RECT 4.820 71.320 375.140 73.080 ;
-    END
-    PORT
-      LAYER met3 ;
-        RECT 4.820 121.320 375.140 123.080 ;
-    END
-    PORT
-      LAYER met3 ;
-        RECT 4.820 171.320 375.140 173.080 ;
-    END
-    PORT
-      LAYER met3 ;
-        RECT 4.820 221.320 375.140 223.080 ;
-    END
-    PORT
-      LAYER met3 ;
-        RECT 4.820 271.320 375.140 273.080 ;
-    END
-    PORT
-      LAYER met3 ;
-        RECT 4.820 321.320 375.140 323.080 ;
-    END
-    PORT
-      LAYER met3 ;
-        RECT 4.820 371.320 375.140 373.080 ;
-    END
-    PORT
-      LAYER met3 ;
-        RECT 4.820 421.320 375.140 423.080 ;
-    END
-    PORT
-      LAYER met4 ;
-        RECT 23.510 0.000 26.610 435.000 ;
-    END
-    PORT
-      LAYER met4 ;
-        RECT 53.510 0.000 56.610 435.000 ;
-    END
-    PORT
-      LAYER met4 ;
-        RECT 83.510 0.000 86.610 435.000 ;
-    END
-    PORT
-      LAYER met4 ;
-        RECT 113.510 0.000 116.610 435.000 ;
-    END
-    PORT
-      LAYER met4 ;
-        RECT 143.510 0.000 146.610 435.000 ;
-    END
-    PORT
-      LAYER met4 ;
-        RECT 173.510 0.000 176.610 435.000 ;
-    END
-    PORT
-      LAYER met4 ;
-        RECT 203.510 0.000 206.610 435.000 ;
-    END
-    PORT
-      LAYER met4 ;
-        RECT 233.510 0.000 236.610 435.000 ;
-    END
-    PORT
-      LAYER met4 ;
-        RECT 263.510 0.000 266.610 435.000 ;
-    END
-    PORT
-      LAYER met4 ;
-        RECT 293.510 0.000 296.610 435.000 ;
-    END
-    PORT
-      LAYER met4 ;
-        RECT 323.510 0.000 326.610 435.000 ;
-    END
-    PORT
-      LAYER met4 ;
-        RECT 353.510 0.000 356.610 435.000 ;
-    END
-  END VGND
-  PIN VPWR
+  END WLOFF
+  PIN vccd1
     DIRECTION INOUT ;
     USE POWER ;
     PORT
@@ -1313,27 +1213,7 @@ MACRO CF_SRAM_1024x32_wrapper
       LAYER met4 ;
         RECT 368.510 0.000 371.610 435.000 ;
     END
-  END VPWR
-  PIN WLBI
-    DIRECTION INPUT ;
-    USE SIGNAL ;
-    ANTENNAGATEAREA 0.213000 ;
-    ANTENNADIFFAREA 0.434700 ;
-    PORT
-      LAYER met2 ;
-        RECT 48.850 431.000 49.130 435.000 ;
-    END
-  END WLBI
-  PIN WLOFF
-    DIRECTION INPUT ;
-    USE SIGNAL ;
-    ANTENNAGATEAREA 0.247500 ;
-    ANTENNADIFFAREA 0.434700 ;
-    PORT
-      LAYER met2 ;
-        RECT 57.130 431.000 57.410 435.000 ;
-    END
-  END WLOFF
+  END vccd1
   PIN vpwrac
     DIRECTION INPUT ;
     USE SIGNAL ;
@@ -1354,6 +1234,126 @@ MACRO CF_SRAM_1024x32_wrapper
         RECT 106.810 431.000 107.090 435.000 ;
     END
   END vpwrpc
+  PIN vssd1
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER met2 ;
+        RECT 20.940 5.200 22.700 29.720 ;
+    END
+    PORT
+      LAYER met2 ;
+        RECT 70.940 5.200 72.700 29.720 ;
+    END
+    PORT
+      LAYER met2 ;
+        RECT 120.940 5.200 122.700 29.720 ;
+    END
+    PORT
+      LAYER met2 ;
+        RECT 170.940 5.200 172.700 29.720 ;
+    END
+    PORT
+      LAYER met2 ;
+        RECT 220.940 5.200 222.700 29.720 ;
+    END
+    PORT
+      LAYER met2 ;
+        RECT 270.940 5.200 272.700 29.720 ;
+    END
+    PORT
+      LAYER met2 ;
+        RECT 320.940 5.200 322.700 29.720 ;
+    END
+    PORT
+      LAYER met2 ;
+        RECT 370.940 5.200 372.700 430.000 ;
+    END
+    PORT
+      LAYER met3 ;
+        RECT 4.820 21.320 375.140 23.080 ;
+    END
+    PORT
+      LAYER met3 ;
+        RECT 4.820 71.320 375.140 73.080 ;
+    END
+    PORT
+      LAYER met3 ;
+        RECT 4.820 121.320 375.140 123.080 ;
+    END
+    PORT
+      LAYER met3 ;
+        RECT 4.820 171.320 375.140 173.080 ;
+    END
+    PORT
+      LAYER met3 ;
+        RECT 4.820 221.320 375.140 223.080 ;
+    END
+    PORT
+      LAYER met3 ;
+        RECT 4.820 271.320 375.140 273.080 ;
+    END
+    PORT
+      LAYER met3 ;
+        RECT 4.820 321.320 375.140 323.080 ;
+    END
+    PORT
+      LAYER met3 ;
+        RECT 4.820 371.320 375.140 373.080 ;
+    END
+    PORT
+      LAYER met3 ;
+        RECT 4.820 421.320 375.140 423.080 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 23.510 0.000 26.610 435.000 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 53.510 0.000 56.610 435.000 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 83.510 0.000 86.610 435.000 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 113.510 0.000 116.610 435.000 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 143.510 0.000 146.610 435.000 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 173.510 0.000 176.610 435.000 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 203.510 0.000 206.610 435.000 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 233.510 0.000 236.610 435.000 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 263.510 0.000 266.610 435.000 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 293.510 0.000 296.610 435.000 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 323.510 0.000 326.610 435.000 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 353.510 0.000 356.610 435.000 ;
+    END
+  END vssd1
   OBS
       LAYER li1 ;
         RECT 5.060 5.355 374.900 429.845 ;

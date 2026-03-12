@@ -20,10 +20,10 @@
     "PNR_SDC_FILE": "dir::base.sdc",
     "SIGNOFF_SDC_FILE": "dir::base.sdc",
     "VDD_NETS": [
-        "VPWR"
+        "vccd1"
     ],
     "GND_NETS": [
-        "VGND"
+        "vssd1"
     ],
     "SYNTH_READ_BLACKBOX_LIB": true,
     "EXTRA_GDS_FILES": [
@@ -47,7 +47,7 @@
     "FP_PDN_HSPACING": 10,
     "FP_PDN_VPITCH": 50,
     "FP_PDN_HPITCH": 50,
-    "FP_PDN_MACRO_HOOKS": "i_sram VPWR VGND vpwra vgnd,i_sram VPWR VGND vpb vnb,i_sram VPWR VGND vpwrp vgnd,i_sram VPWR VGND vpwrm vgnd",
+    "FP_PDN_MACRO_HOOKS": "i_sram vccd1 vssd1 vpwra vgnd,i_sram vccd1 vssd1 vpb vnb,i_sram vccd1 vssd1 vpwrp vgnd,i_sram vccd1 vssd1 vpwrm vgnd",
     "FP_PDN_CFG": "dir::pdn.tcl",
     "QUIT_ON_LINTER_ERRORS": false,
     "QUIT_ON_SYNTH_CHECKS": false,

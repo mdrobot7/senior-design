@@ -6,10 +6,11 @@
   Prioritizes low latency read hits. 
 */
 
-// uncomment for rtl sim
-// `default_nettype wire
-//   `include "../../ip/CF_SRAM_1024x32/hdl/beh_models/CF_SRAM_1024x32.tt_180V_25C.v"
-// `default_nettype none
+`ifdef SVUNIT
+  `default_nettype wire
+  `include "../../ip/CF_SRAM_1024x32/hdl/beh_models/CF_SRAM_1024x32.tt_180V_25C.v"
+  `default_nettype none
+`endif
 
 module metadata_cache_m
 #(
@@ -32,6 +33,7 @@ localparam INDEX_BITS = ($clog2(BLOCKS));
 localparam OFFSET_BITS = ($clog2(BLOCK_WORD_SIZE << 2));
 localparam TAG_BITS = (32 - INDEX_BITS - OFFSET_BITS);
 
+// core
 wire core_req_i;
 wire [31:0] data_i;
 wire [31:0] addr_i;
@@ -41,6 +43,7 @@ assign data_i = s_core_i[`BUS_SI_DATA];
 assign addr_i = s_core_i[`BUS_SI_ADDR];
 assign rw_i = s_core_i[`BUS_SI_RW];
 
+// mem
 reg mem_req_o;        
 reg mem_rw;          
 reg mem_seqmst_o;
@@ -60,6 +63,7 @@ assign mem_ack_i = m_mem_i[`BUS_MI_ACK];
 assign mem_seqslv_i = m_mem_i[`BUS_MI_SEQSLV];
 assign mem_data_i = m_mem_i[`BUS_MI_DATA];
 
+// meta
 reg                valid [BLOCKS-1:0]; 
 reg                dirty [BLOCKS-1:0];
 reg [TAG_BITS-1:0] tag   [BLOCKS-1:0];
@@ -89,47 +93,26 @@ reg [31:0] sram_in_data;  // data input to sram
 reg sram_rw;              // 0 for write, 1 for read
 reg sram_en;            
 reg [31:0] sram_out_data; // data output from sram
-
-localparam BEN = 32'hFFFFFFFF;
-localparam WLBI = 1'b0;
-localparam WLOFF = 1'b0;
-localparam TM = 1'b0;
-localparam SM = 1'b0;
-localparam ScanInCC = 1'b0;
-localparam ScanInDL = 1'b0;
-localparam ScanInDR = 1'b0;
-wire ScanOutCC;
   
 // CF_SRAM_1024x32_macro for rtl sim
-CF_SRAM_1024x32 sram(
-  .DO(sram_out_data),
-  .ScanOutCC(ScanOutCC),
+CF_SRAM_1024x32_wrapper sram (
+  .DO(sram_out_data), 
+  .ScanOutCC(),
 
-  .AD(sram_addr),
-  .BEN(BEN),
-  .CLKin(clk_i),
-  .DI(sram_in_data),
-  .EN(sram_en),
+  .CLKin(clk_i), 
+  .AD(sram_addr), 
+  .BEN(32'hFFFFFFFF), 
+  .DI(sram_in_data), 
+  .EN(sram_en), 
   .R_WB(sram_rw),
 
-  .ScanInCC(ScanInCC),
-  .ScanInDL(ScanInDL),
-  .ScanInDR(ScanInDR),
-  .SM(SM),
-  .TM(TM),
-  .WLBI(WLBI),
-  .WLOFF(WLOFF)
-
-  `ifdef USE_POWER_PINS
-    ,.vgnd(vssd1),
-    .vnb(vssd1), 
-    .vpb(vccd1), 
-    .vpwra(vccd1), 
-    .vpwrac(vccd1),
-    .vpwrm(vccd1),
-    .vpwrp(vccd1),
-    .vpwrpc(vccd1)
-  `endif  
+  .ScanInCC(1'b0), 
+  .ScanInDL(1'b0), 
+  .ScanInDR(1'b0), 
+  .SM(1'b0), 
+  .TM(1'b0), 
+  .WLBI(1'b0), 
+  .WLOFF(1'b0)
 );
 
 integer i;
@@ -328,10 +311,3 @@ always @ (posedge clk_i) begin
 end
 
 endmodule
-
-  // "FP_PDN_MACRO_HOOKS": [
-  //       "sram vccd1 vssd1 vpwra vgnd",
-  //       "sram vccd1 vssd1 vpb vnb",
-  //       "sram vccd1 vssd1 vpwrp vgnd",
-  //       "sram vccd1 vssd1 vpwrm vgnd"
-  //   ],

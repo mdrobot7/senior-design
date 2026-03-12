@@ -7,6 +7,8 @@
  */
 module sram_1024x32_m (
 `ifdef USE_POWER_PINS
+    input wire vccd1,
+    input wire vssd1,
     input wire vpwrac,
     input wire vpwrpc,
 `endif
@@ -29,38 +31,7 @@ module sram_1024x32_m (
     .di(data_i),
     .dout(data_o)
   );
-`elsif macro
-  CF_SRAM_1024x32 sram(
-    .DO(sram_out_data),
-    .ScanOutCC(ScanOutCC),
-
-    .AD(sram_addr),
-    .BEN(BEN),
-    .CLKin(clk_i),
-    .DI(sram_in_data),
-    .EN(sram_en),
-    .R_WB(sram_rw),
-
-    .ScanInCC(ScanInCC),
-    .ScanInDL(ScanInDL),
-    .ScanInDR(ScanInDR),
-    .SM(SM),
-    .TM(TM),
-    .WLBI(WLBI),
-    .WLOFF(WLOFF)
-
-    `ifdef USE_POWER_PINS
-      ,.vgnd(vssd1),
-      .vnb(vssd1), 
-      .vpb(vccd1), 
-      .vpwra(vccd1), 
-      .vpwrac(vccd1),
-      .vpwrm(vccd1),
-      .vpwrp(vccd1),
-      .vpwrpc(vccd1)
-    `endif  
-  );
-`else
+`elsif SVUNIT
   `define functional // Use this for RTL tests (we think), disables the $setuphold tests that can't be checked with RTL
   CF_SRAM_1024x32_macro sram (
   `ifdef USE_POWER_PINS
@@ -77,6 +48,36 @@ module sram_1024x32_m (
     .R_WB(read_en_i),
 
     // Test signals
+    .WLBI(1'b0),
+    .WLOFF(1'b0),
+    .TM(1'b0),
+    .SM(1'b0),
+    .ScanInCC(1'b0),
+    .ScanInDL(1'b0),
+    .ScanInDR(1'b0),
+    .ScanOutCC()
+  );
+`else
+  CF_SRAM_1024x32 sram(
+    `ifdef USE_POWER_PINS
+      .vgnd(vssd1),
+      .vnb(vssd1), 
+      .vpb(vccd1), 
+      .vpwra(vccd1), 
+      .vpwrac(vccd1),
+      .vpwrm(vccd1),
+      .vpwrp(vccd1),
+      .vpwrpc(vccd1),
+    `endif
+
+    .CLKin(clk_i),
+    .DO(data_o),
+    .DI(data_i),
+    .BEN(32'hFFFFFFFF), // Write mask
+    .AD(addr_i),
+    .EN(en_i),
+    .R_WB(read_en_i),
+
     .WLBI(1'b0),
     .WLOFF(1'b0),
     .TM(1'b0),
