@@ -2,16 +2,17 @@
 
 `include "user_defines.v"
 
+`include "math/fp_sqrt.v"
 `include "math/sqrt.v"
 
 `include "test/clk_rst.v"
 `include "test/stream_master.v"
 `include "test/stream_slave.v"
 
-module sqrt_m_unit_test;
+module fp_sqrt_m_unit_test;
     import svunit_pkg::svunit_testcase;
 
-    string name = "sqrt_m_ut";
+    string name = "fp_sqrt_m_ut";
     svunit_testcase svunit_ut;
 
     wire clk, nrst;
@@ -23,8 +24,8 @@ module sqrt_m_unit_test;
     wire [`STREAM_SIPORT(32)] sstreami;
     wire [`STREAM_SOPORT(32)] sstreamo;
 
-    wire [`STREAM_MIPORT(16)] mstreami;
-    wire [`STREAM_MOPORT(16)] mstreamo;
+    wire [`STREAM_MIPORT(32)] mstreami;
+    wire [`STREAM_MOPORT(32)] mstreamo;
 
     stream_master_m #(32) master(
         .clk_i(clk),
@@ -33,7 +34,7 @@ module sqrt_m_unit_test;
         .mstream_o(sstreami)
     );
 
-    stream_slave_m #(16, 1) slave(
+    stream_slave_m #(32, 1) slave(
         .clk_i(clk),
 
         .sstream_i(mstreamo),
@@ -44,7 +45,7 @@ module sqrt_m_unit_test;
     // This is the UUT that we're 
     // running the Unit Tests on
     //===================================
-    sqrt_m my_sqrt_m(
+    fp_sqrt_m my_fp_sqrt_m(
         .clk_i(clk),
         .nrst_i(nrst),
 
@@ -102,14 +103,16 @@ module sqrt_m_unit_test;
     `SVUNIT_TESTS_BEGIN
 
         `SVTEST(backwards)
-            reg [15:0] root;
+            reg [31:0] root;
             reg [31:0] square;
             reg [15:0] out;
             integer diff;
 
             for (int i = 0; i < 1000; i++) begin
                 root = {$random} % 65537;
-                square = root * root;
+                square = `FP_MUL(root, root);
+
+                $display(square);
 
                 master.WRITE(square);
 
@@ -120,7 +123,7 @@ module sqrt_m_unit_test;
                 if (diff < 0) diff = -diff;
 
                 $display("%d == %d   -   diff: %d", out, root, diff);
-                `FAIL_UNLESS(diff <= 1);
+                `FAIL_UNLESS(diff <= 2**(`DECIMAL_POS / 2));
             end
         `SVTEST_END
 
