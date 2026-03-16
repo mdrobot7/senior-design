@@ -48,15 +48,15 @@ module inst_fetch_m #(
   localparam JUMP_TYPE_JAL  = 1;
 
   localparam STATE_READY   = 0;
-  localparam STATE_IMEM_DELAY = 1;
-  localparam STATE_EXECUTE = 2;
-  localparam STATE_DONE    = 3;
+  localparam STATE_EXECUTE = 1;
+  localparam STATE_DONE    = 2;
 
   reg [1:0] state;
 
   // PC, in *words*
   reg [`SRAM_1024x32_ADDR_WIDTH-1:0] pc;
   reg [`SRAM_1024x32_ADDR_WIDTH-1:0] pc_prev;
+  reg                                pc_prev_valid;
 
   // Call stack
   reg [`SRAM_1024x32_ADDR_WIDTH-1:0] call_stack[CALL_STACK_LEN-1:0];
@@ -136,6 +136,7 @@ module inst_fetch_m #(
 
       pc <= 0;
       pc_prev <= 0;
+      pc_prev_valid <= 0;
 
       call_stack_idx <= 0;
       for (i = 0; i < JUMP_STAGE; i++) begin
@@ -151,17 +152,17 @@ module inst_fetch_m #(
         STATE_READY: begin
           step_done_o <= 0;
           prog_done_o <= 0;
+          pc_prev_valid <= 0;
           if (enable_i)
             state <= STATE_EXECUTE;
         end
-        STATE_IMEM_DELAY:
-          state <= STATE_EXECUTE;
         STATE_EXECUTE: begin
           if (!enable_i)
             state <= STATE_READY;
           else if (!core_stall_i) begin
             pc <= pc + 1;
             pc_prev <= pc;
+            pc_prev_valid <= 1;
 
             step_done_o <= 1;
 
@@ -225,13 +226,14 @@ module inst_fetch_m #(
         end
         pc <= prog_entry_i;
         pc_prev <= prog_entry_i;
+        pc_prev_valid <= 0;
         state <= STATE_READY;
       end
     end
   end
 
   always @(*) begin
-    if (halt_counter || core_jump_i || core_stall_i || state != STATE_EXECUTE)
+    if (halt_counter || core_jump_i || core_stall_i || state != STATE_EXECUTE || !pc_prev_valid)
       // Feed nops after a halt and flush "fetch" stage on a jump
       inst_o = INST_NOP;
     else
