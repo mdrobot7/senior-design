@@ -48,13 +48,15 @@ module inst_fetch_m #(
   localparam JUMP_TYPE_JAL  = 1;
 
   localparam STATE_READY   = 0;
-  localparam STATE_EXECUTE = 1;
-  localparam STATE_DONE    = 2;
+  localparam STATE_IMEM_DELAY = 1;
+  localparam STATE_EXECUTE = 2;
+  localparam STATE_DONE    = 3;
 
   reg [1:0] state;
 
   // PC, in *words*
   reg [`SRAM_1024x32_ADDR_WIDTH-1:0] pc;
+  reg [`SRAM_1024x32_ADDR_WIDTH-1:0] pc_prev;
 
   // Call stack
   reg [`SRAM_1024x32_ADDR_WIDTH-1:0] call_stack[CALL_STACK_LEN-1:0];
@@ -69,9 +71,10 @@ module inst_fetch_m #(
 
   // IMEM
   wire [`WORD]                        imem_do;
-  wire [`SRAM_1024x32_ADDR_WIDTH-1:0] imem_addr = !enable_i ? imem_addr_i : pc; // In *words*
+  wire [`SRAM_1024x32_ADDR_WIDTH-1:0] imem_addr = !enable_i ? imem_addr_i : (core_stall_i ? pc_prev : pc); // In *words*
   wire                                imem_rw   = !enable_i ? imem_rw_i   : 1;
-  reg  [`WORD]                        imem_do_latch;
+  reg                                 imem_flush_output;
+  reg                                 imem_output_flushed;
   sram_1024x32_m imem (
 `ifdef USE_POWER_PINS
     .vpwrac(vpwrac),
@@ -87,10 +90,10 @@ module inst_fetch_m #(
   );
 
   // Instruction decode
-  wire [`OPCODE_WIDTH-1:0]     inst_opcode      = imem_do_latch[`OPCODE_IDX];
-  wire [`REG_SOURCE_WIDTH-1:0] inst_rs1         = imem_do_latch[`R1_IDX];
-  wire [`REG_SOURCE_WIDTH-1:0] inst_rs2         = imem_do_latch[`R2_IDX];
-  wire [`JUMP_WIDTH-1:0]       inst_jump_offset = imem_do_latch[`JUMP_IDX];
+  wire [`OPCODE_WIDTH-1:0]     inst_opcode      = imem_do[`OPCODE_IDX];
+  wire [`REG_SOURCE_WIDTH-1:0] inst_rs1         = imem_do[`R1_IDX];
+  wire [`REG_SOURCE_WIDTH-1:0] inst_rs2         = imem_do[`R2_IDX];
+  wire [`JUMP_WIDTH-1:0]       inst_jump_offset = imem_do[`JUMP_IDX];
 
   // Global regfile
   wire                         global_regfile_write_en    = !enable_i ? global_regfile_write_en_i : 0;
@@ -122,7 +125,7 @@ module inst_fetch_m #(
     .outbox_o()
   );
 
-  assign imem_do_o = imem_do;
+  assign imem_do_o    = imem_do;
 
   always @(posedge clk_i, negedge nrst_i) begin
     if (!nrst_i) begin : RESET
@@ -130,7 +133,9 @@ module inst_fetch_m #(
 
       step_done_o <= 0;
       prog_done_o <= 0;
-      inst_o <= 0;
+
+      pc <= 0;
+      pc_prev <= 0;
 
       call_stack_idx <= 0;
       for (i = 0; i < JUMP_STAGE; i++) begin
@@ -138,7 +143,6 @@ module inst_fetch_m #(
         jump_offsets[i] <= 0;
         jump_type[i] <= 0;
       end
-      imem_do_latch <= INST_NOP;
 
       state <= STATE_READY;
     end
@@ -150,12 +154,14 @@ module inst_fetch_m #(
           if (enable_i)
             state <= STATE_EXECUTE;
         end
+        STATE_IMEM_DELAY:
+          state <= STATE_EXECUTE;
         STATE_EXECUTE: begin
           if (!enable_i)
             state <= STATE_READY;
           else if (!core_stall_i) begin
-            imem_do_latch <= imem_do;
             pc <= pc + 1;
+            pc_prev <= pc;
 
             step_done_o <= 1;
 
@@ -182,7 +188,6 @@ module inst_fetch_m #(
             end
             if (core_jump_i) begin
               halt_counter <= 0; // jump/jal was taken before halt reaches writeback, no halt
-              imem_do_latch <= INST_NOP; // Flush IMEM latch "stage"
               if (jump_type[1] == JUMP_TYPE_JAL && call_stack_idx != CALL_STACK_LEN - 1) begin
                 // Call stack overflow is a nop
                 pc <= jump_jal_offset;
@@ -218,19 +223,19 @@ module inst_fetch_m #(
           jump_offsets[i] <= 0;
           jump_type[i] <= 0;
         end
-        imem_do_latch <= INST_NOP;
         pc <= prog_entry_i;
+        pc_prev <= prog_entry_i;
         state <= STATE_READY;
       end
     end
   end
 
   always @(*) begin
-    if (halt_counter || core_jump_i || state != STATE_EXECUTE)
+    if (halt_counter || core_jump_i || core_stall_i || state != STATE_EXECUTE)
       // Feed nops after a halt and flush "fetch" stage on a jump
       inst_o = INST_NOP;
     else
-      inst_o = imem_do_latch;
+      inst_o = imem_do;
   end
 
 endmodule

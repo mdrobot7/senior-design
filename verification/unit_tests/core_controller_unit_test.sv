@@ -8,6 +8,7 @@
 `include "shaded_vertex_cache.v"
 `include "test/bus_slave.v"
 `include "test/clk_rst.v"
+`include "test/stream_master.v"
 
 `include "math/full_adder.v"
 `include "math/mul.v"
@@ -227,6 +228,8 @@ module core_controller_m_unit_test;
     .global_regfile_rs2_data_o(global_regfile_rs2_data)
   );
 
+  reg  [`STREAM_SIPORT(`WORD_WIDTH)] core_inbox_sstreami;
+  wire [`STREAM_SOPORT(`WORD_WIDTH)] core_inbox_sstreamo;
   core_m core[`NUM_CORES-1:0] (
     .clk_i(clk),
     .nrst_i(nrst),
@@ -238,13 +241,24 @@ module core_controller_m_unit_test;
     .stall_i(core_stallo),
     .stall_o(core_stalli),
     .nsync_rst_i(core_reset),
-    .inbox_sstream_i(34'b0),
-    .inbox_sstream_o(),
+    .inbox_sstream_i(core_inbox_sstreami),
+    .inbox_sstream_o(core_inbox_sstreamo),
     .outbox_mstream_i(1'b0),
     .outbox_mstream_o(),
     .mport_i(mportcorei),
     .mport_o(mportcoreo)
   );
+
+
+  stream_master_m #(
+      .SIZE(`WORD_WIDTH)
+  ) stream_master (
+      .clk_i(clk),
+
+      .mstream_i(core_inbox_sstreamo),
+      .mstream_o(core_inbox_sstreami)
+  );
+
   // Can't for loop this (compiler issues) so we're doing this instead
   // (expand to NUM_CORES once multicore tests are added)
   `define FAIL_UNLESS_EQUAL_PRINT(exp, found) \
@@ -253,6 +267,7 @@ module core_controller_m_unit_test;
       `FAIL_UNLESS_EQUAL(exp, found); \
     end
   `define CHECK_REG(local_reg, val) \
+    $display("Checking reg  %d...", local_reg); \
     `FAIL_UNLESS_EQUAL_PRINT(val, core[0].regfile.mem[local_reg]);
 
   reg[`WORD_WIDTH-1:0] imem_reg [0:1023];
@@ -404,7 +419,7 @@ module core_controller_m_unit_test;
   `SVTEST(exec_gpgpu)
     clk_rst.WAIT_CYCLES(1);
     fill_imem();
-    // `FAIL_UNLESS_EQUAL(0, 1);
+    fill_inbox();
 
     pc_gpgpu_compute = 0;
     core_enable = {`NUM_CORES{1'b1}};
@@ -430,7 +445,7 @@ module core_controller_m_unit_test;
       `CHECK_REG( 4, 32'h00000004);
       `CHECK_REG( 5, 32'hFFFFFFFB);
       `CHECK_REG( 6, 32'h00000006);
-      `CHECK_REG( 7, 32'hFFFFFFF9);
+      `CHECK_REG( 7, 32'h000193E8);
       `CHECK_REG( 8, 32'h00000A00);
       `CHECK_REG( 9, 32'h00000007);
       // r10: Undefined value in test_core.s
@@ -469,6 +484,14 @@ module core_controller_m_unit_test;
       clk_rst.WAIT_CYCLES(1);
     end
     clk_rst.WAIT_CYCLES(1);
+  end
+  endtask
+
+  task fill_inbox;
+  begin
+    for (int i = 0; i < `CORE_MAILBOX_HEIGHT - 1; i++)
+      stream_master.WRITE($urandom);
+    stream_master.WRITE_LAST($urandom);
   end
   endtask
 
