@@ -567,7 +567,7 @@ module core_controller_m #(
   output reg  [`NUM_CORES-1:0]  core_stall_o, // Per-core stall control
   input  wire [`NUM_CORES-1:0]  core_jump_i,
   output reg                    core_jump_o,  // Flushes decode on all cores
-  output wire [`WORD]           global_regfile_rs1_data_o,
+  output reg  [`WORD]           global_regfile_rs1_data_o,
   output wire [`WORD]           global_regfile_rs2_data_o
 );
 
@@ -575,11 +575,12 @@ module core_controller_m #(
 
   localparam STATE_STOPPED          = 0; // Waiting for program to start from beginning
   localparam STATE_DISPATCHING      = 1; // Dispatching jobs
-  localparam STATE_VERTEX_SHADING   = 2;
-  localparam STATE_FRAGMENT_SHADING = 3;
-  localparam STATE_GPGPU_COMPUTE    = 4;
-  localparam STATE_PAUSED           = 5; // Manual pause by management core or step-through
-  localparam STATE_DONE             = 6;
+  localparam STATE_DISPATCH_DELAY   = 2;
+  localparam STATE_VERTEX_SHADING   = 3;
+  localparam STATE_FRAGMENT_SHADING = 4;
+  localparam STATE_GPGPU_COMPUTE    = 5;
+  localparam STATE_PAUSED           = 6; // Manual pause by management core or step-through
+  localparam STATE_DONE             = 7;
 
   reg [2:0] state;
 
@@ -639,6 +640,7 @@ module core_controller_m #(
   wire                               instfetch_step_done;
   wire                               instfetch_prog_done;
   wire [`WORD]                       instfetch_inst;
+  wire [`WORD]                       instfetch_global_regfile_rs1_data;
   inst_fetch_m #(
     CALL_STACK_LEN
   ) inst_fetch (
@@ -665,7 +667,7 @@ module core_controller_m #(
     .inst_o(instfetch_inst),
     .core_stall_i(core_stall_i),
     .core_jump_i(core_jump_i),
-    .global_regfile_rs1_data_o(global_regfile_rs1_data_o),
+    .global_regfile_rs1_data_o(instfetch_global_regfile_rs1_data),
     .global_regfile_rs2_data_o(global_regfile_rs2_data_o)
   );
 
@@ -711,8 +713,13 @@ module core_controller_m #(
               state <= STATE_DISPATCHING;
             end
             else
-              state <= STATE_GPGPU_COMPUTE;
+              state <= STATE_DISPATCH_DELAY;
           end
+        end
+        STATE_DISPATCH_DELAY: begin
+          instfetch_reset_prog <= 0;
+          instfetch_enable <= 1;
+          state <= cur_prog;
         end
         STATE_DISPATCHING: begin
           instfetch_reset_prog <= 0;
@@ -845,7 +852,15 @@ module core_controller_m #(
         instfetch_prog_entry = pc_vertex_shading_i;
       STATE_FRAGMENT_SHADING:
         instfetch_prog_entry = pc_fragment_shading_i;
+      default:
+        instfetch_prog_entry = 0;
     endcase
+
+    // Global regfile/thread ID
+    if (state == STATE_DISPATCHING)
+      global_regfile_rs1_data_o = dispatch_thread_id;
+    else
+      global_regfile_rs1_data_o = instfetch_global_regfile_rs1_data;
   end
 
 endmodule

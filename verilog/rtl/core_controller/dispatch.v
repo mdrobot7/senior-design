@@ -179,6 +179,7 @@ module dispatch_m #(
         STATE_DISPATCHING_INTS: begin
           // Fill in $tid with increasing numbers
           if (core_idx == `NUM_CORES) begin
+            core_stall_o <= {`NUM_CORES{1'b1}};
             core_idx <= 0;
             state <= STATE_DISPATCH_DONE;
           end

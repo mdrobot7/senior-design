@@ -268,7 +268,12 @@ module core_controller_m_unit_test;
     end
   `define CHECK_REG(local_reg, val) \
     $display("Checking reg  %d...", local_reg); \
-    `FAIL_UNLESS_EQUAL_PRINT(val, core[0].regfile.mem[local_reg]);
+    `FAIL_UNLESS_EQUAL_PRINT(val, core[0].regfile.mem[local_reg]); \
+    `FAIL_UNLESS_EQUAL_PRINT(val, core[1].regfile.mem[local_reg]); \
+    `FAIL_UNLESS_EQUAL_PRINT(val, core[2].regfile.mem[local_reg]); \
+    `FAIL_UNLESS_EQUAL_PRINT(val, core[3].regfile.mem[local_reg]); \
+    `FAIL_UNLESS_EQUAL_PRINT(val, core[4].regfile.mem[local_reg]); \
+    `FAIL_UNLESS_EQUAL_PRINT(val, core[5].regfile.mem[local_reg]);
 
   reg[`WORD_WIDTH-1:0] imem_reg [0:1023];
 
@@ -418,14 +423,14 @@ module core_controller_m_unit_test;
 
   `SVTEST(exec_gpgpu)
     clk_rst.WAIT_CYCLES(1);
-    fill_imem();
+    fill_imem("../../verilog/dv/top_level/src/asm/test_core.hex");
     fill_inbox();
 
     pc_gpgpu_compute = 0;
     core_enable = {`NUM_CORES{1'b1}};
     cmd = `CORE_CTRL_CMD_RUN;
     pause_at_halt = 1;
-    dispatch_ctrl = `CORE_CTRL_DISPATCH_INT;
+    dispatch_ctrl = `CORE_CTRL_DISPATCH_DISABLE;
     num_dispatches = 100;
 
     for (int i = 0; i < 10000000; i++) begin
@@ -436,32 +441,71 @@ module core_controller_m_unit_test;
     `FAIL_UNLESS_EQUAL(state, STATE_STOPPED);
     `FAIL_UNLESS_EQUAL(job_done, 1);
 
-    for (int i = 0; i < `NUM_CORES; i++) begin
-      $display("Checking core %d...", i);
-      `CHECK_REG( 0, 32'h00000000);
-      `CHECK_REG( 1, 32'hFFFFFFFF);
-      `CHECK_REG( 2, 32'h00000002);
-      `CHECK_REG( 3, 32'hFFFFFFFD);
-      `CHECK_REG( 4, 32'h00000004);
-      `CHECK_REG( 5, 32'hFFFFFFFB);
-      `CHECK_REG( 6, 32'h00000006);
-      `CHECK_REG( 7, 32'h000193E8);
-      `CHECK_REG( 8, 32'h00000A00);
-      `CHECK_REG( 9, 32'h00000007);
-      // r10: Undefined value in test_core.s
-      `CHECK_REG(11, 32'h000050C8);
-      `CHECK_REG(12, 32'h00000000);
-      // r13: Undefined value in test_core.s
-      `CHECK_REG(14, 32'h0000000A);
-      `CHECK_REG(15, 32'h0000000A);
-    end
+    `CHECK_REG( 0, 32'h00000000);
+    `CHECK_REG( 1, 32'hFFFFFFFF);
+    `CHECK_REG( 2, 32'h00000002);
+    `CHECK_REG( 3, 32'hFFFFFFFD);
+    `CHECK_REG( 4, 32'h00000004);
+    `CHECK_REG( 5, 32'hFFFFFFFB);
+    `CHECK_REG( 6, 32'h00000006);
+    `CHECK_REG( 7, 32'h000193E8);
+    `CHECK_REG( 8, 32'h00000A00);
+    `CHECK_REG( 9, 32'h00000007);
+    // r10: Undefined value in test_core.s
+    `CHECK_REG(11, 32'h000050C8);
+    `CHECK_REG(12, 32'h00000000);
+    // r13: Undefined value in test_core.s
+    `CHECK_REG(14, 32'h0000000A);
+    `CHECK_REG(15, 32'h0000000A);
   `SVTEST_END
 
-  `SVTEST(exec_raster)
-    // TODO
+  `SVTEST(exec_gpgpu_dispatch)
+    clk_rst.WAIT_CYCLES(1);
+    for (int i = 0; i < 1024; i++)
+      imem_reg[i] = 32'h04000000;
+
+    imem_rw = 0;
+    for (int i = 0; i < 1024; i++) begin // Word-addressed
+      // dut.imem.memory_mode_inst.memory[i] = imem_reg[i];
+      imem_addr = i;
+      imem_di = imem_reg[i];
+      clk_rst.WAIT_CYCLES(1);
+    end
+    clk_rst.WAIT_CYCLES(1);
+    fill_inbox();
+
+    pc_gpgpu_compute = 0;
+    core_enable = {`NUM_CORES{1'b1}};
+    pause_at_halt = 1;
+    dispatch_ctrl = `CORE_CTRL_DISPATCH_INT;
+    num_dispatches = 100;
+    clk_rst.WAIT_CYCLES(1);
+
+    cmd = `CORE_CTRL_CMD_RUN;
+    clk_rst.WAIT_CYCLES(1);
+
+    for (int i = 0; i < 10000000; i++) begin
+      clk_rst.WAIT_CYCLES(1);
+      if (dut.dispatch_done)
+        break;
+    end
+    `FAIL_UNLESS_EQUAL(dut.dispatch_done, 1);
+
+    clk_rst.WAIT_CYCLES(10);
+
+    `FAIL_UNLESS_EQUAL_PRINT(0, core[0].regfile.mem[0]);
+    `FAIL_UNLESS_EQUAL_PRINT(1, core[1].regfile.mem[0]);
+    `FAIL_UNLESS_EQUAL_PRINT(2, core[2].regfile.mem[0]);
+    `FAIL_UNLESS_EQUAL_PRINT(3, core[3].regfile.mem[0]);
+    `FAIL_UNLESS_EQUAL_PRINT(4, core[4].regfile.mem[0]);
+    `FAIL_UNLESS_EQUAL_PRINT(5, core[5].regfile.mem[0]);
   `SVTEST_END
 
   `SVTEST(exec_gpgpu_cores_disabled)
+    // TODO
+  `SVTEST_END
+
+  `SVTEST(exec_raster)
     // TODO
   `SVTEST_END
 
@@ -469,13 +513,14 @@ module core_controller_m_unit_test;
 
   int fd;
   task fill_imem;
+    input string path;
   begin
     // For the sake of this test set unused IMEM to 0. Shouldn't cause any
     // issues
     for (int i = 0; i < 1024; i++)
       imem_reg[i] = 0;
 
-    $readmemh("../../verilog/dv/top_level/src/asm/test_core.hex", imem_reg);
+    $readmemh(path, imem_reg);
     imem_rw = 0;
     for (int i = 0; i < 1024; i++) begin // Word-addressed
       // dut.imem.memory_mode_inst.memory[i] = imem_reg[i];
