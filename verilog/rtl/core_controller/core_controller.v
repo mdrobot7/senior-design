@@ -809,7 +809,7 @@ module core_controller_m #(
       core_reset_o = {`NUM_CORES{1'b1}};
     else
       // Hold disabled and undispatched cores in reset during execution
-      core_reset_o = core_enable_i | dispatch_core_stall;
+      core_reset_o = core_enable_i | ~dispatch_core_stall;
     if (state == STATE_DISPATCHING)
       core_stall_o = dispatch_core_stall;
     else if (state == STATE_PAUSED || core_stall_i)

@@ -181,14 +181,19 @@ module dispatch_m #(
           if (core_idx == `NUM_CORES) begin
             core_stall_o <= {`NUM_CORES{1'b1}};
             core_idx <= 0;
+            dispatch_done_o <= 1;
             state <= STATE_DISPATCH_DONE;
           end
           else if (thread_id == num_dispatches_i - 1) begin
+            core_stall_o <= {`NUM_CORES{1'b1}};
             core_idx <= 0;
+            dispatch_done_o <= 1;
             state <= STATE_MODEL_DONE;
           end
-          else if (!core_enable_i[core_idx])
+          else if (!core_enable_i[core_idx]) begin
+            core_stall_o <= {`NUM_CORES{1'b1}};
             core_idx <= core_idx + 1; // Skip disabled cores
+          end
           else begin
             core_stall_o <= core_stall;
             thread_id_o <= thread_id;

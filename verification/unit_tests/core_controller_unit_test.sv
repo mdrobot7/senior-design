@@ -266,14 +266,20 @@ module core_controller_m_unit_test;
       $display("Fail: expected 0x%x, found 0x%x", exp, found); \
       `FAIL_UNLESS_EQUAL(exp, found); \
     end
-  `define CHECK_REG(local_reg, val) \
+  `define CHECK_REG(local_reg, val, core_en_mask) \
     $display("Checking reg  %d...", local_reg); \
-    `FAIL_UNLESS_EQUAL_PRINT(val, core[0].regfile.mem[local_reg]); \
-    `FAIL_UNLESS_EQUAL_PRINT(val, core[1].regfile.mem[local_reg]); \
-    `FAIL_UNLESS_EQUAL_PRINT(val, core[2].regfile.mem[local_reg]); \
-    `FAIL_UNLESS_EQUAL_PRINT(val, core[3].regfile.mem[local_reg]); \
-    `FAIL_UNLESS_EQUAL_PRINT(val, core[4].regfile.mem[local_reg]); \
-    `FAIL_UNLESS_EQUAL_PRINT(val, core[5].regfile.mem[local_reg]);
+    if (core_en_mask & (1 << 0)) begin `FAIL_UNLESS_EQUAL_PRINT(val, core[0].regfile.mem[local_reg]); end \
+    else                         begin `FAIL_UNLESS_EQUAL_PRINT(0,   core[0].regfile.mem[local_reg]); end \
+    if (core_en_mask & (1 << 1)) begin `FAIL_UNLESS_EQUAL_PRINT(val, core[1].regfile.mem[local_reg]); end \
+    else                         begin `FAIL_UNLESS_EQUAL_PRINT(0,   core[1].regfile.mem[local_reg]); end \
+    if (core_en_mask & (1 << 2)) begin `FAIL_UNLESS_EQUAL_PRINT(val, core[2].regfile.mem[local_reg]); end \
+    else                         begin `FAIL_UNLESS_EQUAL_PRINT(0,   core[2].regfile.mem[local_reg]); end \
+    if (core_en_mask & (1 << 3)) begin `FAIL_UNLESS_EQUAL_PRINT(val, core[3].regfile.mem[local_reg]); end \
+    else                         begin `FAIL_UNLESS_EQUAL_PRINT(0,   core[3].regfile.mem[local_reg]); end \
+    if (core_en_mask & (1 << 4)) begin `FAIL_UNLESS_EQUAL_PRINT(val, core[4].regfile.mem[local_reg]); end \
+    else                         begin `FAIL_UNLESS_EQUAL_PRINT(0,   core[4].regfile.mem[local_reg]); end \
+    if (core_en_mask & (1 << 5)) begin `FAIL_UNLESS_EQUAL_PRINT(val, core[5].regfile.mem[local_reg]); end \
+    else                         begin `FAIL_UNLESS_EQUAL_PRINT(0,   core[5].regfile.mem[local_reg]); end
 
   reg[`WORD_WIDTH-1:0] imem_reg [0:1023];
 
@@ -441,22 +447,22 @@ module core_controller_m_unit_test;
     `FAIL_UNLESS_EQUAL(state, STATE_STOPPED);
     `FAIL_UNLESS_EQUAL(job_done, 1);
 
-    `CHECK_REG( 0, 32'h00000000);
-    `CHECK_REG( 1, 32'hFFFFFFFF);
-    `CHECK_REG( 2, 32'h00000002);
-    `CHECK_REG( 3, 32'hFFFFFFFD);
-    `CHECK_REG( 4, 32'h00000004);
-    `CHECK_REG( 5, 32'hFFFFFFFB);
-    `CHECK_REG( 6, 32'h00000006);
-    `CHECK_REG( 7, 32'h000193E8);
-    `CHECK_REG( 8, 32'h00000A00);
-    `CHECK_REG( 9, 32'h00000007);
+    `CHECK_REG( 0, 32'h00000000, {`NUM_CORES{1'b1}});
+    `CHECK_REG( 1, 32'hFFFFFFFF, {`NUM_CORES{1'b1}});
+    `CHECK_REG( 2, 32'h00000002, {`NUM_CORES{1'b1}});
+    `CHECK_REG( 3, 32'hFFFFFFFD, {`NUM_CORES{1'b1}});
+    `CHECK_REG( 4, 32'h00000004, {`NUM_CORES{1'b1}});
+    `CHECK_REG( 5, 32'hFFFFFFFB, {`NUM_CORES{1'b1}});
+    `CHECK_REG( 6, 32'h00000006, {`NUM_CORES{1'b1}});
+    `CHECK_REG( 7, 32'h000193E8, {`NUM_CORES{1'b1}});
+    `CHECK_REG( 8, 32'h00000A00, {`NUM_CORES{1'b1}});
+    `CHECK_REG( 9, 32'h00000007, {`NUM_CORES{1'b1}});
     // r10: Undefined value in test_core.s
-    `CHECK_REG(11, 32'h000050C8);
-    `CHECK_REG(12, 32'h00000000);
+    `CHECK_REG(11, 32'h000050C8, {`NUM_CORES{1'b1}});
+    `CHECK_REG(12, 32'h00000000, {`NUM_CORES{1'b1}});
     // r13: Undefined value in test_core.s
-    `CHECK_REG(14, 32'h0000000A);
-    `CHECK_REG(15, 32'h0000000A);
+    `CHECK_REG(14, 32'h0000000A, {`NUM_CORES{1'b1}});
+    `CHECK_REG(15, 32'h0000000A, {`NUM_CORES{1'b1}});
   `SVTEST_END
 
   `SVTEST(exec_gpgpu_dispatch)
@@ -502,7 +508,41 @@ module core_controller_m_unit_test;
   `SVTEST_END
 
   `SVTEST(exec_gpgpu_cores_disabled)
-    // TODO
+    clk_rst.WAIT_CYCLES(1);
+    fill_imem("../../verilog/dv/top_level/src/asm/test_core.hex");
+    fill_inbox();
+
+    pc_gpgpu_compute = 0;
+    core_enable = 6'b101010;
+    cmd = `CORE_CTRL_CMD_RUN;
+    pause_at_halt = 1;
+    dispatch_ctrl = `CORE_CTRL_DISPATCH_INT;
+    num_dispatches = 100;
+
+    for (int i = 0; i < 10000000; i++) begin
+      clk_rst.WAIT_CYCLES(1);
+      if (job_done)
+        break;
+    end
+    `FAIL_UNLESS_EQUAL(state, STATE_STOPPED);
+    `FAIL_UNLESS_EQUAL(job_done, 1);
+
+    `CHECK_REG( 0, 32'h00000000, 6'b101010);
+    `CHECK_REG( 1, 32'hFFFFFFFF, 6'b101010);
+    `CHECK_REG( 2, 32'h00000002, 6'b101010);
+    `CHECK_REG( 3, 32'hFFFFFFFD, 6'b101010);
+    `CHECK_REG( 4, 32'h00000004, 6'b101010);
+    `CHECK_REG( 5, 32'hFFFFFFFB, 6'b101010);
+    `CHECK_REG( 6, 32'h00000006, 6'b101010);
+    `CHECK_REG( 7, 32'h000193E8, 6'b101010);
+    `CHECK_REG( 8, 32'h00000A00, 6'b101010);
+    `CHECK_REG( 9, 32'h00000007, 6'b101010);
+    // r10: Undefined value in test_core.s
+    `CHECK_REG(11, 32'h000050C8, 6'b101010);
+    `CHECK_REG(12, 32'h00000000, 6'b101010);
+    // r13: Undefined value in test_core.s
+    `CHECK_REG(14, 32'h0000000A, 6'b101010);
+    `CHECK_REG(15, 32'h0000000A, 6'b101010);
   `SVTEST_END
 
   `SVTEST(exec_raster)
