@@ -10,6 +10,7 @@ module fragment_fifo_m #(
 ) (
     input  wire                         clk_i,
     input  wire                         nrst_i,
+    input  wire                         clear_i,
 
     //Slave to rasterizer
     input  wire [`STREAM_SIPORT(SIZE)] sstream_i,
@@ -73,22 +74,24 @@ end
 // Assign mstream_o VALID bit for selected core
 integer j;
 always @(*) begin
-    // Assign all outputs from internal FIFO default 
-    for (j = 0; j < `NUM_CORES; j = j + 1) begin
-        mstream_o[j * MO_Size +: MO_Size] = internal_mstream_o;
-    end
+    if(!clear_i) begin
+        // Assign all outputs from internal FIFO default 
+        for (j = 0; j < `NUM_CORES; j = j + 1) begin
+            mstream_o[j * MO_Size +: MO_Size] = internal_mstream_o;
+        end
 
-    // Override only  valid bit for selected core
-    for (j = 0; j < `NUM_CORES; j = j + 1) begin
-        if (sel_i[j] && fifo_has_data && internal_mstream_o[`STREAM_MO_VALID(SIZE)])
-            mstream_o[j * MO_Size + `STREAM_MO_VALID(SIZE)] = 1'b1;
-        else
-            mstream_o[j * MO_Size + `STREAM_MO_VALID(SIZE)] = 1'b0;
+        // Override only  valid bit for selected core
+        for (j = 0; j < `NUM_CORES; j = j + 1) begin
+            if (sel_i[j] && fifo_has_data && internal_mstream_o[`STREAM_MO_VALID(SIZE)])
+                mstream_o[j * MO_Size + `STREAM_MO_VALID(SIZE)] = 1'b1;
+            else
+                mstream_o[j * MO_Size + `STREAM_MO_VALID(SIZE)] = 1'b0;
+        end
     end
 end
 
 // FIFO pops when the currently selected core is READY.
-assign internal_mstream_i[`STREAM_MI_READY(SIZE)] = cur_core_ready;
+assign internal_mstream_i[`STREAM_MI_READY(SIZE)] = cur_core_ready || clear_i;
 
 // Assign MC status bits
 always @(*) begin

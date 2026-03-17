@@ -25,6 +25,8 @@ module fragment_fifo_m_unit_test;
   reg  [`STREAM_SIPORT(SIZE)] sstream_i;
   wire [`STREAM_SOPORT(SIZE)] sstream_o;
 
+  reg clear_i;
+
   // Packed master streams for NUM_CORES cores
   reg  [MI_Size*`NUM_CORES-1:0] mstream_i;
   wire [MO_Size*`NUM_CORES-1:0] mstream_o;
@@ -40,6 +42,7 @@ module fragment_fifo_m_unit_test;
   fragment_fifo_m #(.SIZE(SIZE), .DEPTH(DEPTH)) my_fragment_fifo_m(
     .clk_i(clk),
     .nrst_i(nrst),
+    .clear_i(clear_i),
     .sstream_i(sstream_i),
     .sstream_o(sstream_o),
     .mstream_i(mstream_i),
@@ -111,6 +114,8 @@ module fragment_fifo_m_unit_test;
 
   `SVTEST(mc_flags)
     integer n;
+    clear_i = 1'b0;
+
     `FAIL_UNLESS(empty == 1'b1)
     `FAIL_UNLESS(full == 1'b0)
 
@@ -129,6 +134,7 @@ module fragment_fifo_m_unit_test;
   `SVTEST(round_robin_all_cores)
       integer n, i, j;
       reg [`NUM_CORES-1:0] seen_valid;
+      clear_i = 1'b0;
 
       // Load FIFO with data
       for (n = 0; n < DEPTH; n = n + 1) begin
@@ -165,6 +171,32 @@ module fragment_fifo_m_unit_test;
 
     `SVTEST_END
 
+    `SVTEST(clear_fifo)
+    integer n;
+    clear_i = 1'b0;
+    `FAIL_UNLESS(empty == 1'b1)
+    `FAIL_UNLESS(full == 1'b0)
+
+      // Load FIFO with data
+      for (n = 0; n < DEPTH; n = n + 1) begin
+        fake_raster.WRITE_LAST(n);
+        clk_rst.WAIT_CYCLES(1);
+        `FAIL_UNLESS(empty == 1'b0)
+        if(n!=DEPTH-1) begin
+        `FAIL_UNLESS(full == 1'b0)
+        end
+      end
+      `FAIL_UNLESS(full == 1'b1)
+      clear_i <= 1'b1;
+      //For sanity set a core to ready and make sure it never receives the data as we're clearing
+      mstream_i[`STREAM_MI_READY(SIZE)] = 1'b1;
+      while(!empty) begin
+        `FAIL_UNLESS(mstream_o[`STREAM_MO_VALID(SIZE)] == 1'b0)
+        clk_rst.WAIT_CYCLES(1);
+      end
+      clear_i = 1'b0;
+      `FAIL_UNLESS(empty == 1'b1)
+    `SVTEST_END
 
 
   `SVUNIT_TESTS_END
