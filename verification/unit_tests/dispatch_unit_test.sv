@@ -71,6 +71,7 @@ module dispatch_m_unit_test;
     .mstream_i(32'b0),
     .mstream_o(),
 
+    .clear_i(1'b0),
     .full_o(),
     .empty_o(vertorder_empty)
   );
@@ -345,8 +346,10 @@ module dispatch_m_unit_test;
           break;
         end
 
-        core_idx = $clog2(~core_stall);
-        tids[core_idx] = thread_id;
+        if (core_stall != {`NUM_CORES{1'b1}}) begin
+          core_idx = $clog2(~core_stall);
+          tids[core_idx] = thread_id;
+        end
       end
 
       for (int i = 0; i < `NUM_CORES; i++) begin
