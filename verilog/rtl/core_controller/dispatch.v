@@ -180,13 +180,11 @@ module dispatch_m #(
           // Fill in $tid with increasing numbers
           if (core_idx == `NUM_CORES) begin
             core_stall_o <= {`NUM_CORES{1'b1}};
-            core_idx <= 0;
             dispatch_done_o <= 1;
             state <= STATE_DISPATCH_DONE;
           end
-          else if (thread_id == num_dispatches_i - 1) begin
+          else if (thread_id == num_dispatches_i) begin
             core_stall_o <= {`NUM_CORES{1'b1}};
-            core_idx <= 0;
             dispatch_done_o <= 1;
             state <= STATE_MODEL_DONE;
           end
@@ -206,6 +204,7 @@ module dispatch_m #(
           dispatch_done_o <= 1;
           if (!enable_i) begin
             dispatch_done_o <= 0;
+            core_idx <= 0;
             state <= STATE_DISABLED;
           end
         end
@@ -215,6 +214,7 @@ module dispatch_m #(
           if (reset_dispatch_i && !enable_i) begin
             dispatch_done_o <= 0;
             thread_id <= 0;
+            core_idx <= 0;
             state <= STATE_DISABLED;
           end
         end

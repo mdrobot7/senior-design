@@ -675,6 +675,7 @@ module core_controller_m #(
 
   wire is_rasterization = (dispatch_ctrl_i == `CORE_CTRL_DISPATCH_INDEX);
   wire should_dispatch  = (dispatch_ctrl_i != `CORE_CTRL_DISPATCH_DISABLE && next_prog != STATE_FRAGMENT_SHADING);
+  reg  dispatched;
 
   always @(posedge clk_i, negedge nrst_i) begin
     if (!nrst_i) begin : RESET
@@ -690,6 +691,7 @@ module core_controller_m #(
       cur_prog      <= STATE_STOPPED;
       state         <= STATE_STOPPED;
       step_handled  <= 0;
+      dispatched    <= 0;
     end
     else if (clk_i) begin
       if (job_done_clr_i)
@@ -710,10 +712,13 @@ module core_controller_m #(
 
             if (should_dispatch) begin
               dispatch_enable <= 1;
+              dispatched <= 1;
               state <= STATE_DISPATCHING;
             end
-            else
+            else begin
+              dispatched <= 0;
               state <= STATE_DISPATCH_DELAY;
+            end
           end
         end
         STATE_DISPATCH_DELAY: begin
@@ -781,8 +786,10 @@ module core_controller_m #(
           cur_prog <= next_prog;
           if (pause_at_halt_i || next_prog == STATE_STOPPED)
             state <= STATE_STOPPED;
-          else if (should_dispatch)
+          else if (should_dispatch) begin
+            dispatch_enable <= 1;
             state <= STATE_DISPATCHING;
+          end
           else begin
             instfetch_enable <= 1;
             state <= next_prog;
@@ -807,9 +814,14 @@ module core_controller_m #(
     // Core control signals
     if (state == STATE_STOPPED)
       core_reset_o = {`NUM_CORES{1'b1}};
+    else if (state == STATE_DISPATCHING)
+      core_reset_o = core_enable_i;
+    else if (!dispatched)
+      // If the dispatcher isn't used, ignore it
+      core_reset_o = core_enable_i;
     else
       // Hold disabled and undispatched cores in reset during execution
-      core_reset_o = core_enable_i | ~dispatch_core_stall;
+      core_reset_o = core_enable_i & ~dispatch_core_stall;
     if (state == STATE_DISPATCHING)
       core_stall_o = dispatch_core_stall;
     else if (state == STATE_PAUSED || core_stall_i)

@@ -429,7 +429,7 @@ module core_controller_m_unit_test;
 
   `SVTEST(exec_gpgpu)
     clk_rst.WAIT_CYCLES(1);
-    fill_imem("../../verilog/dv/top_level/src/asm/test_core.hex");
+    fill_imem("../../verilog/dv/top_level/src/asm/test_core.hex", 0);
     fill_inbox();
 
     pc_gpgpu_compute = 0;
@@ -509,7 +509,7 @@ module core_controller_m_unit_test;
 
   `SVTEST(exec_gpgpu_cores_disabled)
     clk_rst.WAIT_CYCLES(1);
-    fill_imem("../../verilog/dv/top_level/src/asm/test_core.hex");
+    fill_imem("../../verilog/dv/top_level/src/asm/test_core.hex", 0);
     fill_inbox();
 
     pc_gpgpu_compute = 0;
@@ -545,6 +545,89 @@ module core_controller_m_unit_test;
     `CHECK_REG(15, 32'h0000000A, 6'b101010);
   `SVTEST_END
 
+  `SVTEST(exec_gpgpu_completion)
+    clk_rst.WAIT_CYCLES(1);
+    fill_imem("../../verilog/dv/top_level/src/asm/test_core.hex", 0);
+    fill_inbox();
+
+    pc_gpgpu_compute = 0;
+    core_enable = 6'b101010;
+    cmd = `CORE_CTRL_CMD_RUN;
+    pause_at_halt = 0;
+    dispatch_ctrl = `CORE_CTRL_DISPATCH_INT;
+    num_dispatches = 11;
+
+    for (int run = 0; run < 3; run++) begin
+      for (int i = 0; i < 10000000; i++) begin
+        clk_rst.WAIT_CYCLES(1);
+        if (job_done)
+          break;
+      end
+      `FAIL_UNLESS_EQUAL(state, STATE_DISPATCHING);
+      `FAIL_UNLESS_EQUAL(job_done, 1);
+      job_done_clr <= 1;
+      clk_rst.WAIT_CYCLES(1);
+      job_done_clr <= 0;
+      `FAIL_UNLESS_EQUAL(job_done, 0);
+
+      $display("Checking run %d...", run);
+      `CHECK_REG( 0, 32'h00000000, 6'b101010);
+      `CHECK_REG( 1, 32'hFFFFFFFF, 6'b101010);
+      `CHECK_REG( 2, 32'h00000002, 6'b101010);
+      `CHECK_REG( 3, 32'hFFFFFFFD, 6'b101010);
+      `CHECK_REG( 4, 32'h00000004, 6'b101010);
+      `CHECK_REG( 5, 32'hFFFFFFFB, 6'b101010);
+      `CHECK_REG( 6, 32'h00000006, 6'b101010);
+      `CHECK_REG( 7, 32'h000193E8, 6'b101010);
+      `CHECK_REG( 8, 32'h00000A00, 6'b101010);
+      `CHECK_REG( 9, 32'h00000007, 6'b101010);
+      // r10: Undefined value in test_core.s
+      `CHECK_REG(11, 32'h000050C8, 6'b101010);
+      `CHECK_REG(12, 32'h00000000, 6'b101010);
+      // r13: Undefined value in test_core.s
+      `CHECK_REG(14, 32'h0000000A, 6'b101010);
+      `CHECK_REG(15, 32'h0000000A, 6'b101010);
+    end
+
+    for (int i = 0; i < 10000000; i++) begin
+      clk_rst.WAIT_CYCLES(1);
+      if (job_done)
+        break;
+    end
+    cmd = `CORE_CTRL_CMD_STOP;
+    `FAIL_UNLESS_EQUAL(state, STATE_STOPPED);
+    `FAIL_UNLESS_EQUAL(job_done, 1);
+    job_done_clr <= 1;
+    clk_rst.WAIT_CYCLES(1);
+    job_done_clr <= 0;
+    `FAIL_UNLESS_EQUAL(job_done, 0);
+    `FAIL_UNLESS_EQUAL(batch_done, 1);
+    batch_done_clr <= 1;
+    clk_rst.WAIT_CYCLES(1);
+    batch_done_clr <= 0;
+    `FAIL_UNLESS_EQUAL(batch_done, 0);
+
+    $display("Checking final run, expecting core to be stopped...");
+    // Core 5 won't execute code, but the regfile will stay the same
+    // because soft reset doesn't clear the regfile. Check it I guess
+    `CHECK_REG( 0, 32'h00000000, 6'b101010);
+    `CHECK_REG( 1, 32'hFFFFFFFF, 6'b101010);
+    `CHECK_REG( 2, 32'h00000002, 6'b101010);
+    `CHECK_REG( 3, 32'hFFFFFFFD, 6'b101010);
+    `CHECK_REG( 4, 32'h00000004, 6'b101010);
+    `CHECK_REG( 5, 32'hFFFFFFFB, 6'b101010);
+    `CHECK_REG( 6, 32'h00000006, 6'b101010);
+    `CHECK_REG( 7, 32'h000193E8, 6'b101010);
+    `CHECK_REG( 8, 32'h00000A00, 6'b101010);
+    `CHECK_REG( 9, 32'h00000007, 6'b101010);
+    // r10: Undefined value in test_core.s
+    `CHECK_REG(11, 32'h000050C8, 6'b101010);
+    `CHECK_REG(12, 32'h00000000, 6'b101010);
+    // r13: Undefined value in test_core.s
+    `CHECK_REG(14, 32'h0000000A, 6'b101010);
+    `CHECK_REG(15, 32'h0000000A, 6'b101010);
+  `SVTEST_END
+
   `SVTEST(exec_raster)
     // TODO
   `SVTEST_END
@@ -554,6 +637,7 @@ module core_controller_m_unit_test;
   int fd;
   task fill_imem;
     input string path;
+    input integer offset;
   begin
     // For the sake of this test set unused IMEM to 0. Shouldn't cause any
     // issues
@@ -564,7 +648,7 @@ module core_controller_m_unit_test;
     imem_rw = 0;
     for (int i = 0; i < 1024; i++) begin // Word-addressed
       // dut.imem.memory_mode_inst.memory[i] = imem_reg[i];
-      imem_addr = i;
+      imem_addr = i + offset;
       imem_di = imem_reg[i];
       clk_rst.WAIT_CYCLES(1);
     end
