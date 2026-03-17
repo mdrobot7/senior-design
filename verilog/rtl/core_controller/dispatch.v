@@ -30,8 +30,10 @@ module dispatch_m #(
   input wire                                    vertorder_full_i,
 
   // Index fetcher
-  input wire [`WORD] index_buffer_addr_i,
-  input wire         index_fetch_enable_i,
+  input  wire [`WORD] index_buffer_addr_i,
+  input  wire         index_fetch_enable_i,
+  input  wire         index_fetch_clear_i,
+  output wire        index_fetch_clear_done_o,
 
   input wire                  reset_dispatch_i,   // Reset dispatch counter and state machine
   input wire                  enable_i,           // Start dispatching, stop when all cores OR vertex order buf is full
@@ -83,6 +85,8 @@ module dispatch_m #(
     .num_dispatches_i(num_dispatches_i),
     .model_done_clr_i(reset_dispatch_i),
     .model_done_o(index_fetch_model_done),
+    .clear_i(index_fetch_clear_i),
+    .clear_done_o(index_fetch_clear_done_o),
 
     .mstream_i(index_fetch_mstreami),
     .mstream_o(index_fetch_mstreamo)

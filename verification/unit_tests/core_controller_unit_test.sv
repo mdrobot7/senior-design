@@ -92,8 +92,9 @@ module core_controller_m_unit_test;
 
   wire [`STREAM_SIPORT(`VERTEX_ORDER_WIDTH)] vertorder_sstreami;
   wire [`STREAM_SOPORT(`VERTEX_ORDER_WIDTH)] vertorder_sstreamo;
-  wire                               vertorder_full;
-  wire                               vertorder_empty;
+  wire                                       vertorder_clear;
+  wire                                       vertorder_full;
+  wire                                       vertorder_empty;
   vertex_order_buffer_m #(
     .ENTRIES(16),
     .INDEX_WIDTH(`VERTEX_ORDER_WIDTH)
@@ -106,10 +107,12 @@ module core_controller_m_unit_test;
     .mstream_i(1'b0),
     .mstream_o(),
 
+    .clear_i(vertorder_clear),
     .full_o(vertorder_full),
     .empty_o(vertorder_empty)
   );
 
+  wire                  vertcache_clear;
   wire [`WORD]          vertcache_test_index;
   wire                  vertcache_test_valid;
   wire                  vertcache_test_found;
@@ -122,7 +125,7 @@ module core_controller_m_unit_test;
     .clk_i(clk),
     .nrst_i(nrst),
 
-    .clear_i(1'b0),
+    .clear_i(vertcache_clear),
 
     .test_index_i(vertcache_test_index),
     .test_valid_i(vertcache_test_valid),
@@ -148,7 +151,10 @@ module core_controller_m_unit_test;
   reg  [`SRAM_1024x32_ADDR_WIDTH-1:0] pc_fragment_shading;
   reg  [`SRAM_1024x32_ADDR_WIDTH-1:0] pc_gpgpu_compute;
   reg                                 fragfifo_full;
+  wire                                fragfifo_empty;
   reg  [`NUM_CORES_WIDTH-1:0]         fragfifo_cores_dispatched;
+  wire                                fragfifo_clear;
+  wire                                rast_busy;
   reg  [`NUM_CORES-1:0]               core_enable;
   reg  [1:0]                          cmd;
   reg                                 cmd_written;
@@ -196,14 +202,20 @@ module core_controller_m_unit_test;
     .vertcache_test_index_o(vertcache_test_index),
     .vertcache_test_valid_o(vertcache_test_valid),
     .vertcache_test_found_i(vertcache_test_found),
+    .vertcache_clear_o(vertcache_clear),
 
     .vertorder_sstreamo_i(vertorder_sstreamo),
     .vertorder_sstreami_o(vertorder_sstreami),
     .vertorder_full_i(vertorder_full),
     .vertorder_empty_i(vertorder_empty),
+    .vertorder_clear_o(vertorder_clear),
 
     .fragfifo_full_i(fragfifo_full),
+    .fragfifo_empty_i(fragfifo_empty),
     .fragfifo_cores_dispatched_i(fragfifo_cores_dispatched),
+    .fragfifo_clear_o(fragfifo_clear),
+
+    .rast_busy_i(rast_busy),
 
     .core_enable_i(core_enable),
     .cmd_i(cmd),

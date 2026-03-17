@@ -38,16 +38,23 @@ module core_controller_wrapper_m #(
   output wire [`WORD] vertcache_test_index_o,
   output wire         vertcache_test_valid_o,
   input  wire         vertcache_test_found_i,
+  output wire         vertcache_clear_o,
 
   // Vertex order buffer
   input  wire [`STREAM_SOPORT(`VERTEX_ORDER_WIDTH)] vertorder_sstreamo_i,
   output wire [`STREAM_SIPORT(`VERTEX_ORDER_WIDTH)] vertorder_sstreami_o,
   input  wire                                    vertorder_full_i,
   input  wire                                    vertorder_empty_i,
+  output wire                                    vertorder_clear_o,
 
   // Rasterizer fragment output FIFO
-  input wire                        fragfifo_full_i,
-  input wire [`NUM_CORES_WIDTH-1:0] fragfifo_cores_dispatched_i, // Number of cores with a fragment in their inbox
+  input  wire                        fragfifo_full_i,
+  input  wire                        fragfifo_empty_i,
+  input  wire [`NUM_CORES_WIDTH-1:0] fragfifo_cores_dispatched_i, // Number of cores with a fragment in their inbox
+  output wire                        fragfifo_clear_o,
+
+  // Rasterizer
+  input wire rast_busy_i,
 
   // Shader core interface
   output wire [`WORD]           inst_o,
@@ -122,14 +129,20 @@ module core_controller_wrapper_m #(
     .vertcache_test_index_o(vertcache_test_index_o),
     .vertcache_test_valid_o(vertcache_test_valid_o),
     .vertcache_test_found_i(vertcache_test_found_i),
+    .vertcache_clear_o(vertcache_clear_o),
 
     .vertorder_sstreamo_i(vertorder_sstreamo_i),
     .vertorder_sstreami_o(vertorder_sstreami_o),
     .vertorder_full_i(vertorder_full_i),
     .vertorder_empty_i(vertorder_empty_i),
+    .vertorder_clear_o(vertorder_clear_o),
 
     .fragfifo_full_i(fragfifo_full_i),
+    .fragfifo_empty_i(fragfifo_empty_i),
     .fragfifo_cores_dispatched_i(fragfifo_cores_dispatched_i),
+    .fragfifo_clear_o(fragfifo_clear_o),
+
+    .rast_busy_i(rast_busy_i),
 
     .core_enable_i(core_enable),
     .cmd_i(cmd),
@@ -158,7 +171,7 @@ module core_controller_wrapper_m #(
 
   wire [`WORD] ctrl_reg;
   assign {pause_at_halt, dispatch_ctrl, cmd} = ctrl_reg[3:0];
-  always @(posedge wb_clk_i, posedge wb_rst_i) begin
+  always @(posedge wb_clk_i, posedge wb_rst_i) begin : CTRL_REG
     reg prev_wbs_stbN0;
     if (wb_rst_i) begin
       cmd_written <= 0;
@@ -535,16 +548,23 @@ module core_controller_m #(
   output wire [`WORD] vertcache_test_index_o,
   output wire         vertcache_test_valid_o,
   input  wire         vertcache_test_found_i,
+  output wire         vertcache_clear_o,
 
   // Vertex order buffer
   input  wire [`STREAM_SOPORT(`VERTEX_ORDER_WIDTH)] vertorder_sstreamo_i,
   output wire [`STREAM_SIPORT(`VERTEX_ORDER_WIDTH)] vertorder_sstreami_o,
   input  wire                                    vertorder_full_i,
   input  wire                                    vertorder_empty_i,
+  output wire                                    vertorder_clear_o,
 
   // Rasterizer fragment output FIFO
-  input wire                        fragfifo_full_i,
-  input wire [`NUM_CORES_WIDTH-1:0] fragfifo_cores_dispatched_i, // Number of cores with a fragment in their inbox
+  input  wire                        fragfifo_full_i,
+  input  wire                        fragfifo_empty_i,
+  input  wire [`NUM_CORES_WIDTH-1:0] fragfifo_cores_dispatched_i, // Number of cores with a fragment in their inbox
+  output wire                        fragfifo_clear_o,
+
+  // Rasterizer
+  input wire rast_busy_i,
 
   // Config/control
   input  wire [`NUM_CORES-1:0] core_enable_i,
@@ -581,20 +601,23 @@ module core_controller_m #(
   localparam STATE_GPGPU_COMPUTE    = 5;
   localparam STATE_PAUSED           = 6; // Manual pause by management core or step-through
   localparam STATE_DONE             = 7;
+  localparam STATE_STOPPING         = 8;
 
-  reg [2:0] state;
+  reg [3:0] state;
 
   // Cur/next programs (vertex shade, fragment shade, gpgpu compute)
-  reg [2:0] cur_prog;
-  reg [2:0] next_prog;
+  reg [3:0] cur_prog;
+  reg [3:0] next_prog;
 
   reg step_handled;
 
   // Dispatch
-  wire         dispatch_index_fetch_enable = (state != STATE_STOPPED);
-  wire         dispatch_reset              = (state == STATE_STOPPED);
+  wire         dispatch_index_fetch_enable     = (state != STATE_STOPPED);
+  wire         dispatch_index_fetch_clear      = (state == STATE_STOPPING);
+  wire         dispatch_index_fetch_clear_done;
+  wire         dispatch_reset                  = (state == STATE_STOPPED);
   reg          dispatch_enable;
-  wire         dispatch_indices            = (dispatch_ctrl_i == `CORE_CTRL_DISPATCH_INDEX);
+  wire         dispatch_indices                = (dispatch_ctrl_i == `CORE_CTRL_DISPATCH_INDEX);
   wire [`WORD] dispatch_thread_id;
   wire [`WORD] dispatch_inst;
   wire [`NUM_CORES-1:0] dispatch_core_stall;
@@ -619,6 +642,8 @@ module core_controller_m #(
 
     .index_buffer_addr_i(index_buffer_addr_i),
     .index_fetch_enable_i(dispatch_index_fetch_enable),
+    .index_fetch_clear_i(dispatch_index_fetch_clear),
+    .index_fetch_clear_done_o(dispatch_index_fetch_clear_done),
 
     .reset_dispatch_i(dispatch_reset),
     .enable_i(dispatch_enable),
@@ -671,6 +696,9 @@ module core_controller_m #(
     .global_regfile_rs2_data_o(global_regfile_rs2_data_o)
   );
 
+  assign vertcache_clear_o = (state == STATE_STOPPED);
+  assign vertorder_clear_o = (state == STATE_STOPPING);
+  assign fragfifo_clear_o  = (state == STATE_STOPPING);
   assign state_o  = state;
 
   wire is_rasterization = (dispatch_ctrl_i == `CORE_CTRL_DISPATCH_INDEX);
@@ -731,7 +759,7 @@ module core_controller_m #(
 
           if (cmd_i == `CORE_CTRL_CMD_STOP) begin
             dispatch_enable <= 0;
-            state <= STATE_STOPPED;
+            state <= STATE_STOPPING;
           end
           else if (dispatch_done) begin
             dispatch_enable <= 0;
@@ -743,11 +771,12 @@ module core_controller_m #(
           instfetch_enable <= 0;
           case (cmd_i)
             `CORE_CTRL_CMD_STOP:
-              state <= STATE_STOPPED;
+              state <= STATE_STOPPING;
             `CORE_CTRL_CMD_PAUSE:
               state <= STATE_PAUSED;
             `CORE_CTRL_CMD_RUN: begin
-              if (instfetch_prog_done) begin
+              if (instfetch_prog_done || (state == STATE_VERTEX_SHADING && fragfifo_full_i)) begin
+                // Deadlock protection: if fragfifo fills up, immediately swap to frag shading
                 instfetch_reset_prog <= 1;
                 state <= STATE_DONE;
               end
@@ -773,7 +802,7 @@ module core_controller_m #(
               end
             end
             `CORE_CTRL_CMD_STOP:
-              state <= STATE_STOPPED;
+              state <= STATE_STOPPING;
           endcase
         end
         STATE_DONE: begin
@@ -785,7 +814,7 @@ module core_controller_m #(
 
           cur_prog <= next_prog;
           if (pause_at_halt_i || next_prog == STATE_STOPPED)
-            state <= STATE_STOPPED;
+            state <= STATE_STOPPING;
           else if (should_dispatch) begin
             dispatch_enable <= 1;
             state <= STATE_DISPATCHING;
@@ -796,6 +825,10 @@ module core_controller_m #(
           end
 
           if (cmd_i == `CORE_CTRL_CMD_STOP)
+            state <= STATE_STOPPING;
+        end
+        STATE_STOPPING: begin
+          if (!rast_busy_i && dispatch_index_fetch_clear_done && vertorder_empty_i && fragfifo_empty_i)
             state <= STATE_STOPPED;
         end
       endcase
@@ -848,7 +881,7 @@ module core_controller_m #(
     else if (cur_prog == STATE_FRAGMENT_SHADING) begin
       if ((!fragfifo_cores_dispatched_i || vertorder_empty_i) && !dispatch_model_done)
         next_prog = STATE_VERTEX_SHADING;
-      else if (fragfifo_cores_dispatched_i && dispatch_model_done)
+      else if (fragfifo_cores_dispatched_i)
         next_prog = STATE_FRAGMENT_SHADING;
       else
         next_prog = STATE_STOPPED;
