@@ -21,9 +21,9 @@ module fragment_fifo_m #(
     output reg  [`STREAM_MOPORT_SIZE(SIZE) * `NUM_CORES - 1:0] mstream_o,
 
     // Status for MC
-    output reg                          empty,
-    output reg                          full,
-    output reg                          done_mailing
+    output reg                          empty_o,
+    output reg                          full_o,
+    output reg                          done_mailing_o
 
 
 );
@@ -95,9 +95,9 @@ assign internal_mstream_i[`STREAM_MI_READY(SIZE)] = cur_core_ready || clear_i;
 
 // Assign MC status bits
 always @(*) begin
-    full = ~sstream_o[`STREAM_SO_READY(SIZE)];
-    empty = ~fifo_has_data;
-    done_mailing = sel_i[0];
+    full_o = ~sstream_o[`STREAM_SO_READY(SIZE)];
+    empty_o = ~fifo_has_data;
+    done_mailing_o = sel_i[0];
 end
     
 

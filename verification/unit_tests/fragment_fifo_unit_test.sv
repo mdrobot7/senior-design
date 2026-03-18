@@ -31,9 +31,9 @@ module fragment_fifo_m_unit_test;
   reg  [MI_Size*`NUM_CORES-1:0] mstream_i;
   wire [MO_Size*`NUM_CORES-1:0] mstream_o;
 
-  wire empty;
-  wire full;
-  wire done_mailing;
+  wire empty_o;
+  wire full_o;
+  wire done_mailing_o;
 
   //===================================
   // This is the UUT that we're 
@@ -47,9 +47,9 @@ module fragment_fifo_m_unit_test;
     .sstream_o(sstream_o),
     .mstream_i(mstream_i),
     .mstream_o(mstream_o),
-    .empty(empty),
-    .full(full),
-    .done_mailing(done_mailing)
+    .empty_o(empty_o),
+    .full_o(full_o),
+    .done_mailing_o(done_mailing_o)
   );
 
   stream_master_m #(SIZE) fake_raster (
@@ -116,19 +116,19 @@ module fragment_fifo_m_unit_test;
     integer n;
     clear_i = 1'b0;
 
-    `FAIL_UNLESS(empty == 1'b1)
-    `FAIL_UNLESS(full == 1'b0)
+    `FAIL_UNLESS(empty_o == 1'b1)
+    `FAIL_UNLESS(full_o == 1'b0)
 
       // Load FIFO with data
       for (n = 0; n < DEPTH; n = n + 1) begin
         fake_raster.WRITE_LAST(n);
         clk_rst.WAIT_CYCLES(1);
-        `FAIL_UNLESS(empty == 1'b0)
+        `FAIL_UNLESS(empty_o == 1'b0)
         if(n!=DEPTH-1) begin
-        `FAIL_UNLESS(full == 1'b0)
+        `FAIL_UNLESS(full_o == 1'b0)
         end
       end
-      `FAIL_UNLESS(full == 1'b1)
+      `FAIL_UNLESS(full_o == 1'b1)
     `SVTEST_END
 
   `SVTEST(round_robin_all_cores)
@@ -174,28 +174,28 @@ module fragment_fifo_m_unit_test;
     `SVTEST(clear_fifo)
     integer n;
     clear_i = 1'b0;
-    `FAIL_UNLESS(empty == 1'b1)
-    `FAIL_UNLESS(full == 1'b0)
+    `FAIL_UNLESS(empty_o == 1'b1)
+    `FAIL_UNLESS(full_o == 1'b0)
 
       // Load FIFO with data
       for (n = 0; n < DEPTH; n = n + 1) begin
         fake_raster.WRITE_LAST(n);
         clk_rst.WAIT_CYCLES(1);
-        `FAIL_UNLESS(empty == 1'b0)
+        `FAIL_UNLESS(empty_o == 1'b0)
         if(n!=DEPTH-1) begin
-        `FAIL_UNLESS(full == 1'b0)
+        `FAIL_UNLESS(full_o == 1'b0)
         end
       end
-      `FAIL_UNLESS(full == 1'b1)
+      `FAIL_UNLESS(full_o == 1'b1)
       clear_i <= 1'b1;
       //For sanity set a core to ready and make sure it never receives the data as we're clearing
       mstream_i[`STREAM_MI_READY(SIZE)] = 1'b1;
-      while(!empty) begin
+      while(!empty_o) begin
         `FAIL_UNLESS(mstream_o[`STREAM_MO_VALID(SIZE)] == 1'b0)
         clk_rst.WAIT_CYCLES(1);
       end
       clear_i = 1'b0;
-      `FAIL_UNLESS(empty == 1'b1)
+      `FAIL_UNLESS(empty_o == 1'b1)
     `SVTEST_END
 
 
