@@ -134,6 +134,8 @@ module dispatch_m_unit_test;
 
     .index_buffer_addr_i(index_buffer_addr),
     .index_fetch_enable_i(index_fetch_enable),
+    .index_fetch_clear_i(1'b0),
+    .index_fetch_clear_done_o(),
 
     .reset_dispatch_i(reset_dispatch),
     .enable_i(enable),

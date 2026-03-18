@@ -29,7 +29,7 @@ module index_fetch_m #(
   input  wire         model_done_clr_i,    // 1: Clear model done flag
   output  reg         model_done_o,        // 1: Fetched all indices in this model
   input  wire         clear_i,             // 1: Clear index cache. enable_i must be 0 and output stream must be inactive.
-  output wire        clear_done_o,        // 1: Index cache cleared.
+  output wire         clear_done_o,        // 1: Index cache cleared.
 
   // Index output stream
   input  wire [`STREAM_MIPORT(`WORD_WIDTH)] mstream_i,
@@ -47,7 +47,7 @@ module index_fetch_m #(
   wire [`STREAM_MIPORT(`WORD_WIDTH)] fifo_mstreami;
   wire [`STREAM_MOPORT(`WORD_WIDTH)] fifo_mstreamo;
   wire                               fifo_full  = !sstreamo[`STREAM_SO_READY(`WORD_WIDTH)];
-  wire                               fifo_empty = !mstream_o[`STREAM_MO_VALID(`WORD_WIDTH)];
+  wire                               fifo_empty = !fifo_mstreamo[`STREAM_MO_VALID(`WORD_WIDTH)];
   stream_fifo_m #(
       `WORD_WIDTH,
       CACHE_LEN_WORDS
