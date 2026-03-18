@@ -169,6 +169,7 @@ module core_m_unit_test;
     flush_dec_stage = 0;
     nsync_rst = 1;
     outbox <= 0;
+    inst = 32'h04000000; // nop
     clk_rst.RESET();
     clk_rst.WAIT_CYCLES(3);
   endtask

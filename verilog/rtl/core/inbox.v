@@ -36,7 +36,6 @@ module inbox_m (
                 inbox[i] = 0;
 
             counter <= 0;
-            stall_o <= 0;
         end
         else if (clk_i) begin : CLOCK
             integer i;
@@ -46,7 +45,6 @@ module inbox_m (
                     inbox[i] = 0;
 
                 counter <= 0;
-                stall_o <= 0;
             end
             else begin
                 if(ready && inbox_sstream_i[`STREAM_SI_VALID(`MAILBOX_STREAM_SIZE)]) begin

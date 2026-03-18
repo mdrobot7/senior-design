@@ -33,7 +33,6 @@ module outbox_m (
             for( i = 0; i < `MAILBOX_STREAM_CYCLES; i = i + 1)
                 outbox[i] = 0;
 
-            stall_o <= 0;
             counter <= `MAILBOX_STREAM_CYCLES;
         end
         else if (clk_i) begin : CLOCK
@@ -43,7 +42,6 @@ module outbox_m (
                 for( i = 0; i < `MAILBOX_STREAM_CYCLES; i = i + 1)
                     outbox[i] = 0;
 
-                stall_o <= 0;
                 counter <= `MAILBOX_STREAM_CYCLES;
             end
             else begin
