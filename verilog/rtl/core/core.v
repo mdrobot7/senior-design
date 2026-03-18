@@ -31,11 +31,11 @@ module core_m(
     output reg stall_o,
     input  wire nsync_rst_i,
 
-    input  wire[`STREAM_SIPORT(`MAILBOX_STREAM_SIZE)] inbox_sstream_i,
-    output reg[`STREAM_SOPORT(`MAILBOX_STREAM_SIZE)] inbox_sstream_o,
+    input  wire [`STREAM_SIPORT(`MAILBOX_STREAM_SIZE)] inbox_sstream_i,
+    output wire [`STREAM_SOPORT(`MAILBOX_STREAM_SIZE)] inbox_sstream_o,
 
-    input  wire[`STREAM_MIPORT(`MAILBOX_STREAM_SIZE)] outbox_mstream_i,
-    output reg[`STREAM_MOPORT(`MAILBOX_STREAM_SIZE)] outbox_mstream_o,
+    input  wire [`STREAM_MIPORT(`MAILBOX_STREAM_SIZE)] outbox_mstream_i,
+    output wire [`STREAM_MOPORT(`MAILBOX_STREAM_SIZE)] outbox_mstream_o,
 
     input  wire [`BUS_MIPORT] mport_i,
     output reg  [`BUS_MOPORT] mport_o
@@ -51,8 +51,8 @@ module core_m(
     localparam MAILBOX_WAIT_STATE = 1;
     localparam MAILBOX_TRANSACTION_STATE = 2;
     localparam MAILBOX_WRITE_STATE = 3;
-    reg inbox_read;
-    reg outbox_write;
+    wire inbox_read;
+    wire outbox_write;
 
     wire stall;
     //input pipeline regs
@@ -84,8 +84,8 @@ module core_m(
     wire[`WORD_WIDTH-1:0] dec_r2_data;
     wire[`WORD_WIDTH-1:0] dec_imm;
 
-    reg [`WORD_WIDTH-1:0] outbox [`CORE_MAILBOX_HEIGHT-1:0];
-    reg [`WORD_WIDTH-1:0] inbox [`CORE_MAILBOX_HEIGHT-1:0];
+    wire [`WORD_WIDTH-1:0] outbox [`CORE_MAILBOX_HEIGHT-1:0];
+    wire [`WORD_WIDTH-1:0] inbox [`CORE_MAILBOX_HEIGHT-1:0];
 
     //execute wires
     wire[`WORD_WIDTH-1:0] ex_inst;
@@ -118,7 +118,7 @@ module core_m(
     wire[`WORD_WIDTH-1:0] wb_ctl_sigs;
     reg[`WORD_WIDTH-1:0]  wb_data;
     wire[`REG_DEST_WIDTH-1:0] wb_addr;
-    reg[`WORD_WIDTH*`CORE_MAILBOX_HEIGHT-1:0] wb_inbox;
+    wire[`WORD_WIDTH*`CORE_MAILBOX_HEIGHT-1:0] wb_inbox;
     wire[`WORD_WIDTH*`CORE_MAILBOX_HEIGHT-1:0] wb_outbox;
 
     //forwarding wires
@@ -130,9 +130,9 @@ module core_m(
     reg[`REG_SOURCE_WIDTH-1:0] fwd_r2_addr;
 
     //stall
-    reg mem_stall;
-    reg outbox_stall;
-    reg inbox_stall;
+    wire mem_stall;
+    wire outbox_stall;
+    wire inbox_stall;
     wire halt_stall;
 
     //decode modules
