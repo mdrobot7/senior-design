@@ -672,6 +672,11 @@ module core_controller_m #(
     .clk_i(clk_i),
     .nrst_i(nrst_i),
 
+`ifdef USE_POWER_PINS
+    .vpwrac(vpwrac),
+    .vpwrpc(vpwrpc),
+`endif
+
     .imem_rw_i(imem_rw_i),
     .imem_do_o(imem_do_o),
     .imem_di_i(imem_di_i),

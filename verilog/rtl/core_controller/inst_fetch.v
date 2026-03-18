@@ -11,6 +11,11 @@ module inst_fetch_m #(
   input wire clk_i,
   input wire nrst_i,
 
+`ifdef USE_POWER_PINS
+  input wire vpwrac,
+  input wire vpwrpc,
+`endif
+
   // IMEM wishbone iface, active when enable_i = 0
   input  wire                                imem_rw_i, // 1 = read, 0 = write
   output wire [`WORD]                        imem_do_o,
