@@ -21,6 +21,7 @@
 `include "core/forward.v"
 `include "core/inbox.v"
 `include "core/mem_bus.v"
+`include "core/outbox.v"
 `include "core/predicate.v"
 `include "core/regfile.v"
 `include "core/signext.v"
@@ -50,11 +51,13 @@ module core_controller_m_unit_test;
 
   localparam STATE_STOPPED          = 0; // Waiting for program to start from beginning
   localparam STATE_DISPATCHING      = 1; // Dispatching jobs
-  localparam STATE_VERTEX_SHADING   = 2;
-  localparam STATE_FRAGMENT_SHADING = 3;
-  localparam STATE_GPGPU_COMPUTE    = 4;
-  localparam STATE_PAUSED           = 5; // Manual pause by management core or step-through
-  localparam STATE_HALTING          = 6; // Used for pause on halt and when a model finishes
+  localparam STATE_DISPATCH_DELAY   = 2;
+  localparam STATE_VERTEX_SHADING   = 3;
+  localparam STATE_FRAGMENT_SHADING = 4;
+  localparam STATE_GPGPU_COMPUTE    = 5;
+  localparam STATE_PAUSED           = 6; // Manual pause by management core or step-through
+  localparam STATE_DONE             = 7;
+  localparam STATE_STOPPING         = 8;
 
   wire clk;
   wire nrst;
@@ -151,10 +154,10 @@ module core_controller_m_unit_test;
   reg  [`SRAM_1024x32_ADDR_WIDTH-1:0] pc_fragment_shading;
   reg  [`SRAM_1024x32_ADDR_WIDTH-1:0] pc_gpgpu_compute;
   reg                                 fragfifo_full;
-  wire                                fragfifo_empty;
-  reg  [`NUM_CORES_WIDTH-1:0]         fragfifo_cores_dispatched;
+  reg                                 fragfifo_empty;
+  reg                                 fragfifo_done_mailing;
   wire                                fragfifo_clear;
-  wire                                rast_busy;
+  reg                                 rast_busy;
   reg  [`NUM_CORES-1:0]               core_enable;
   reg  [1:0]                          cmd;
   reg                                 cmd_written;
@@ -166,7 +169,7 @@ module core_controller_m_unit_test;
   wire                                job_done;
   reg                                 batch_done_clr;
   wire                                batch_done;
-  wire [2:0]                          state;
+  wire [3:0]                          state;
   wire [`WORD]                        inst;
   wire [`NUM_CORES-1:0]               core_reset;
   reg  [`NUM_CORES-1:0]               core_stalli;
@@ -212,7 +215,7 @@ module core_controller_m_unit_test;
 
     .fragfifo_full_i(fragfifo_full),
     .fragfifo_empty_i(fragfifo_empty),
-    .fragfifo_cores_dispatched_i(fragfifo_cores_dispatched),
+    .fragfifo_done_mailing_i(fragfifo_done_mailing),
     .fragfifo_clear_o(fragfifo_clear),
 
     .rast_busy_i(rast_busy),
@@ -320,7 +323,9 @@ module core_controller_m_unit_test;
     pc_fragment_shading = 0;
     pc_gpgpu_compute = 0;
     fragfifo_full = 0;
-    fragfifo_cores_dispatched = 0;
+    fragfifo_empty = 1;
+    fragfifo_done_mailing = 0;
+    rast_busy = 0;
     core_enable = 0;
     cmd = 0;
     pause_at_halt = 0;
@@ -456,7 +461,7 @@ module core_controller_m_unit_test;
       if (job_done)
         break;
     end
-    `FAIL_UNLESS_EQUAL(state, STATE_STOPPED);
+    `FAIL_UNLESS_EQUAL(state, STATE_STOPPING);
     `FAIL_UNLESS_EQUAL(job_done, 1);
 
     `CHECK_REG( 0, 32'h00000000, {`NUM_CORES{1'b1}});
@@ -536,7 +541,7 @@ module core_controller_m_unit_test;
       if (job_done)
         break;
     end
-    `FAIL_UNLESS_EQUAL(state, STATE_STOPPED);
+    `FAIL_UNLESS_EQUAL(state, STATE_STOPPING);
     `FAIL_UNLESS_EQUAL(job_done, 1);
 
     `CHECK_REG( 0, 32'h00000000, 6'b101010);
@@ -607,7 +612,7 @@ module core_controller_m_unit_test;
         break;
     end
     cmd = `CORE_CTRL_CMD_STOP;
-    `FAIL_UNLESS_EQUAL(state, STATE_STOPPED);
+    `FAIL_UNLESS_EQUAL(state, STATE_STOPPING);
     `FAIL_UNLESS_EQUAL(job_done, 1);
     job_done_clr <= 1;
     clk_rst.WAIT_CYCLES(1);
@@ -641,7 +646,115 @@ module core_controller_m_unit_test;
   `SVTEST_END
 
   `SVTEST(exec_raster)
-    // TODO
+    // This isn't an actual rasterization test, use the integration tb for
+    // that. This is using test_core. It checks index dispatch and the
+    // rasterization stop conditions.
+    clk_rst.WAIT_CYCLES(1);
+    fill_imem("../../verilog/dv/top_level/src/asm/test_core.hex", 0);
+    fill_inbox();
+
+    pc_gpgpu_compute = 0;
+    pc_vertex_shading = 0;
+    pc_fragment_shading = 0;
+    core_enable = 6'b101010;
+    cmd = `CORE_CTRL_CMD_RUN;
+    pause_at_halt = 0;
+    dispatch_ctrl = `CORE_CTRL_DISPATCH_INDEX;
+    num_dispatches = 11;
+
+    rast_busy = 1;
+    fragfifo_done_mailing = 1;
+    fragfifo_empty = 0;
+
+    for (int run = 0; run < 7; run++) begin
+      for (int i = 0; i < 10000000; i++) begin
+        clk_rst.WAIT_CYCLES(1);
+        if (job_done)
+          break;
+      end
+      `FAIL_UNLESS_EQUAL(job_done, 1);
+
+      $display("Checking run %d...", run);
+      `CHECK_REG( 0, 32'h00000000, 6'b101010);
+      `CHECK_REG( 1, 32'hFFFFFFFF, 6'b101010);
+      `CHECK_REG( 2, 32'h00000002, 6'b101010);
+      `CHECK_REG( 3, 32'hFFFFFFFD, 6'b101010);
+      `CHECK_REG( 4, 32'h00000004, 6'b101010);
+      `CHECK_REG( 5, 32'hFFFFFFFB, 6'b101010);
+      `CHECK_REG( 6, 32'h00000006, 6'b101010);
+      `CHECK_REG( 7, 32'h000193E8, 6'b101010);
+      `CHECK_REG( 8, 32'h00000A00, 6'b101010);
+      `CHECK_REG( 9, 32'h00000007, 6'b101010);
+      // r10: Undefined value in test_core.s
+      `CHECK_REG(11, 32'h000050C8, 6'b101010);
+      `CHECK_REG(12, 32'h00000000, 6'b101010);
+      // r13: Undefined value in test_core.s
+      `CHECK_REG(14, 32'h0000000A, 6'b101010);
+      `CHECK_REG(15, 32'h0000000A, 6'b101010);
+
+      job_done_clr <= 1;
+      clk_rst.WAIT_CYCLES(1);
+      job_done_clr <= 0;
+      `FAIL_UNLESS_EQUAL(job_done, 0);
+
+      // Program switchover happened when job_done was set high
+      if (fragfifo_done_mailing) begin
+        `FAIL_UNLESS_EQUAL(dut.cur_prog, STATE_FRAGMENT_SHADING);
+      end
+      else begin
+        `FAIL_UNLESS_EQUAL(dut.cur_prog, STATE_VERTEX_SHADING);
+      end
+      fragfifo_done_mailing = !fragfifo_done_mailing; // flip between vertex and frag shading
+    end
+
+    for (int i = 0; i < 10000000; i++) begin
+      clk_rst.WAIT_CYCLES(1);
+      if (job_done)
+        break;
+    end
+    cmd = `CORE_CTRL_CMD_STOP;
+    `FAIL_UNLESS_EQUAL(state, STATE_STOPPING);
+    `FAIL_UNLESS_EQUAL(job_done, 1);
+    job_done_clr <= 1;
+    clk_rst.WAIT_CYCLES(1);
+    job_done_clr <= 0;
+    `FAIL_UNLESS_EQUAL(job_done, 0);
+    `FAIL_UNLESS_EQUAL(batch_done, 1);
+    batch_done_clr <= 1;
+    clk_rst.WAIT_CYCLES(1);
+    batch_done_clr <= 0;
+    `FAIL_UNLESS_EQUAL(batch_done, 0);
+
+    `FAIL_UNLESS_EQUAL(dut.dispatch_index_fetch_clear, 1);
+    `FAIL_UNLESS_EQUAL(vertorder_clear, 1);
+    `FAIL_UNLESS_EQUAL(fragfifo_clear, 1);
+    clk_rst.WAIT_CYCLES(1);
+    rast_busy = 0;
+    clk_rst.WAIT_CYCLES(1);
+    `FAIL_UNLESS_EQUAL(state, STATE_STOPPING);
+    fragfifo_empty = 1;
+    clk_rst.WAIT_CYCLES(2);
+    `FAIL_UNLESS_EQUAL(state, STATE_STOPPED);
+
+    $display("Checking final run, expecting core to be stopped...");
+    // Core 5 won't execute code, but the regfile will stay the same
+    // because soft reset doesn't clear the regfile. Check it I guess
+    `CHECK_REG( 0, 32'h00000000, 6'b101010);
+    `CHECK_REG( 1, 32'hFFFFFFFF, 6'b101010);
+    `CHECK_REG( 2, 32'h00000002, 6'b101010);
+    `CHECK_REG( 3, 32'hFFFFFFFD, 6'b101010);
+    `CHECK_REG( 4, 32'h00000004, 6'b101010);
+    `CHECK_REG( 5, 32'hFFFFFFFB, 6'b101010);
+    `CHECK_REG( 6, 32'h00000006, 6'b101010);
+    `CHECK_REG( 7, 32'h000193E8, 6'b101010);
+    `CHECK_REG( 8, 32'h00000A00, 6'b101010);
+    `CHECK_REG( 9, 32'h00000007, 6'b101010);
+    // r10: Undefined value in test_core.s
+    `CHECK_REG(11, 32'h000050C8, 6'b101010);
+    `CHECK_REG(12, 32'h00000000, 6'b101010);
+    // r13: Undefined value in test_core.s
+    `CHECK_REG(14, 32'h0000000A, 6'b101010);
+    `CHECK_REG(15, 32'h0000000A, 6'b101010);
   `SVTEST_END
 
   `SVUNIT_TESTS_END

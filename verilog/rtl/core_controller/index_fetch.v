@@ -120,14 +120,13 @@ module index_fetch_m #(
         STATE_DONE: begin
           state <= STATE_READY;
 
-          if (index_buffer_offset >= num_dispatches_i)
-            model_done_o <= 1;
-
           mport_o[`BUS_MO_REQ] <= 0;
           mport_o[`BUS_MO_SEQMST] <= 0;
         end
       endcase
 
+      if (index_buffer_offset >= num_dispatches_i && fifo_empty)
+        model_done_o <= 1;
       if (model_done_clr_i)
         model_done_o <= 0;
 

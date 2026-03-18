@@ -48,10 +48,10 @@ module core_controller_wrapper_m #(
   output wire                                    vertorder_clear_o,
 
   // Rasterizer fragment output FIFO
-  input  wire                        fragfifo_full_i,
-  input  wire                        fragfifo_empty_i,
-  input  wire [`NUM_CORES_WIDTH-1:0] fragfifo_cores_dispatched_i, // Number of cores with a fragment in their inbox
-  output wire                        fragfifo_clear_o,
+  input  wire fragfifo_full_i,
+  input  wire fragfifo_empty_i,
+  input  wire fragfifo_done_mailing_i,
+  output wire fragfifo_clear_o,
 
   // Rasterizer
   input wire rast_busy_i,
@@ -96,7 +96,7 @@ module core_controller_wrapper_m #(
   wire                         job_done;
   wire                         batch_done_clr;
   wire                         batch_done;
-  wire [2:0]                   cc_state;
+  wire [3:0]                   cc_state;
   core_controller_m #(
     .INDEX_FETCH_CACHE_LEN_WORDS(INDEX_FETCH_CACHE_LEN_WORDS),
     .CALL_STACK_LEN(CALL_STACK_LEN)
@@ -139,7 +139,7 @@ module core_controller_wrapper_m #(
 
     .fragfifo_full_i(fragfifo_full_i),
     .fragfifo_empty_i(fragfifo_empty_i),
-    .fragfifo_cores_dispatched_i(fragfifo_cores_dispatched_i),
+    .fragfifo_done_mailing_i(fragfifo_done_mailing_i),
     .fragfifo_clear_o(fragfifo_clear_o),
 
     .rast_busy_i(rast_busy_i),
@@ -220,14 +220,14 @@ module core_controller_wrapper_m #(
     .wbs_ack_o(wbs_ackN[1]),
     .wbs_dat_o(wbs_datN[1]),
 
-    .access_read_mask_i(32'h00000007),
+    .access_read_mask_i(32'h0000000F),
     .access_write_mask_i(32'h00000000),
-    .periph_read_mask_i(32'h00000007),
+    .periph_read_mask_i(32'h0000000F),
 
     .enable_prot_i(0),
     .enable_i(0),
 
-    .reg_i({29'h0, cc_state}),
+    .reg_i({28'h0, cc_state}),
     .reg_o()
   );
 
@@ -558,10 +558,10 @@ module core_controller_m #(
   output wire                                    vertorder_clear_o,
 
   // Rasterizer fragment output FIFO
-  input  wire                        fragfifo_full_i,
-  input  wire                        fragfifo_empty_i,
-  input  wire [`NUM_CORES_WIDTH-1:0] fragfifo_cores_dispatched_i, // Number of cores with a fragment in their inbox
-  output wire                        fragfifo_clear_o,
+  input  wire fragfifo_full_i,
+  input  wire fragfifo_empty_i,
+  input  wire fragfifo_done_mailing_i,
+  output wire fragfifo_clear_o,
 
   // Rasterizer
   input wire rast_busy_i,
@@ -578,7 +578,7 @@ module core_controller_m #(
   output  reg                  job_done_o,          // 1: finished a shader program (i.e. reached a halt)
   input  wire                  batch_done_clr_i,    // 1: clear batch done flag
   output  reg                  batch_done_o,        // 1: finished num_dispatches_i jobs.
-  output wire [2:0]            state_o,
+  output wire [3:0]            state_o,
 
   // Shader core interface
   output reg  [`WORD]           inst_o,
@@ -813,7 +813,7 @@ module core_controller_m #(
           instfetch_reset_prog <= 0;
 
           cur_prog <= next_prog;
-          if (pause_at_halt_i || next_prog == STATE_STOPPED)
+          if (pause_at_halt_i || next_prog == STATE_STOPPING)
             state <= STATE_STOPPING;
           else if (should_dispatch) begin
             dispatch_enable <= 1;
@@ -866,28 +866,26 @@ module core_controller_m #(
     // Next program selection
     if (cur_prog == STATE_GPGPU_COMPUTE) begin
       if (dispatch_model_done)
-        next_prog = STATE_STOPPED;
+        next_prog = STATE_STOPPING;
       else
         next_prog = STATE_GPGPU_COMPUTE;
     end
     else if (cur_prog == STATE_VERTEX_SHADING) begin
-      if (fragfifo_cores_dispatched_i == `NUM_CORES - 1 ||
-          fragfifo_full_i ||
-          dispatch_model_done)
+      if (fragfifo_done_mailing_i || fragfifo_full_i || dispatch_model_done)
         next_prog = STATE_FRAGMENT_SHADING;
       else
         next_prog = STATE_VERTEX_SHADING;
     end
     else if (cur_prog == STATE_FRAGMENT_SHADING) begin
-      if ((!fragfifo_cores_dispatched_i || vertorder_empty_i) && !dispatch_model_done)
+      if ((!fragfifo_done_mailing_i || vertorder_empty_i) && !dispatch_model_done)
         next_prog = STATE_VERTEX_SHADING;
-      else if (fragfifo_cores_dispatched_i)
+      else if (fragfifo_done_mailing_i)
         next_prog = STATE_FRAGMENT_SHADING;
       else
-        next_prog = STATE_STOPPED;
+        next_prog = STATE_STOPPING;
     end
     else
-      next_prog = STATE_STOPPED;
+      next_prog = STATE_STOPPING;
 
     // Entry point
     case (cur_prog)
