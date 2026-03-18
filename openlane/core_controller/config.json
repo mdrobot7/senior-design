@@ -11,12 +11,18 @@
       "dir::../../verilog/rtl/user_defines/vga.v",
       "dir::../../verilog/rtl/user_defines.v",
       "dir::../../verilog/rtl/wishbone_register.v",
-      "dir::../../library/wishbone_helper/verilog/rtl/wishbone_helper.v",
+      "dir::../../verilog/rtl/wishbone_helper.v",
+      "dir::../../verilog/rtl/sram_1024x32.v",
       "dir::../../verilog/rtl/stream/stream_fifo.v",
       "dir::../../verilog/rtl/core/regfile.v",
       "dir::../../verilog/rtl/core_controller/index_fetch.v",
+      "dir::../../verilog/rtl/core_controller/inst_fetch.v",
       "dir::../../verilog/rtl/core_controller/dispatch.v",
+
       "dir::../../verilog/rtl/core_controller/core_controller.v"
+  ],
+  "SYNTH_DEFINES" :[
+      "FPGA"
   ],
   "ROUTING_CORES": 16,
   "CLOCK_PERIOD": 20,
