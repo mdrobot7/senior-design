@@ -89,7 +89,10 @@ module integration_tb();
         .vsync_o()
     );
 
-    initial begin
+    initial begin : RUN
+        integer i;
+        reg [`WORD] temp [1023:0];
+
         $dumpfile("integration.vcd");
         $dumpvars(0, integration_tb);
 
@@ -97,53 +100,65 @@ module integration_tb();
 
         // If you get a cannot bind error here, add `define FPGA to the top of
         // sram_1024x32.v.
-        $readmemh("../top_level/src/asm/vertex_shader_cached.txt", top_level.core_cont.core_controller.inst_fetch.imem.sram.RAM);
+        $readmemh("../top_level/src/asm/vertex_shader_cached.txt", temp);
+        for (i = 0; i < 128; i = i + 1)
+            top_level.core_cont.core_controller.inst_fetch.imem.sram.RAM[i] = temp[i];
+        $readmemh("../top_level/src/asm/fragment_shader.txt", temp);
+        for (i = 0; i < 128; i = i + 1)
+            top_level.core_cont.core_controller.inst_fetch.imem.sram.RAM[128 + i] = temp[i];
 
+        // Index buffer
         WRITE_WORD(32'h80000 + 0 * 4, 0);
         WRITE_WORD(32'h80000 + 1 * 4, 1);
         WRITE_WORD(32'h80000 + 2 * 4, 2);
 
+        // Vertex 0
         WRITE_WORD(32'h90000 + 0 * 20 + 0, `FP(1));
         WRITE_WORD(32'h90000 + 0 * 20 + 4, `FP(1));
         WRITE_WORD(32'h90000 + 0 * 20 + 8, `FP(1));
         WRITE_WORD(32'h90000 + 0 * 20 + 12, `FP(0));
         WRITE_WORD(32'h90000 + 0 * 20 + 16, `FP(0));
 
+        // Vertex 1
         WRITE_WORD(32'h90000 + 1 * 20 + 0, `FP(61));
         WRITE_WORD(32'h90000 + 1 * 20 + 4, `FP(1));
         WRITE_WORD(32'h90000 + 1 * 20 + 8, `FP(1));
         WRITE_WORD(32'h90000 + 1 * 20 + 12, `FP(60));
         WRITE_WORD(32'h90000 + 1 * 20 + 16, `FP(0));
 
+        // Vertex 2
         WRITE_WORD(32'h90000 + 2 * 20 + 0, `FP(1));
         WRITE_WORD(32'h90000 + 2 * 20 + 4, `FP(61));
         WRITE_WORD(32'h90000 + 2 * 20 + 8, `FP(1));
         WRITE_WORD(32'h90000 + 2 * 20 + 12, `FP(0));
         WRITE_WORD(32'h90000 + 2 * 20 + 16, `FP(60));
 
+        // Vertex 3
         WRITE_WORD(32'h90000 + 3 * 20 + 0, `FP(61));
         WRITE_WORD(32'h90000 + 3 * 20 + 4, `FP(61));
         WRITE_WORD(32'h90000 + 3 * 20 + 8, `FP(1));
         WRITE_WORD(32'h90000 + 3 * 20 + 12, `FP(60));
         WRITE_WORD(32'h90000 + 3 * 20 + 16, `FP(60));
 
-        wbmst.WRITE(32'h30000000 + 0 * 4, `ADDR_FB1);
-        wbmst.WRITE(32'h30000000 + 1 * 4, 60);
-        wbmst.WRITE(32'h30000000 + 2 * 4, 60);
+        // Rasterizer config
+        wbmst.WRITE(32'h30000000 + 0 * 4, `ADDR_FB1); // Texture addr
+        wbmst.WRITE(32'h30000000 + 1 * 4, 60); // Texture height
+        wbmst.WRITE(32'h30000000 + 2 * 4, 60); // Texture width
 
-        wbmst.WRITE(32'h28000000 + 2 * 4, 6'b111111);
+        // Core controller config
+        wbmst.WRITE(32'h28000000 + 2 * 4, 6'b111111); // Enable all cores
 
-        wbmst.WRITE(32'h28000000 + 5 * 4, 32'h00000000);
-        wbmst.WRITE(32'h28000000 + 6 * 4, 32'h00000000);
-        wbmst.WRITE(32'h28000000 + 7 * 4, 32'h00000000);
+        wbmst.WRITE(32'h28000000 + 5 * 4, 32'h00000000); // GPGPU entry point
+        wbmst.WRITE(32'h28000000 + 6 * 4, 32'h00000000); // Vert shade entry point
+        wbmst.WRITE(32'h28000000 + 7 * 4, 32'h00000200); // Frag shade entry point (word 128 -> byte 512)
 
-        wbmst.WRITE(32'h28000000 + 8 * 4, 32'h00080000);
+        wbmst.WRITE(32'h28000000 + 8 * 4, 32'h00080000); // Index buffer addr
 
-        wbmst.WRITE(32'h28000000 + 9 * 4, 32'd3);
+        wbmst.WRITE(32'h28000000 + 9 * 4, 32'd3); // Job/index count
 
-        wbmst.WRITE(32'h28000000 + (10 + 46) * 4, 32'h00090000);
+        wbmst.WRITE(32'h28000000 + (10 + 46) * 4, 32'h00090000); // r46 = 0x00090000
 
-        wbmst.WRITE(32'h28000000 + 0 * 4, 5'b01010);
+        wbmst.WRITE(32'h28000000 + 0 * 4, 5'b01010); // Dispatch indices, start
 
         $display("Regs written");
 
