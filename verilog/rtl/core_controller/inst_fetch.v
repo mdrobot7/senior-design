@@ -78,8 +78,6 @@ module inst_fetch_m #(
   wire [`WORD]                        imem_do;
   wire [`SRAM_1024x32_ADDR_WIDTH-1:0] imem_addr = !enable_i ? imem_addr_i : (core_stall_i ? pc_prev : pc); // In *words*
   wire                                imem_rw   = !enable_i ? imem_rw_i   : 1;
-  reg                                 imem_flush_output;
-  reg                                 imem_output_flushed;
   sram_1024x32_m imem (
 `ifdef USE_POWER_PINS
     .vpwrac(vpwrac),
@@ -143,8 +141,13 @@ module inst_fetch_m #(
       pc_prev <= 0;
       pc_prev_valid <= 0;
 
+      halt_counter <= 0;
+
       call_stack_idx <= 0;
-      for (i = 0; i < JUMP_STAGE; i++) begin
+      for (i = 0; i < CALL_STACK_LEN; i = i + 1)
+        call_stack[i] <= 0;
+
+      for (i = 0; i < JUMP_STAGE; i = i + 1) begin
         jump_bases[i] <= 0;
         jump_offsets[i] <= 0;
         jump_type[i] <= 0;
@@ -155,6 +158,7 @@ module inst_fetch_m #(
     else if (clk_i) begin
       case (state)
         STATE_READY: begin
+          halt_counter <= 0;
           step_done_o <= 0;
           prog_done_o <= 0;
           pc_prev_valid <= 0;
@@ -224,7 +228,11 @@ module inst_fetch_m #(
         integer i;
 
         call_stack_idx <= 0;
-        for (i = 0; i < JUMP_STAGE; i++) begin
+        // Skip call stack reset, it doesn't matter
+
+        halt_counter <= 0;
+
+        for (i = 0; i < JUMP_STAGE; i = i + 1) begin
           jump_bases[i] <= 0;
           jump_offsets[i] <= 0;
           jump_type[i] <= 0;

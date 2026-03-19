@@ -661,7 +661,7 @@ module core_controller_m #(
 
   reg [`SRAM_1024x32_ADDR_WIDTH-1:0] instfetch_prog_entry;
   reg                                instfetch_enable;
-  reg                                instfetch_reset_prog;
+  wire                               instfetch_reset_prog = (state == STATE_STOPPED || state == STATE_DONE);
   wire                               instfetch_step_done;
   wire                               instfetch_prog_done;
   wire [`WORD]                       instfetch_inst;
@@ -719,7 +719,6 @@ module core_controller_m #(
       dispatch_enable <= 0;
 
       instfetch_enable <= 0;
-      instfetch_reset_prog <= 0;
 
       cur_prog      <= STATE_STOPPED;
       state         <= STATE_STOPPED;
@@ -736,7 +735,6 @@ module core_controller_m #(
 
       case (state)
         STATE_STOPPED: begin
-          instfetch_reset_prog <= 1;
           if (cmd_i == `CORE_CTRL_CMD_RUN || cmd_i == `CORE_CTRL_CMD_STEP) begin
             if (is_rasterization)
               cur_prog <= STATE_VERTEX_SHADING;
@@ -755,13 +753,10 @@ module core_controller_m #(
           end
         end
         STATE_DISPATCH_DELAY: begin
-          instfetch_reset_prog <= 0;
           instfetch_enable <= 1;
           state <= cur_prog;
         end
         STATE_DISPATCHING: begin
-          instfetch_reset_prog <= 0;
-
           if (cmd_i == `CORE_CTRL_CMD_STOP) begin
             dispatch_enable <= 0;
             state <= STATE_STOPPING;
@@ -782,7 +777,6 @@ module core_controller_m #(
             `CORE_CTRL_CMD_RUN: begin
               if (instfetch_prog_done || (state == STATE_VERTEX_SHADING && fragfifo_full_i)) begin
                 // Deadlock protection: if fragfifo fills up, immediately swap to frag shading
-                instfetch_reset_prog <= 1;
                 state <= STATE_DONE;
               end
               else
@@ -814,8 +808,6 @@ module core_controller_m #(
           job_done_o <= 1;
           if (dispatch_model_done)
             batch_done_o <= 1;
-
-          instfetch_reset_prog <= 0;
 
           cur_prog <= next_prog;
           if (pause_at_halt_i || next_prog == STATE_STOPPING)
@@ -893,7 +885,7 @@ module core_controller_m #(
       next_prog = STATE_STOPPING;
 
     // Entry point
-    case (cur_prog)
+    case (next_prog)
       STATE_GPGPU_COMPUTE:
         instfetch_prog_entry = pc_gpgpu_compute_i;
       STATE_VERTEX_SHADING:
