@@ -1,7 +1,7 @@
 #once
 
 ; Local consts
-DECIMAL_POS = 10
+DECIMAL_POS = 16
 
 ; Opcodes
 OPCODE_ADD      = 0x0`6
@@ -107,24 +107,23 @@ OPCODE_IN       = 0x28`6
     ; Autodetect integer or fixed point:
     ; 1 -> integer, 1. or 1.11123 or 2/135 -> fixed point.
     {n: i13}         => n
-    {i: s3}.         => i @ 0`DECIMAL_POS
 
     ; customasm doesn't have if conditions, floats, or string processing
     ; so we can't get leading/trailing zeros on the fractional portion.
-    ; Instead, just force the user to pad decimals to 6 places.
+    ; Instead, just force the user to pad decimals to 7 places.
     ; Math: fixed_pt(-3.14) = -3.14 * 1024 = -3 * 1024 - 0.14 * 1024 = -3 * 1024 - (140000 * 1024) / 1000
-    {i: s3}.{f: u32} => {
-        assert(i >= 0)
-        assert(f < 1000000)
+    0.{f: u32} => {
+        i = 0
+        assert(f < 10000000)
         int = (i << DECIMAL_POS)`13
-        frac = ((f * (1 << DECIMAL_POS)) / 1000000)`DECIMAL_POS
+        frac = ((f * (1 << DECIMAL_POS)) / 10000000)`DECIMAL_POS
         (int + frac)`13
     }
-    {i: s3}.{f: u32} => {
-        assert(i < 0)
-        assert(f < 1000000)
+    -0.{f: u32} => {
+        i = 0
+        assert(f < 10000000)
         int = (i << DECIMAL_POS)`13
-        frac = ((f * (1 << DECIMAL_POS)) / 1000000)`DECIMAL_POS
+        frac = ((f * (1 << DECIMAL_POS)) / 10000000)`DECIMAL_POS
         (int - frac)`13
     }
 
@@ -135,23 +134,22 @@ OPCODE_IN       = 0x28`6
 }
 
 #subruledef immediate16 {
-    ; Same as above but with a 6 bit integer part.
+    ; Same as above but wider.
     {n: i16}         => n
-    {i: s6}.         => i @ 0`DECIMAL_POS
 
     ; Reminder: Pad decimals to 6 places.
-    {i: s6}.{f: u32} => {
-        assert(i >= 0)
-        assert(f < 1000000)
+    0.{f: u32} => {
+        i = 0
+        assert(f < 10000000)
         int = (i << DECIMAL_POS)`16
-        frac = ((f * (1 << DECIMAL_POS)) / 1000000)`DECIMAL_POS
+        frac = ((f * (1 << DECIMAL_POS)) / 10000000)`DECIMAL_POS
         (int + frac)`16
     }
-    {i: s6}.{f: u32} => {
-        assert(i < 0)
-        assert(f < 1000000)
+    -0.{f: u32} => {
+        i = 0
+        assert(f < 10000000)
         int = (i << DECIMAL_POS)`16
-        frac = ((f * (1 << DECIMAL_POS)) / 1000000)`DECIMAL_POS
+        frac = ((f * (1 << DECIMAL_POS)) / 10000000)`DECIMAL_POS
         (int - frac)`16
     }
 
@@ -164,21 +162,21 @@ OPCODE_IN       = 0x28`6
 #subruledef immediate32 {
     ; Same as above but with the full integer part.
     {n: i32}        => n
-    {i: s22}.       => i @ 0`DECIMAL_POS
+    {i: s16}.       => i @ 0`DECIMAL_POS
 
     ; Reminder: Pad decimals to 6 places
-    {i: s22}.{f: u32} => {
+    {i: s16}.{f: u32} => {
         assert(i >= 0)
-        assert(f < 1000000)
+        assert(f < 10000000)
         int = (i << DECIMAL_POS)`32
-        frac = ((f * (1 << DECIMAL_POS)) / 1000000)`DECIMAL_POS
+        frac = ((f * (1 << DECIMAL_POS)) / 10000000)`DECIMAL_POS
         (int + frac)`32
     }
-    {i: s22}.{f: u32} => {
+    {i: s16}.{f: u32} => {
         assert(i < 0)
-        assert(f < 1000000)
+        assert(f < 10000000)
         int = (i << DECIMAL_POS)`32
-        frac = ((f * (1 << DECIMAL_POS)) / 1000000)`DECIMAL_POS
+        frac = ((f * (1 << DECIMAL_POS)) / 10000000)`DECIMAL_POS
         (int - frac)`32
     }
 

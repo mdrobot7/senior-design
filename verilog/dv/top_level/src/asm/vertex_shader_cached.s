@@ -14,13 +14,13 @@ clrp (111)
 
 ; Thread ID (tid) is the index, loaded into r0 by the core
 ; controller. Grab our vertex.
-() li $r9, 20.000000
+() li $r9, 20.0000000
 () mul $tid, $tid, $r9
 () add $tid, $tid, $g46
 () lw $r10, 0[$tid]; vx
 () lw $r11, 4[$tid]; vy
 () lw $r12, 8[$tid]; vz
-() lli $r13, 1.000000 ; Homogeneous term
+() li $r13, 1.0000000 ; Homogeneous term
 () lw $r5, 12[$tid] ; tx
 () lw $r6, 16[$tid] ; ty
 
