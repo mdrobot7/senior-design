@@ -20,17 +20,21 @@
 
 clrp (111)
 
+() in
+
 ; Get pixel memory address
 () li $r9, 320.0000000 ; r9: Scratch, must use fixed point for multiplication
 () mul $r3, $r3, $r9
 () add $r3, $r3, $r2
 () add $r3, $r3, $g44
 
-() dot3 $g41, $r4
-() macrd $r9
-() splt $p0, $r9, $zero
-(001) sb $r1, 0[$r3]
-(000) mov $r15, $zero ; sb needs a local register
-(000) sb $r15, 0[$r3] ; Surface is facing away from the light, set color to black
+() sb $r1, 0[$r3]
+
+; () dot3 $g41, $r4
+; () macrd $r9
+; () splt $p0, $r9, $zero
+; (001) sb $r1, 0[$r3]
+; (000) mov $r15, $zero ; sb needs a local register
+; (000) sb $r15, 0[$r3] ; Surface is facing away from the light, set color to black
 
 halt
