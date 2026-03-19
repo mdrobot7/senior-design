@@ -107,9 +107,9 @@ module rasterizer_wrapper_m(
         .v2y_i(v2y),
         .v2z_i(v2z),
         .v2w_i(v2w),
-        
-        .u0_i(u0_i),
-        .u1_i(u1_i)
+
+        .u0_i(0), // TODO: u0a/b, u1a/b, or u2a/b? Doesn't compile as is
+        .u1_i(0)
     );
 
     localparam STATE_READY = 2'd0;
@@ -276,4 +276,3 @@ module rasterizer_wrapper_m(
     end
 
 endmodule
-

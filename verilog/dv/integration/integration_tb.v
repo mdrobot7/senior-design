@@ -90,16 +90,18 @@ module integration_tb();
     );
 
     initial begin
-		$dumpfile("integration.vcd");
-		$dumpvars(0, integration_tb);
+        $dumpfile("integration.vcd");
+        $dumpvars(0, integration_tb);
 
         clk_rst.RESET();
 
-        $readmemh("../top_level/src/asm/vertex_shader_cached.txt", top_level.core_cont.core_controller.imem);
+        // If you get a cannot bind error here, add `define FPGA to the top of
+        // sram_1024x32.v.
+        $readmemh("../top_level/src/asm/vertex_shader_cached.txt", top_level.core_cont.core_controller.inst_fetch.imem.sram.RAM);
 
-		WRITE_WORD(32'h80000 + 0 * 4, 0);
-		WRITE_WORD(32'h80000 + 1 * 4, 1);
-		WRITE_WORD(32'h80000 + 2 * 4, 2);
+        WRITE_WORD(32'h80000 + 0 * 4, 0);
+        WRITE_WORD(32'h80000 + 1 * 4, 1);
+        WRITE_WORD(32'h80000 + 2 * 4, 2);
 
         WRITE_WORD(32'h90000 + 0 * 20 + 0, `FP(1));
         WRITE_WORD(32'h90000 + 0 * 20 + 4, `FP(1));

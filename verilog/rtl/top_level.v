@@ -71,14 +71,11 @@ module top_level_m(
     wire [`BUS_MIPORT] rast2_mporti;
     wire [`BUS_MOPORT] rast2_mporto;
 
-    wire [`BUS_MIPORT] core_mporti;
-    wire [`BUS_MOPORT] core_mporto;
+    wire [(`BUS_MIPORT_SIZE * `NUM_CORES)-1:0] core_mporti;
+    wire [(`BUS_MOPORT_SIZE * `NUM_CORES)-1:0] core_mporto;
 
     wire [`BUS_MIPORT] cc_mporti;
     wire [`BUS_MOPORT] cc_mporto;
-
-    wire [`BUS_MIPORT] write_mporti;
-    wire [`BUS_MOPORT] write_mporto;
 
     wire [`BUS_SIPORT] spi1_sporti;
     wire [`BUS_SOPORT] spi1_sporto;
@@ -86,50 +83,46 @@ module top_level_m(
     wire [`BUS_SIPORT] spi2_sporti;
     wire [`BUS_SOPORT] spi2_sporto;
 
-    wire [`WORD] inst;
+    // Core Controller - Cores
+    wire [`WORD]          inst;
+    wire [`WORD]          global_r1, global_r2;
+    wire [`NUM_CORES-1:0] jump_request;
+    wire                  fds;
+    wire [`NUM_CORES-1:0] stalli;
+    wire [`NUM_CORES-1:0] stallo;
+    wire [`NUM_CORES-1:0] nsync_rst;
 
-    wire [`WORD] global_r1, global_r2;
+    wire [(`STREAM_MIPORT_SIZE(`MAILBOX_STREAM_SIZE) * `NUM_CORES)-1:0] inbox_mstreami;
+    wire [(`STREAM_MOPORT_SIZE(`MAILBOX_STREAM_SIZE) * `NUM_CORES)-1:0] inbox_mstreamo;
 
-    wire jump_request;
-    wire fds;
+    wire [(`STREAM_MIPORT_SIZE(`MAILBOX_STREAM_SIZE) * `NUM_CORES)-1:0] outbox_mstreami;
+    wire [(`STREAM_MOPORT_SIZE(`MAILBOX_STREAM_SIZE) * `NUM_CORES)-1:0] outbox_mstreamo;
 
-    wire stalli;
-    wire stallo;
+    wire [(`STREAM_MIPORT_SIZE(`SHADED_VERTEX_WIDTH) * `NUM_CORES)-1:0] core_deser_mstreami;
+    wire [(`STREAM_MOPORT_SIZE(`SHADED_VERTEX_WIDTH) * `NUM_CORES)-1:0] core_deser_mstreamo;
 
-    wire nsync_rst;
+    wire         svc_clear;
+    wire [`WORD] svc_test_index;
+    wire         svc_test_valid;
+    wire         svc_test_found;
 
-    wire [`STREAM_MIPORT(`MAILBOX_STREAM_SIZE)] cc_mstreami;
-    wire [`STREAM_MOPORT(`MAILBOX_STREAM_SIZE)] cc_mstreamo;
+    wire [`SHADED_VERTEX] svc_store_vertex;
+    wire [`WORD]          svc_store_index = 0;
+    wire                  svc_store_valid;
 
-    wire [`STREAM_MIPORT(`MAILBOX_STREAM_SIZE)] core_mstreami;
-    wire [`STREAM_MOPORT(`MAILBOX_STREAM_SIZE)] core_mstreamo;
-
-    wire [`STREAM_MIPORT(`SHADED_VERTEX_WIDTH)] core_deser_mstreami;
-    wire [`STREAM_MOPORT(`SHADED_VERTEX_WIDTH)] core_deser_mstreamo;
-
-    wire svc_clear;
-    assign svc_clear = 0;
-
-    wire [`WORD] test_index;
-    wire test_valid;
-    wire test_found;
-
-    wire [`SHADED_VERTEX] store_vertex;
-    wire [`WORD] store_index;
-    wire store_valid;
-    assign store_index = 0;
-
-    wire vob_full, vob_empty;
+    wire vob_full;
+    wire vob_empty;
+    wire vob_clear;
 
     wire [`STREAM_MIPORT(`SHADED_VERTEX_WIDTH)] svc_mstreami;
     wire [`STREAM_MOPORT(`SHADED_VERTEX_WIDTH)] svc_mstreamo;
     wire [`STREAM_MIPORT(`SHADED_VERTEX_WIDTH)] svb_mstreami;
     wire [`STREAM_MOPORT(`SHADED_VERTEX_WIDTH)] svb_mstreamo;
 
-    wire [`STREAM_MIPORT(`ORDER_STREAM_WIDTH)] order_mstreami;
-    wire [`STREAM_MOPORT(`ORDER_STREAM_WIDTH)] order_mstreamo;
-    wire [`STREAM_MIPORT(`ORDER_STREAM_WIDTH)] vob_mstreami;
-    wire [`STREAM_MOPORT(`ORDER_STREAM_WIDTH)] vob_mstreamo;
+    wire [`STREAM_MIPORT(`VERTEX_ORDER_WIDTH)] order_mstreami;
+    wire [`STREAM_MOPORT(`VERTEX_ORDER_WIDTH)] order_mstreamo;
+    wire [`STREAM_MIPORT(`VERTEX_ORDER_WIDTH)] vob_mstreami;
+    wire [`STREAM_MOPORT(`VERTEX_ORDER_WIDTH)] vob_mstreamo;
 
     wire [`STREAM_MIPORT(3 * `SHADED_VERTEX_WIDTH)] vrc_mstreami;
     wire [`STREAM_MOPORT(3 * `SHADED_VERTEX_WIDTH)] vrc_mstreamo;
@@ -137,12 +130,18 @@ module top_level_m(
     wire [`STREAM_MIPORT(`FRAGMENT_WIDTH)] frag_mstreami;
     wire [`STREAM_MOPORT(`FRAGMENT_WIDTH)] frag_mstreamo;
 
-    busarb_m #(6, 2, 2) arbiter(
+    // Core Controller - Fragment FIFO
+    wire fragfifo_full;
+    wire fragfifo_empty;
+    wire fragfifo_done_mailing;
+    wire fragfifo_clear;
+
+    busarb_m #(4 + `NUM_CORES, 2, 2) arbiter(
         .clk_i(clk),
         .nrst_i(nrst),
 
-        .mports_i({ cc_mporto, write_mporto, core_mporto, rast2_mporto, rast1_mporto, vga_mporto }),
-        .mports_o({ cc_mporti, write_mporti, core_mporti, rast2_mporti, rast1_mporti, vga_mporti }),
+        .mports_i({ cc_mporto, core_mporto, rast2_mporto, rast1_mporto, vga_mporto }),
+        .mports_o({ cc_mporti, core_mporti, rast2_mporti, rast1_mporti, vga_mporti }),
 
         .sports_i({ spi1_sporto, spi2_sporto }),
         .sports_o({ spi1_sporti, spi2_sporti })
@@ -210,17 +209,23 @@ module top_level_m(
         .mport_i(cc_mporti),
         .mport_o(cc_mporto),
 
-        .vertcache_test_index_o(test_index),
-        .vertcache_test_valid_o(test_valid),
-        .vertcache_test_found_i(test_found),
+        .vertcache_test_index_o(svc_test_index),
+        .vertcache_test_valid_o(svc_test_valid),
+        .vertcache_test_found_i(svc_test_found),
+        .vertcache_clear_o(svc_clear),
 
         .vertorder_sstreamo_i(order_mstreami),
         .vertorder_sstreami_o(order_mstreamo),
         .vertorder_full_i(vob_full),
         .vertorder_empty_i(vob_empty),
+        .vertorder_clear_o(vob_clear),
 
-        .fragfifo_full_i(1'b0),
-        .fragfifo_cores_dispatched_i(1'b0), // Number of cores with a fragment in their inbox
+        .fragfifo_full_i(fragfifo_full),
+        .fragfifo_empty_i(fragfifo_empty),
+        .fragfifo_done_mailing_i(fragfifo_done_mailing),
+        .fragfifo_clear_o(fragfifo_clear),
+
+        .rast_busy_i(rast_busy),
 
         .inst_o(inst),
         .core_reset_o(nsync_rst), // Core soft reset
@@ -232,7 +237,7 @@ module top_level_m(
         .global_regfile_rs2_data_o(global_r2)
     );
 
-    core_m #(.SP(0)) core(
+    core_m #(.SP(0)) core [`NUM_CORES-1:0] (
         .clk_i(clk),
         .nrst_i(nrst),
 
@@ -248,22 +253,22 @@ module top_level_m(
 
         .nsync_rst_i(nsync_rst),
 
-        .inbox_sstream_i(cc_mstreamo),
-        .inbox_sstream_o(cc_mstreami),
+        .inbox_sstream_i(inbox_mstreamo),
+        .inbox_sstream_o(inbox_mstreami),
 
-        .outbox_mstream_i(core_mstreami),
-        .outbox_mstream_o(core_mstreamo),
+        .outbox_mstream_i(outbox_mstreami),
+        .outbox_mstream_o(outbox_mstreamo),
 
         .mport_i(core_mporti),
         .mport_o(core_mporto)
     );
 
-    vertex_deserializer_m core_deserializer(
+    vertex_deserializer_m core_deserializer [`NUM_CORES-1:0] (
         .clk_i(clk),
         .nrst_i(nrst),
 
-        .sstream_i(core_mstreamo),
-        .sstream_o(core_mstreami),
+        .sstream_i(outbox_mstreamo), // TODO: should this pull from the cores, or do the cores push?
+        .sstream_o(outbox_mstreami),
 
         .mstream_i(core_deser_mstreami),
         .mstream_o(core_deser_mstreamo)
@@ -279,13 +284,13 @@ module top_level_m(
 
         .clear_i(svc_clear),
 
-        .test_index_i(test_index),
-        .test_valid_i(test_valid),
-        .test_found_o(test_found),
+        .test_index_i(svc_test_index),
+        .test_valid_i(svc_test_valid),
+        .test_found_o(svc_test_found),
 
-        .store_vertex_i(store_vertex),
-        .store_index_i(store_index),
-        .store_valid_i(store_valid),
+        .store_vertex_i(svc_store_vertex),
+        .store_index_i(svc_store_index),
+        .store_valid_i(svc_store_valid),
 
         .mstream_i(svc_mstreami),
         .mstream_o(svc_mstreamo)
@@ -302,7 +307,7 @@ module top_level_m(
         .mstream_o(svb_mstreamo)
     );
 
-    vertex_order_buffer_m #(6, `ORDER_STREAM_WIDTH) vob(
+    vertex_order_buffer_m #(6, `VERTEX_ORDER_WIDTH) vob(
         .clk_i(clk),
         .nrst_i(nrst),
 
@@ -313,7 +318,8 @@ module top_level_m(
         .mstream_o(vob_mstreamo),
 
         .full_o(vob_full),
-        .empty_o(vob_empty)
+        .empty_o(vob_empty),
+        .clear_i(vob_clear)
     );
 
     vertex_reorder_controller_m #(`NUM_CORES + 1) vrc(
@@ -328,6 +334,25 @@ module top_level_m(
 
         .mstream_i(vrc_mstreami),
         .mstream_o(vrc_mstreamo)
+    );
+
+    // TODO: Fix output stream sizes (josh problem)
+    fragment_fifo_m #(
+        .SIZE(`FRAGMENT_WIDTH),
+        .DEPTH(10)
+    ) frag_fifo (
+        .clk_i(clk),
+        .nrst_i(nrst),
+
+        .sstream_i(frag_mstreamo),
+        .sstream_o(frag_mstreami),
+        .mstream_i(inbox_mstreami),
+        .mstream_o(inbox_mstreamo),
+
+        .empty_o(fragfifo_empty),
+        .full_o(fragfifo_full),
+        .done_mailing_o(fragfifo_done_mailing),
+        .clear_i(fragfifo_clear)
     );
 
     rasterizer_wrapper_m rasterizer(
@@ -373,21 +398,6 @@ module top_level_m(
         .pixel_o({ blue_o, green_o, red_o }),
         .hsync_o(hsync_o),
         .vsync_o(vsync_o)
-    );
-
-    mem_write_m mem_write(
-        .clk_i(clk),
-        .nrst_i(nrst),
-
-        .busy_o(),
-
-        .sstream_i(frag_mstreamo),
-        .sstream_o(frag_mstreami),
-
-        .mport_i(write_mporti),
-        .mport_o(write_mporto),
-
-        .fb_i(1'b0)
     );
 
 endmodule
