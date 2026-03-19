@@ -99,6 +99,7 @@
 -v $(USER_PROJECT_VERILOG)/rtl/image.v
 -v $(USER_PROJECT_VERILOG)/rtl/vertex_deserializer.v
 -v $(USER_PROJECT_VERILOG)/rtl/mem_write.v
+-v $(USER_PROJECT_VERILOG)/rtl/fragment_fifo.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/wbslave_pkmaster/wb_to_pk.v
 
