@@ -93,8 +93,8 @@ module core_controller_m_unit_test;
     .bad_read_o()
   );
 
-  wire [`STREAM_SIPORT(`VERTEX_ORDER_WIDTH)] vertorder_sstreami;
-  wire [`STREAM_SOPORT(`VERTEX_ORDER_WIDTH)] vertorder_sstreamo;
+  wire [`STREAM_MOPORT(`VERTEX_ORDER_WIDTH)] vertorder_mstreamo;
+  wire [`STREAM_MIPORT(`VERTEX_ORDER_WIDTH)] vertorder_mstreami;
   wire                                       vertorder_clear;
   wire                                       vertorder_full;
   wire                                       vertorder_empty;
@@ -105,8 +105,8 @@ module core_controller_m_unit_test;
     .clk_i(clk),
     .nrst_i(nrst),
 
-    .sstream_i(vertorder_sstreami),
-    .sstream_o(vertorder_sstreamo),
+    .sstream_i(vertorder_mstreamo),
+    .sstream_o(vertorder_mstreami),
     .mstream_i(1'b0),
     .mstream_o(),
 
@@ -207,8 +207,8 @@ module core_controller_m_unit_test;
     .vertcache_test_found_i(vertcache_test_found),
     .vertcache_clear_o(vertcache_clear),
 
-    .vertorder_sstreamo_i(vertorder_sstreamo),
-    .vertorder_sstreami_o(vertorder_sstreami),
+    .vertorder_mstream_o(vertorder_mstreamo),
+    .vertorder_mstream_i(vertorder_mstreami),
     .vertorder_full_i(vertorder_full),
     .vertorder_empty_i(vertorder_empty),
     .vertorder_clear_o(vertorder_clear),

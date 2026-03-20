@@ -55,8 +55,8 @@ module dispatch_m_unit_test;
     .bad_read_o()
   );
 
-  wire [`STREAM_SIPORT(`NUM_CORES_WIDTH)] vertorder_sstreami;
-  wire [`STREAM_SOPORT(`NUM_CORES_WIDTH)] vertorder_sstreamo;
+  wire [`STREAM_MOPORT(`NUM_CORES_WIDTH)] vertorder_mstreamo;
+  wire [`STREAM_MIPORT(`NUM_CORES_WIDTH)] vertorder_mstreami;
   wire                                    vertorder_empty;
   reg                                     vertorder_full; // Driven by TB
   vertex_order_buffer_m #(
@@ -66,8 +66,8 @@ module dispatch_m_unit_test;
     .clk_i(clk),
     .nrst_i(nrst),
 
-    .sstream_i(vertorder_sstreami),
-    .sstream_o(vertorder_sstreamo),
+    .sstream_i(vertorder_mstreamo),
+    .sstream_o(vertorder_mstreami),
     .mstream_i(32'b0),
     .mstream_o(),
 
@@ -128,8 +128,8 @@ module dispatch_m_unit_test;
     .vertcache_test_valid_o(vertcache_test_valid),
     .vertcache_test_found_i(vertcache_test_found),
 
-    .vertorder_sstreamo_i(vertorder_sstreamo),
-    .vertorder_sstreami_o(vertorder_sstreami),
+    .vertorder_mstream_i(vertorder_mstreami),
+    .vertorder_mstream_o(vertorder_mstreamo),
     .vertorder_full_i(vertorder_full),
 
     .index_buffer_addr_i(index_buffer_addr),

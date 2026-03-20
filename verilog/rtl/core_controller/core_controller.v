@@ -41,11 +41,11 @@ module core_controller_wrapper_m #(
   output wire         vertcache_clear_o,
 
   // Vertex order buffer
-  input  wire [`STREAM_SOPORT(`VERTEX_ORDER_WIDTH)] vertorder_sstreamo_i,
-  output wire [`STREAM_SIPORT(`VERTEX_ORDER_WIDTH)] vertorder_sstreami_o,
-  input  wire                                    vertorder_full_i,
-  input  wire                                    vertorder_empty_i,
-  output wire                                    vertorder_clear_o,
+  input  wire [`STREAM_MIPORT(`VERTEX_ORDER_WIDTH)] vertorder_mstream_i,
+  output wire [`STREAM_MOPORT(`VERTEX_ORDER_WIDTH)] vertorder_mstream_o,
+  input  wire                                       vertorder_full_i,
+  input  wire                                       vertorder_empty_i,
+  output wire                                       vertorder_clear_o,
 
   // Rasterizer fragment output FIFO
   input  wire fragfifo_full_i,
@@ -131,8 +131,8 @@ module core_controller_wrapper_m #(
     .vertcache_test_found_i(vertcache_test_found_i),
     .vertcache_clear_o(vertcache_clear_o),
 
-    .vertorder_sstreamo_i(vertorder_sstreamo_i),
-    .vertorder_sstreami_o(vertorder_sstreami_o),
+    .vertorder_mstream_i(vertorder_mstream_i),
+    .vertorder_mstream_o(vertorder_mstream_o),
     .vertorder_full_i(vertorder_full_i),
     .vertorder_empty_i(vertorder_empty_i),
     .vertorder_clear_o(vertorder_clear_o),
@@ -551,11 +551,11 @@ module core_controller_m #(
   output wire         vertcache_clear_o,
 
   // Vertex order buffer
-  input  wire [`STREAM_SOPORT(`VERTEX_ORDER_WIDTH)] vertorder_sstreamo_i,
-  output wire [`STREAM_SIPORT(`VERTEX_ORDER_WIDTH)] vertorder_sstreami_o,
-  input  wire                                    vertorder_full_i,
-  input  wire                                    vertorder_empty_i,
-  output wire                                    vertorder_clear_o,
+  input  wire [`STREAM_MIPORT(`VERTEX_ORDER_WIDTH)] vertorder_mstream_i,
+  output wire [`STREAM_MOPORT(`VERTEX_ORDER_WIDTH)] vertorder_mstream_o,
+  input  wire                                       vertorder_full_i,
+  input  wire                                       vertorder_empty_i,
+  output wire                                       vertorder_clear_o,
 
   // Rasterizer fragment output FIFO
   input  wire fragfifo_full_i,
@@ -636,8 +636,8 @@ module core_controller_m #(
     .vertcache_test_valid_o(vertcache_test_valid_o),
     .vertcache_test_found_i(vertcache_test_found_i),
 
-    .vertorder_sstreamo_i(vertorder_sstreamo_i),
-    .vertorder_sstreami_o(vertorder_sstreami_o),
+    .vertorder_mstream_i(vertorder_mstream_i),
+    .vertorder_mstream_o(vertorder_mstream_o),
     .vertorder_full_i(vertorder_full_i),
 
     .index_buffer_addr_i(index_buffer_addr_i),
