@@ -214,8 +214,8 @@ module top_level_m(
         .vertcache_test_found_i(svc_test_found),
         .vertcache_clear_o(svc_clear),
 
-        .vertorder_sstreamo_i(order_mstreami),
-        .vertorder_sstreami_o(order_mstreamo),
+        .vertorder_mstream_i(order_mstreami),
+        .vertorder_mstream_o(order_mstreamo),
         .vertorder_full_i(vob_full),
         .vertorder_empty_i(vob_empty),
         .vertorder_clear_o(vob_clear),
@@ -267,7 +267,7 @@ module top_level_m(
         .clk_i(clk),
         .nrst_i(nrst),
 
-        .sstream_i(outbox_mstreamo), // TODO: should this pull from the cores, or do the cores push?
+        .sstream_i(outbox_mstreamo),
         .sstream_o(outbox_mstreami),
 
         .mstream_i(core_deser_mstreami),
