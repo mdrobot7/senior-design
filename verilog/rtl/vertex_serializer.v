@@ -23,21 +23,17 @@ module vertex_serializer_m(
             tmp <= '0;
             valid <= 1'b0;
         end else begin
-            if(tmp != 8'b0)
-                count <= count + 3'd1;
-
+            if(valid)
+            count <= count + 3'd1;
             if ((count == 3'd0) && (sstream_i[`STREAM_SI_VALID(`FRAGMENT_WIDTH)] == 1'b1)) begin
                 tmp <= sstream_i[`STREAM_SI_DATA(`FRAGMENT_WIDTH)];
                 last <= 1'b0;
                 valid <= 1'b1;
             end
-
             else
                 tmp <= (tmp >> 32);
-
             if (count == 3'd6)
                 last <= 1'b1;
-                
             if (count == 3'd7)
                 valid <= 1'b0;
         end 
