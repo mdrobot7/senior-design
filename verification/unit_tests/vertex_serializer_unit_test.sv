@@ -17,8 +17,8 @@ module vertex_serializer_m_unit_test;
   reg  [`STREAM_SIPORT(`FRAGMENT_WIDTH)] sstream_i;
   wire [`STREAM_SOPORT(`FRAGMENT_WIDTH)] sstream_o;
 
-  reg  [`MAILBOX_STREAM_SIZE] mstream_i;
-  wire [`MAILBOX_STREAM_SIZE] mstream_o;
+  reg  [`STREAM_MIPORT(`MAILBOX_STREAM_SIZE)] mstream_i;
+  wire [`STREAM_MOPORT(`MAILBOX_STREAM_SIZE)] mstream_o;
 
   vertex_serializer_m my_vertex_serializer_m(
     .clk_i(clk),
@@ -53,13 +53,27 @@ module vertex_serializer_m_unit_test;
 
   `SVTEST(serialize)
     integer i;
-    logic [7:0][31:0] data = '{8{32'hDEADBEEF}};
-    fake_raster.WRITE_LAST(data);
+    logic [7:0][31:0] data;
+
     for(i = 0; i < 8; i++)begin
+      data[i] = i;
+    end
+    fake_raster.WRITE_LAST(data);
+    clk_rst.WAIT_CYCLES(1);
+    for(i = 0; i < 8; i++)begin
+      $display("READY: %b", sstream_o[`STREAM_SO_READY(`FRAGMENT_WIDTH)]);
+      $display("Serializer: %h", mstream_o[`STREAM_MO_DATA(`MAILBOX_STREAM_SIZE)]);
+      $display("VALID: %b", mstream_o[`STREAM_MO_VALID(`MAILBOX_STREAM_SIZE)]);
+
+      $display("Expected Data: %h",data[i]);
+      $display("LAST: %b", mstream_o[`STREAM_MO_LAST(`MAILBOX_STREAM_SIZE)]);
+
       `FAIL_UNLESS(mstream_o[`STREAM_MO_DATA(`MAILBOX_STREAM_SIZE)] == data[i])
       `FAIL_UNLESS(mstream_o[`STREAM_MO_VALID(`MAILBOX_STREAM_SIZE)] == 1'b1)
       if(i == 7)
         `FAIL_UNLESS(mstream_o[`STREAM_MO_LAST(`MAILBOX_STREAM_SIZE)] == 1'b1)
+      clk_rst.WAIT_CYCLES(1);
+      
     end
   `SVTEST_END
 
