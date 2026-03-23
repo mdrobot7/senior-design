@@ -109,8 +109,8 @@ module integration_tb();
 
         // Index buffer
         WRITE_WORD(32'h80000 + 0 * 4, 0);
-        WRITE_WORD(32'h80000 + 1 * 4, 1);
-        WRITE_WORD(32'h80000 + 2 * 4, 2);
+        WRITE_WORD(32'h80000 + 1 * 4, 2);
+        WRITE_WORD(32'h80000 + 2 * 4, 1);
 
         // Vertex 0
         WRITE_WORD(32'h90000 + 0 * 20 + 0, `FP(1));

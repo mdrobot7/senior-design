@@ -171,13 +171,13 @@ module dispatch_m #(
             index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
           if (core_idx == `NUM_CORES || vertorder_full_i) begin
             index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
-            core_stall_o <= {`NUM_CORES{1'b1}};
+            core_stall_o <= core_stall;
             dispatch_done_o <= 1;
             state <= STATE_DISPATCH_DONE;
           end
           if (index_fetch_model_done && index_fetch_empty) begin
             index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
-            core_stall_o <= {`NUM_CORES{1'b1}};
+            core_stall_o <= core_stall;
             dispatch_done_o <= 1;
             state <= STATE_MODEL_DONE;
           end

@@ -67,7 +67,7 @@ module rasterizer_m(
 
         .div_mstream_i(wdiv_div_so),
         .div_mstream_o(wdiv_div_si),
-        
+
         .div_sstream_i(wdiv_div_mo),
         .div_sstream_o(wdiv_div_mi),
 
@@ -152,7 +152,7 @@ module rasterizer_m(
 
     reg bary_last;
     reg bary_run;
-    
+
     wire bary_init;
     wire bary_discard;
     wire bary_busy;
@@ -230,7 +230,7 @@ module rasterizer_m(
                 STATE_READY: begin
                     if (run) begin
                         state <= STATE_BARY_BOOT;
-                        
+
                         posx  <= bbx0;
                         posy  <= bby0;
 
@@ -326,7 +326,7 @@ module rasterizer_m(
         bary_check_busy ||
         depth_busy ||
         normal_busy ||
-        (frags_in_flight != 0); // TODO: make an busy and flushed different
+        (frags_in_flight != 0);
 
     normal_pipe_m normal_pipe(
         .clk_i(clk_i),
@@ -382,7 +382,7 @@ module rasterizer_m(
         .v2x(v2x),
         .v2y(v2y),
         .v2z(v2z),
-        
+
         .div_mstream_i(bary_div_so),
         .div_mstream_o(bary_div_si),
 
@@ -460,7 +460,7 @@ module rasterizer_m(
 
         .mport_i(depth_mport_i),
         .mport_o(depth_mport_o),
-        
+
         .busy_o(depth_busy)
     );
 
@@ -483,7 +483,7 @@ module rasterizer_m(
         .tex_addr_i(tex_addr_i),
         .tex_width_i(tex_width_i),
         .tex_height_i(tex_height_i),
-        
+
         .normal_valid_i(normal_valid),
         .nx_i(nx),
         .ny_i(ny),
@@ -496,7 +496,7 @@ module rasterizer_m(
 
         .sstreams_i({ wdiv_div_si, normal_div_si, bary_div_si, wavg0_div_si, wavg1_div_si }),
         .sstreams_o({ wdiv_div_so, normal_div_so, bary_div_so, wavg0_div_so, wavg1_div_so }),
-        
+
         .mstreams_i({ wdiv_div_mi, normal_div_mi, bary_div_mi, wavg0_div_mi, wavg1_div_mi }),
         .mstreams_o({ wdiv_div_mo, normal_div_mo, bary_div_mo, wavg0_div_mo, wavg1_div_mo })
     );
