@@ -33,6 +33,7 @@ module vertex_serializer_m(
             mstream_o[`STREAM_MO_LAST(`MAILBOX_STREAM_SIZE)] <= 1'b1;
     end
 
-    assign sstream_o[`STREAM_MO_DATA] = tmp[31:0];
+    assign mstream_o[`STREAM_MO_VALID(`MAILBOX_STREAM_SIZE)] = sstream_i[`STREAM_SI_VALID(`FRAGMENT_WIDTH)]
+    assign mstream_o[`STREAM_MO_DATA(`MAILBOX_STREAM_SIZE)] = tmp[31:0];
 
 endmodule
