@@ -18,19 +18,20 @@ This repository contains a 3D graphics accelerator. Specifically, we created a p
 # Consumer Need
 Many modern graphics processing units (GPUs) are complex devices. For our project, we have elected to design and test a small footprint educational GPU through the Iowa State Chip Forge organization’s toolflow. This organization’s focus is to give students an opportunity to experience ASIC design, and the toolflow is an open-source solution to design ASICs. The μGPU provides a simple and relevant method for students to enter the world of GPU and ASIC design.
 
-The μGPU will be used to help students explore GPU design in a more consumable way than self-research and exploration. Our documentation and weekly reports can be used by students to help them understand the architecture choices we made and to help them consume the design in modularized pieces. Additionally, at Iowa State University there is a lack of formal instruction on hardware design for graphics. Students at other universities may not even have a course on GPU design offered and could use this document to help themselves learn key concepts for a relatively simple GPU design.
+The μGPU will be used to help students explore GPU design in a more consumable way than self-research and exploration. Our documentation and design can be used by students to help them understand the architecture choices we made and to help them consume the design in modularized pieces. Additionally, at Iowa State University there is a lack of formal instruction on hardware design for graphics. Students at other universities may not even have a course on GPU design offered and could use this document to help themselves learn key concepts for a relatively simple GPU design.
 
 # Design Proposal
 The following is our proposed design based on our current development. As described in the overview, we have a PCBA to hold the memory chips, and to hold our VGA port to display to the monitor. A render of this PCBA can be seen below.
 
 <p align="center">
-  <img src="docs/source/_static/MemoryVGAPmod.png" alt="3D Render of MemoryVGAPmod"> 
+  <img src="docs/source/_static/MemoryVGAPmod.png" alt="3D Render of MemoryVGAPmod"> <br>
+  MemoryVGAPmod
 </p>
 
 This PCBA contains a resistor ladder DAC to convert the digital pixel data to its analog component, which VGA uses. We also plan on having an analog component resistor ladder on chip, but will keep the PCB alternative open for redundancy. In the final design, the PCBA will be housed an in 3D printed enclosure. An overview of our SoC can be seen below.
 
 <p align="center">
-    <img src="docs/source/_static/OverallDesign.png">
+    <img src="docs/source/_static/OverallDesign.png"> <br>
     Proposed Design Block Diagram
 </p>
 
@@ -49,7 +50,7 @@ The three major hardware modules are the rasterizer, the core controller, and th
 
 The shader cores implements a custom ISA inspired by MIPS and RISC-V designed for GPU operations. These cores are given the instructions and data from the core controller, and the work is done on the data in the shader cores. Each shader core has a 5 stage pipeline to complete memory accesses, do logical and arithmetic work, and each has a MAC unit for linear algebra computations. Note that for area considerations, shader cores do not contain hardware to divide, but they can do software division algorithm. 
 <p align="center">
-    <img src="docs/source/_static/core.png">
+    <img src="docs/source/_static/core.png"> <br>
     Core Block Diagram
 </p>
 
