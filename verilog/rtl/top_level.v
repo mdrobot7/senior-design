@@ -77,6 +77,9 @@ module top_level_m(
     wire [`BUS_MIPORT] cc_mporti;
     wire [`BUS_MOPORT] cc_mporto;
 
+    wire [`BUS_MIPORT] mw_mporti;
+    wire [`BUS_MOPORT] mw_mporto;
+
     wire [`BUS_SIPORT] spi1_sporti;
     wire [`BUS_SOPORT] spi1_sporto;
 
@@ -136,12 +139,12 @@ module top_level_m(
     wire fragfifo_done_mailing;
     wire fragfifo_clear;
 
-    busarb_m #(4 + `NUM_CORES, 2, 2) arbiter(
+    busarb_m #(5 + `NUM_CORES, 2, 2) arbiter(
         .clk_i(clk),
         .nrst_i(nrst),
 
-        .mports_i({ cc_mporto, core_mporto, rast2_mporto, rast1_mporto, vga_mporto }),
-        .mports_o({ cc_mporti, core_mporti, rast2_mporti, rast1_mporti, vga_mporti }),
+        .mports_i({ mw_mporto, cc_mporto, core_mporto, rast2_mporto, rast1_mporto, vga_mporto }),
+        .mports_o({ mw_mporti, cc_mporti, core_mporti, rast2_mporti, rast1_mporti, vga_mporti }),
 
         .sports_i({ spi1_sporto, spi2_sporto }),
         .sports_o({ spi1_sporti, spi2_sporti })
@@ -336,6 +339,21 @@ module top_level_m(
         .mstream_o(vrc_mstreamo)
     );
 
+    mem_write_m mem_write(
+        .clk_i(clk),
+        .nrst_i(nrst),
+
+        .busy_o(),
+
+        .sstream_i(frag_mstreamo),
+        .sstream_o(frag_mstreami),
+
+        .mport_i(mw_mporti),
+        .mport_o(mw_mporto),
+
+        .fb_i(1'b0)
+    );
+
     // TODO: Fix output stream sizes (josh problem)
     fragment_fifo_m #(
         .SIZE(`FRAGMENT_WIDTH),
@@ -345,7 +363,7 @@ module top_level_m(
         .nrst_i(nrst),
 
         .sstream_i(frag_mstreamo),
-        .sstream_o(frag_mstreami),
+        .sstream_o(),
         .mstream_i(inbox_mstreami),
         .mstream_o(inbox_mstreamo),
 

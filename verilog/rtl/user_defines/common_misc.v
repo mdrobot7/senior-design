@@ -10,7 +10,7 @@
 
 `define DECIMAL_POS (16)
 
-`define NUM_CORES (6)
+`define NUM_CORES (3)
 `define NUM_CORES_WIDTH ($clog2(`NUM_CORES))
 
 `define SRAM_1024x32_ADDR_WIDTH (10)

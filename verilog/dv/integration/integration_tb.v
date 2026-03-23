@@ -89,6 +89,8 @@ module integration_tb();
         .vsync_o()
     );
 
+    image_m image();
+
     initial begin : RUN
         integer i;
         reg [`WORD] temp [1023:0];
@@ -111,31 +113,34 @@ module integration_tb();
         WRITE_WORD(32'h80000 + 0 * 4, 0);
         WRITE_WORD(32'h80000 + 1 * 4, 2);
         WRITE_WORD(32'h80000 + 2 * 4, 1);
+        WRITE_WORD(32'h80000 + 3 * 4, 1);
+        WRITE_WORD(32'h80000 + 4 * 4, 2);
+        WRITE_WORD(32'h80000 + 5 * 4, 3);
 
         // Vertex 0
-        WRITE_WORD(32'h90000 + 0 * 20 + 0, `FP(1));
-        WRITE_WORD(32'h90000 + 0 * 20 + 4, `FP(1));
+        WRITE_WORD(32'h90000 + 0 * 20 + 0, `FP(61));
+        WRITE_WORD(32'h90000 + 0 * 20 + 4, `FP(61));
         WRITE_WORD(32'h90000 + 0 * 20 + 8, `FP(1));
         WRITE_WORD(32'h90000 + 0 * 20 + 12, `FP(0));
         WRITE_WORD(32'h90000 + 0 * 20 + 16, `FP(0));
 
         // Vertex 1
-        WRITE_WORD(32'h90000 + 1 * 20 + 0, `FP(61));
-        WRITE_WORD(32'h90000 + 1 * 20 + 4, `FP(1));
+        WRITE_WORD(32'h90000 + 1 * 20 + 0, `FP(121));
+        WRITE_WORD(32'h90000 + 1 * 20 + 4, `FP(61));
         WRITE_WORD(32'h90000 + 1 * 20 + 8, `FP(1));
         WRITE_WORD(32'h90000 + 1 * 20 + 12, `FP(60));
         WRITE_WORD(32'h90000 + 1 * 20 + 16, `FP(0));
 
         // Vertex 2
-        WRITE_WORD(32'h90000 + 2 * 20 + 0, `FP(1));
-        WRITE_WORD(32'h90000 + 2 * 20 + 4, `FP(61));
+        WRITE_WORD(32'h90000 + 2 * 20 + 0, `FP(61));
+        WRITE_WORD(32'h90000 + 2 * 20 + 4, `FP(121));
         WRITE_WORD(32'h90000 + 2 * 20 + 8, `FP(1));
         WRITE_WORD(32'h90000 + 2 * 20 + 12, `FP(0));
         WRITE_WORD(32'h90000 + 2 * 20 + 16, `FP(60));
 
         // Vertex 3
-        WRITE_WORD(32'h90000 + 3 * 20 + 0, `FP(61));
-        WRITE_WORD(32'h90000 + 3 * 20 + 4, `FP(61));
+        WRITE_WORD(32'h90000 + 3 * 20 + 0, `FP(121));
+        WRITE_WORD(32'h90000 + 3 * 20 + 4, `FP(121));
         WRITE_WORD(32'h90000 + 3 * 20 + 8, `FP(1));
         WRITE_WORD(32'h90000 + 3 * 20 + 12, `FP(60));
         WRITE_WORD(32'h90000 + 3 * 20 + 16, `FP(60));
@@ -144,6 +149,14 @@ module integration_tb();
         wbmst.WRITE(32'h30000000 + 0 * 4, `ADDR_FB1); // Texture addr
         wbmst.WRITE(32'h30000000 + 1 * 4, 60); // Texture height
         wbmst.WRITE(32'h30000000 + 2 * 4, 60); // Texture width
+
+        for (i = 0; i < 60 * 60; i = i + 1) begin
+            WRITE_MEM(`ADDR_FB1 + i, image.tex_data[i]);
+        end
+
+        for (i = 0; i < 320 * 240 * 4; i = i + 1) begin
+            WRITE_MEM(`ADDR_DEPTH_BUFFER + i, 8'hff);
+        end
 
         // Core controller config
         wbmst.WRITE(32'h28000000 + 2 * 4, 6'b111111); // Enable all cores
@@ -154,7 +167,7 @@ module integration_tb();
 
         wbmst.WRITE(32'h28000000 + 8 * 4, 32'h00080000); // Index buffer addr
 
-        wbmst.WRITE(32'h28000000 + 9 * 4, 32'd3); // Job/index count
+        wbmst.WRITE(32'h28000000 + 9 * 4, 32'd6); // Job/index count
 
         wbmst.WRITE(32'h28000000 + (10 + 46) * 4, 32'h00090000); // r46 = 0x00090000
 
@@ -179,9 +192,11 @@ module integration_tb();
     end
 
     initial begin
-        #1000000;
+        #10000000;
 
         `VGA_WRITE("output.bmp", spi_chip1.mem, `ADDR_FB0, 320, 240, `COLOR_TYPE_RGB332);
+
+        // `VGA_WRITE("depth.bmp", spi_chip1.mem, `ADDR_DEPTH_BUFFER, 320, 240, `COLOR_TYPE_GSW);
 
         $finish;
     end
