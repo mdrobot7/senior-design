@@ -1,5 +1,6 @@
 `include "svunit_defines.svh"
 `include "user_defines.v"
+`include "test/clk_rst.v"
 `include "vertex_serializer.v"
 `include "test/stream_master.v"
 // `include "stream/stream_fifo.v"
@@ -28,7 +29,7 @@ module vertex_serializer_m_unit_test;
     .mstream_o(mstream_o)
   );
 
-    stream_master_m #(SIZE) fake_raster (
+    stream_master_m #(`FRAGMENT_WIDTH) fake_raster (
     .clk_i(clk),
     .mstream_i(sstream_o),
     .mstream_o(sstream_i)
@@ -53,13 +54,13 @@ module vertex_serializer_m_unit_test;
   `SVTEST(serialize)
     integer i;
     logic [7:0][31:0] data = '{8{32'hDEADBEEF}};
-    fake_raster.WRITE_LAST(data)
-    for(i = 0; i < 8; i++){
+    fake_raster.WRITE_LAST(data);
+    for(i = 0; i < 8; i++)begin
       `FAIL_UNLESS(mstream_o[`STREAM_MO_DATA(`MAILBOX_STREAM_SIZE)] == data[i])
       `FAIL_UNLESS(mstream_o[`STREAM_MO_VALID(`MAILBOX_STREAM_SIZE)] == 1'b1)
       if(i == 7)
-      `FAIL_UNLESS(mstream_o[`STREAM_MO_LAST(`MAILBOX_STREAM_SIZE)] == 1'b1)
-    }
+        `FAIL_UNLESS(mstream_o[`STREAM_MO_LAST(`MAILBOX_STREAM_SIZE)] == 1'b1)
+    end
   `SVTEST_END
 
   `SVUNIT_TESTS_END
