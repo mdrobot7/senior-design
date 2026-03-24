@@ -95,6 +95,10 @@ module integration_tb();
         integer i;
         reg [`WORD] temp [1023:0];
 
+        reg [31:0] triangles;
+
+        triangles = 2;
+
         $dumpfile("integration.vcd");
         $dumpvars(0, integration_tb);
 
@@ -167,7 +171,7 @@ module integration_tb();
 
         wbmst.WRITE(32'h28000000 + 8 * 4, 32'h00080000); // Index buffer addr
 
-        wbmst.WRITE(32'h28000000 + 9 * 4, 32'd6); // Job/index count
+        wbmst.WRITE(32'h28000000 + 9 * 4, triangles * 3); // Job/index count
 
         wbmst.WRITE(32'h28000000 + (10 + 46) * 4, 32'h00090000); // r46 = 0x00090000
 
@@ -189,14 +193,29 @@ module integration_tb();
         // cores->greg[46] = 0x90000;
 
         // cores->control = 0b1010;
-    end
 
-    initial begin
-        #10000000;
+        for (i = 0; i < triangles; i = i + 1) begin
+            wait(top_level.rasterizer.rasterizer.busy_o);
+            wait(!top_level.rasterizer.rasterizer.busy_o);
+        end
+    
+        $display("Elapsed %d clock cycles", clk_rst.current_cycle);
+        $display("%d FPS at 10 MHz", 10000000.0 / clk_rst.current_cycle);
+        $display("%d FPS at 20 MHz", 20000000.0 / clk_rst.current_cycle);
+        $display("%d FPS at 30 MHz", 30000000.0 / clk_rst.current_cycle);
+        $display("%d FPS at 40 MHz", 40000000.0 / clk_rst.current_cycle);
+        $display("%d FPS at 50 MHz", 50000000.0 / clk_rst.current_cycle);
+        $display("%d FPS at 100 MHz", 100000000.0 / clk_rst.current_cycle);
 
         `VGA_WRITE("output.bmp", spi_chip1.mem, `ADDR_FB0, 320, 240, `COLOR_TYPE_RGB332);
 
         // `VGA_WRITE("depth.bmp", spi_chip1.mem, `ADDR_DEPTH_BUFFER, 320, 240, `COLOR_TYPE_GSW);
+
+        $finish;
+    end
+
+    initial begin
+        #100000000;
 
         $finish;
     end

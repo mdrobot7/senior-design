@@ -10,6 +10,8 @@ module rasterizer_wrapper_m(
     output reg wbs_ack_o,
     output reg [`WORD_WIDTH-1:0] wbs_dat_o,
 
+    output wire rast_busy_o,
+
     input  wire [`STREAM_SIPORT(3 * `SHADED_VERTEX_WIDTH)] sstream_i,
     output reg  [`STREAM_SOPORT(3 * `SHADED_VERTEX_WIDTH)] sstream_o,
 
@@ -65,6 +67,8 @@ module rasterizer_wrapper_m(
     reg [`WORD] u1b;
     reg [`WORD] u2a;
     reg [`WORD] u2b;
+
+    assign rast_busy_o = busy;
 
     rasterizer_m rasterizer(
         .clk_i(clk),

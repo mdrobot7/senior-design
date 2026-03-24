@@ -1,3 +1,5 @@
+`default_nettype none
+
 module top_level_m(
     input  wire wb_clk_i,
     input  wire wb_rst_i,
@@ -110,12 +112,16 @@ module top_level_m(
     wire         svc_test_found;
 
     wire [`SHADED_VERTEX] svc_store_vertex;
-    wire [`WORD]          svc_store_index = 0;
+    wire [`WORD]          svc_store_index = 2;
     wire                  svc_store_valid;
+
+    wire [$clog2(`NUM_CORES + 1) - 1:0] svc_store_index_select;
 
     wire vob_full;
     wire vob_empty;
     wire vob_clear;
+
+    wire rast_busy;
 
     wire [`STREAM_MIPORT(`SHADED_VERTEX_WIDTH)] svc_mstreami;
     wire [`STREAM_MOPORT(`SHADED_VERTEX_WIDTH)] svc_mstreamo;
@@ -277,10 +283,6 @@ module top_level_m(
         .mstream_o(core_deser_mstreamo)
     );
 
-    // assign store_valid = core_deser_mstreamo[`STREAM_MO_VALID(`SHADED_VERTEX_WIDTH)];
-    assign store_valid = 0;
-    assign store_vertex = core_deser_mstreamo[`STREAM_MO_DATA(`SHADED_VERTEX_WIDTH)];
-
     shaded_vertex_cache_m #(6) svc(
         .clk_i(clk),
         .nrst_i(nrst),
@@ -336,8 +338,14 @@ module top_level_m(
         .sstreams_o({ svb_mstreami, core_deser_mstreami }),
 
         .mstream_i(vrc_mstreami),
-        .mstream_o(vrc_mstreamo)
+        .mstream_o(vrc_mstreamo),
+
+        .svc_store_vertex_o(svc_store_vertex),
+        .svc_store_index_select_o(svc_store_index_select),
+        .svc_store_valid_o()
     );
+
+    assign svc_store_valid = 0;
 
     mem_write_m mem_write(
         .clk_i(clk),
@@ -384,6 +392,8 @@ module top_level_m(
         .wbs_adr_i(wbs_adr_i),
         .wbs_ack_o(wbs_ackN_o[1]),
         .wbs_dat_o(wbs_datN_o[1]),
+
+        .rast_busy_o(rast_busy),
 
         .sstream_i(vrc_mstreamo),
         .sstream_o(vrc_mstreami),
