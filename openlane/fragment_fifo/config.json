@@ -10,6 +10,7 @@
         "dir::../../verilog/rtl/user_defines/vga.v",
         "dir::../../verilog/rtl/user_defines.v",
         "dir::../../verilog/rtl/stream/stream_fifo.v",
+        "dir::../../verilog/rtl/vertex_serializer.v",
         "dir::../../verilog/rtl/fragment_fifo.v"
 
     ],

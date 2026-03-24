@@ -1,6 +1,6 @@
 module fragment_fifo_m #(
     parameter PARALLEL_SIZE  = `FRAGMENT_WIDTH,
-    parameter SERIALIZED_SIZE  = 8,
+    parameter SERIALIZED_SIZE  = `MAILBOX_STREAM_SIZE,
     parameter DEPTH = 10
 ) (
     input  wire clk_i,
@@ -27,7 +27,7 @@ module fragment_fifo_m #(
     wire [`STREAM_SOPORT(PARALLEL_SIZE)] parallel_sstream_o;
 
     wire [`STREAM_SIPORT(SERIALIZED_SIZE)] serial_sstream_i;
-    wire [`STREAM_SOPORT(`ERIALIZED_SIZE)] serial_sstream_o;
+    wire [`STREAM_SOPORT(SERIALIZED_SIZE)] serial_sstream_o;
 
 
     stream_fifo_m #( .SIZE(PARALLEL_SIZE), .DEPTH(DEPTH) ) parallel_fifo (
@@ -48,7 +48,7 @@ module fragment_fifo_m #(
         .mstream_o(serial_sstream_i)
     );
 
-    stream_fifo_m #( .SIZE(SERIALIZED_SIZE), .DEPTH(DEPTH) ) serialized_fifo (
+    stream_fifo_m #(.SIZE(SERIALIZED_SIZE), .DEPTH(DEPTH*8) ) serialized_fifo (
         .clk_i(clk_i),
         .nrst_i(nrst_i),
         .sstream_i(serial_sstream_i),
@@ -91,7 +91,7 @@ module fragment_fifo_m #(
         end
         // Override only valid bit for selected core
         for (j = 0; j < `NUM_CORES; j = j + 1) begin
-            if (!clear_i && sel_i[j] && fifo_has_data && internal_mstream_o[`STREAM_MO_VALID(SERIALIZED_SIZE)])
+            if (!clear_i && sel_i[j] && fifo_has_data)
                 mstream_o[j * MO_Size + `STREAM_MO_VALID(SERIALIZED_SIZE)] = 1'b1;
             else
                 mstream_o[j * MO_Size + `STREAM_MO_VALID(SERIALIZED_SIZE)] = 1'b0;
