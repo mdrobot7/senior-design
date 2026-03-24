@@ -97,7 +97,11 @@ module integration_tb();
 
         reg [31:0] triangles;
 
+        real angle;
+
         triangles = 2;
+
+        angle = 3.14 * 0.666;
 
         $dumpfile("integration.vcd");
         $dumpvars(0, integration_tb);
@@ -173,15 +177,22 @@ module integration_tb();
 
         wbmst.WRITE(32'h28000000 + 9 * 4, triangles * 3); // Job/index count
 
-        wbmst.WRITE(32'h28000000 + (10 + 0) * 4, `FP(2));
-        wbmst.WRITE(32'h28000000 + (10 + 1) * 4, -`FP(2));
-        wbmst.WRITE(32'h28000000 + (10 + 2) * 4, 0);
-        wbmst.WRITE(32'h28000000 + (10 + 3) * 4, 0);
+        $display(angle);
+        $display($cos(angle));
+        $display($sin(angle));
+        $display("%x", `REAL_TO_FP(angle));
+        $display("%x", `REAL_TO_FP($cos(angle)));
+        $display("%x", `REAL_TO_FP($sin(angle)));
 
-        wbmst.WRITE(32'h28000000 + (10 + 4) * 4, `FP(1));
-        wbmst.WRITE(32'h28000000 + (10 + 5) * 4, `FP(1));
-        wbmst.WRITE(32'h28000000 + (10 + 6) * 4, `FP(1));
-        wbmst.WRITE(32'h28000000 + (10 + 7) * 4, 0);
+        wbmst.WRITE(32'h28000000 + (10 + 0) * 4, `REAL_TO_FP($cos(angle)));
+        wbmst.WRITE(32'h28000000 + (10 + 1) * 4, -`REAL_TO_FP($sin(angle)));
+        wbmst.WRITE(32'h28000000 + (10 + 2) * 4, 0);
+        wbmst.WRITE(32'h28000000 + (10 + 3) * 4, `FP(200));
+
+        wbmst.WRITE(32'h28000000 + (10 + 4) * 4, `REAL_TO_FP($sin(angle)));
+        wbmst.WRITE(32'h28000000 + (10 + 5) * 4, `REAL_TO_FP($cos(angle)));
+        wbmst.WRITE(32'h28000000 + (10 + 6) * 4, 0);
+        wbmst.WRITE(32'h28000000 + (10 + 7) * 4, `FP(100));
 
         wbmst.WRITE(32'h28000000 + (10 + 8) * 4, 0);
         wbmst.WRITE(32'h28000000 + (10 + 9) * 4, 0);
