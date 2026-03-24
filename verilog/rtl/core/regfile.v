@@ -68,10 +68,4 @@ module core_regfile_m #(
         end
     end
 
-    wire [31:0] r0, r1, r2, r9;
-    assign r0 = mem[0];
-    assign r1 = mem[1];
-    assign r2 = mem[2];
-    assign r9 = mem[9];
-
 endmodule
