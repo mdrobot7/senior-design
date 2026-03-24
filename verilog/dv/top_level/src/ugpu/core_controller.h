@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define CC_CTRL_CMD_Pos         (0)
-#define CC_CTRL_CMD_Msk         (0x3UL << CC_CTRL_CMD_Msk)
+#define CC_CTRL_CMD_Msk         (0x3UL << CC_CTRL_CMD_Pos)
 #define CC_CTRL_CMD(value)      (CC_CTRL_CMD_Msk & ((value) << CC_CTRL_CMD_Pos))
 #define CC_CTRL_CMD_STOP        CC_CTRL_CMD(0x0)
 #define CC_CTRL_CMD_PAUSE       CC_CTRL_CMD(0x1)
@@ -156,7 +156,10 @@ typedef struct {
   CC_GR_t GR[CC_GLOBAL_REGFILE_SIZE];
 } CC_t;
 
-#define CC_IMEM_ADDR ((uint32_t *) 0x00000000UL)
+#define CC_IMEM_ADDR (0x00000000UL)
 #define CC_IMEM_SIZE (0x00001000UL)
+#define CC_IMEM      ((void *) CC_IMEM_ADDR)
+
+#define CC_NUM_CORES (6UL)
 
 #endif

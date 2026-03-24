@@ -1,7 +1,6 @@
 #ifndef _UGPU_RASTERIZER_H
 #define _UGPU_RASTERIZER_H
 
-#include <cstdint>
 #include <stdint.h>
 
 #define RAST_TEXADDR_ADDR_Pos    (0)

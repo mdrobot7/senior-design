@@ -1,7 +1,6 @@
 #ifndef _UGPU_QSPI_H
 #define _UGPU_QSPI_H
 
-#include <cstdint>
 #include <stdint.h>
 
 #define QSPI_CTRL_QSPIEN  (1UL << 0)
@@ -96,5 +95,12 @@ typedef struct {
   QSPIDATA_WCOUNT_t WCOUNT;
   QSPIDATA_RDATA_t RDATA;
 } QSPIDATA_t;
+
+// Default PKBus addresses for external RAM. Assumes the IS66WVQ8M4DBLL-133BLI 32Mb/4MB RAM
+// chip (used on the PMOD board and uGPU carrier board)
+#define QSPI_MEM_SIZE          (0x00400000UL)
+#define QSPI0_MEM_ADDR_DEFAULT (0x00000000UL)
+#define QSPI1_MEM_ADDR_DEFAULT (0x00400000UL)
+#define QSPI2_MEM_ADDR_DEFAULT (0x00800000UL)
 
 #endif

@@ -2,6 +2,8 @@
 #define _UGPU_H_
 
 #include "core_controller.h"
+#include "gpio.h"
+#include "math.h"
 #include "qspi.h"
 #include "rasterizer.h"
 #include "vga.h"
@@ -13,5 +15,8 @@
 #define QSPI2    ((volatile QSPI_t *) 0x00000000)
 #define QSPIDATA ((volatile QSPIDATA_t *) 0x00000000)
 #define VGA      ((volatile VGA_t *) 0x00000000)
+
+// Must be included after peripheral defines
+#include "util.h"
 
 #endif
