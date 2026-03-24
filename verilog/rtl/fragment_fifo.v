@@ -63,7 +63,7 @@ module fragment_fifo_m #(
     integer i;
     always @(*) begin
         for (i = 0; i < `NUM_CORES; i = i + 1)
-            core_ready[i] = mstream_i[MI_Size * i + `STREAM_MI_READY(SIZE)];
+            core_ready[i] = mstream_i[MI_Size * i + `STREAM_MI_READY(SERIALIZED_SIZE)];
     end
 
     //Internal valid and ready 

@@ -35,7 +35,7 @@ module stream_fifo_m #(
 
             for (i = 0; i < DEPTH; i = i + 1) begin
                 last[i]   <= 0;
-                buffer[i] <= 0;
+                buffer[i] = 0;
             end
         end
         else if (clk_i) begin : CLOCK

@@ -32,7 +32,7 @@ module vertex_serializer_m(
             end
             else
                 tmp <= (tmp >> 32);
-            if (count == 3'd6)
+            if (count == 3'd6 && (sstream_i[`STREAM_SI_LAST(`FRAGMENT_WIDTH)] == 1'b1))
                 last <= 1'b1;
             if (count == 3'd7)
                 valid <= 1'b0;
