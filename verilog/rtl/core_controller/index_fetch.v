@@ -125,7 +125,7 @@ module index_fetch_m #(
         end
       endcase
 
-      if (index_buffer_offset >= num_dispatches_i && fifo_empty)
+      if (index_buffer_offset >= num_dispatches_i)
         model_done_o <= 1;
       if (model_done_clr_i)
         model_done_o <= 0;

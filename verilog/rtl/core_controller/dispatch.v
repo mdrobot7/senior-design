@@ -102,7 +102,7 @@ module dispatch_m #(
   wire [`NUM_CORES-1:0] core_stall_undispatched = {`NUM_CORES{1'b1}} << core_idx; // Handle partial dispatch by stalling cores without jobs
 
   assign model_done_o           = dispatch_indices_i
-                                  ? index_fetch_model_done
+                                  ? (index_fetch_model_done && index_fetch_empty)
                                   : (thread_id == num_dispatches_i);
   assign vertcache_test_index_o = index_fetch_mstreamo[`STREAM_MO_DATA(`WORD_WIDTH)];
 
@@ -177,7 +177,7 @@ module dispatch_m #(
             dispatch_done_o <= 1;
             state <= STATE_DISPATCH_DONE;
           end
-          if (index_fetch_model_done) begin
+          if (index_fetch_model_done && index_fetch_empty) begin
             vertcache_test_valid_o <= 0;
             index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
             core_stall_o <= {`NUM_CORES{1'b1}};
