@@ -3,6 +3,7 @@
 `include "test/clk_rst.v"
 `include "stream/stream_fifo.v"
 `include "fragment_fifo.v"
+`include "vertex_serializer.v"
 `include "test/stream_master.v"
 
 module fragment_fifo_m_unit_test;
@@ -31,7 +32,7 @@ module fragment_fifo_m_unit_test;
   wire full_o;
   wire done_mailing_o;
 
-  fragment_fifo_m #(.SIZE(SIZE), .DEPTH(DEPTH)) my_fragment_fifo_m(
+  fragment_fifo_m #(.DEPTH(DEPTH)) my_fragment_fifo_m(
     .clk_i(clk),
     .nrst_i(nrst),
     .clear_i(clear_i),

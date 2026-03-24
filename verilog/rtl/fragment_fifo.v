@@ -1,32 +1,58 @@
 module fragment_fifo_m #(
-    parameter SIZE  = 1,
+    parameter PARALLEL_SIZE  = `FRAGMENT_WIDTH,
+    parameter SERIALIZED_SIZE  = 8,
     parameter DEPTH = 10
 ) (
     input  wire clk_i,
     input  wire nrst_i,
     input  wire clear_i,
 
-    input  wire [`STREAM_SIPORT(SIZE)] sstream_i,
-    output wire [`STREAM_SOPORT(SIZE)] sstream_o,
-    input  wire [`STREAM_MIPORT_SIZE(SIZE) * `NUM_CORES - 1:0] mstream_i,
-    output reg  [`STREAM_MOPORT_SIZE(SIZE) * `NUM_CORES - 1:0] mstream_o,
+    input  wire [`STREAM_SIPORT(PARALLEL_SIZE)] sstream_i,
+    output wire [`STREAM_SOPORT(PARALLEL_SIZE)] sstream_o,
+    input  wire [`STREAM_MIPORT_SIZE(SERIALIZED_SIZE) * `NUM_CORES - 1:0] mstream_i,
+    output reg  [`STREAM_MOPORT_SIZE(SERIALIZED_SIZE) * `NUM_CORES - 1:0] mstream_o,
 
     output reg  empty_o,
     output reg  full_o,
     output reg  done_mailing_o
 );
 
-    localparam MI_Size = `STREAM_MIPORT_SIZE(SIZE);
-    localparam MO_Size = `STREAM_MOPORT_SIZE(SIZE);
+    localparam MI_Size = `STREAM_MIPORT_SIZE(SERIALIZED_SIZE);
+    localparam MO_Size = `STREAM_MOPORT_SIZE(SERIALIZED_SIZE);
 
-    wire [`STREAM_MIPORT(SIZE)] internal_mstream_i;
-    wire [`STREAM_MOPORT(SIZE)] internal_mstream_o;
+    wire [`STREAM_MIPORT(SERIALIZED_SIZE)] internal_mstream_i;
+    wire [`STREAM_MOPORT(SERIALIZED_SIZE)] internal_mstream_o;
 
-    stream_fifo_m #( .SIZE(SIZE), .DEPTH(DEPTH) ) fifo (
+    wire [`STREAM_SIPORT(PARALLEL_SIZE)] parallel_sstream_i;
+    wire [`STREAM_SOPORT(PARALLEL_SIZE)] parallel_sstream_o;
+
+    wire [`STREAM_SIPORT(SERIALIZED_SIZE)] serial_sstream_i;
+    wire [`STREAM_SOPORT(`ERIALIZED_SIZE)] serial_sstream_o;
+
+
+    stream_fifo_m #( .SIZE(PARALLEL_SIZE), .DEPTH(DEPTH) ) parallel_fifo (
         .clk_i(clk_i),
         .nrst_i(nrst_i),
         .sstream_i(sstream_i),
         .sstream_o(sstream_o),
+        .mstream_i(parallel_sstream_o),
+        .mstream_o(parallel_sstream_i)
+    ); 
+
+    vertex_serializer_m serializer(
+        .clk_i(clk_i),
+        .nrst_i(nrst_i),
+        .sstream_i(parallel_sstream_i),
+        .sstream_o(parallel_sstream_o),
+        .mstream_i(serial_sstream_o),
+        .mstream_o(serial_sstream_i)
+    );
+
+    stream_fifo_m #( .SIZE(SERIALIZED_SIZE), .DEPTH(DEPTH) ) serialized_fifo (
+        .clk_i(clk_i),
+        .nrst_i(nrst_i),
+        .sstream_i(serial_sstream_i),
+        .sstream_o(serial_sstream_o),
         .mstream_i(internal_mstream_i),
         .mstream_o(internal_mstream_o)
     ); 
@@ -41,7 +67,7 @@ module fragment_fifo_m #(
     end
 
     //Internal valid and ready 
-    wire fifo_has_data   = internal_mstream_o[`STREAM_MO_VALID(SIZE)];
+    wire fifo_has_data   = internal_mstream_o[`STREAM_MO_VALID(SERIALIZED_SIZE)];
     wire cur_core_ready  = |(core_ready & sel_i);
 
     // Select core, increment to next core if not ready
@@ -65,19 +91,19 @@ module fragment_fifo_m #(
         end
         // Override only valid bit for selected core
         for (j = 0; j < `NUM_CORES; j = j + 1) begin
-            if (!clear_i && sel_i[j] && fifo_has_data && internal_mstream_o[`STREAM_MO_VALID(SIZE)])
-                mstream_o[j * MO_Size + `STREAM_MO_VALID(SIZE)] = 1'b1;
+            if (!clear_i && sel_i[j] && fifo_has_data && internal_mstream_o[`STREAM_MO_VALID(SERIALIZED_SIZE)])
+                mstream_o[j * MO_Size + `STREAM_MO_VALID(SERIALIZED_SIZE)] = 1'b1;
             else
-                mstream_o[j * MO_Size + `STREAM_MO_VALID(SIZE)] = 1'b0;
+                mstream_o[j * MO_Size + `STREAM_MO_VALID(SERIALIZED_SIZE)] = 1'b0;
         end
     end
 
     // FIFO pops when the currently selected core is READY or when clearing
-    assign internal_mstream_i[`STREAM_MI_READY(SIZE)] = cur_core_ready || clear_i;
+    assign internal_mstream_i[`STREAM_MI_READY(SERIALIZED_SIZE)] = cur_core_ready || clear_i;
 
     // Assign MC status bits
     always @(*) begin
-        full_o = ~sstream_o[`STREAM_SO_READY(SIZE)];
+        full_o = ~sstream_o[`STREAM_SO_READY(SERIALIZED_SIZE)];
         empty_o = ~fifo_has_data;
         done_mailing_o = sel_i[0];
     end
