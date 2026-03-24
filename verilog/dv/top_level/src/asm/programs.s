@@ -10,6 +10,12 @@
 # Vertex shader program, with start and end markers
 .global _svertex_shader
 _svertex_shader:
-    .incbin "vertex_shader.bin"
+    .incbin "vertex_shader_cached.bin"
 .global _evertex_shader
 _evertex_shader:
+
+.global _sfragment_shader
+_sfragment_shader:
+    .incbin "fragment_shader.bin"
+.global _efragment_shader
+_efragment_shader:
