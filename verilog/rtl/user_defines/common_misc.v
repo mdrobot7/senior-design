@@ -3,7 +3,7 @@
  */
 
 `define WIDTH (320)
-`define HEIGHT (200)
+`define HEIGHT (240)
 
 `define WORD_WIDTH (32)
 `define WORD `WORD_WIDTH - 1:0

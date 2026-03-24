@@ -425,4 +425,11 @@ module core_m #(
         end
     end
 
+    wire [`WORD] r0, r1, r2, r9;
+
+    assign r0 = regfile.mem[0];
+    assign r1 = regfile.mem[1];
+    assign r2 = regfile.mem[2];
+    assign r9 = regfile.mem[9];
+
 endmodule

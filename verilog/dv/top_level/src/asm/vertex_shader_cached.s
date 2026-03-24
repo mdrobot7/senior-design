@@ -24,20 +24,20 @@ clrp (111)
 () lw $r5, 12[$tid] ; tx
 () lw $r6, 16[$tid] ; ty
 
-() mov $r1, $r10
-() mov $r2, $r11
-() mov $r3, $r12
-() mov $r4, $r13
+;() mov $r1, $r10
+;() mov $r2, $r11
+;() mov $r3, $r12
+;() mov $r4, $r13
 
 ; Vertex shade
-;() dot4 $g0, $r10
-;() macrd $r1
-;() dot4 $g4, $r10
-;() macrd $r2
-;() dot4 $g8, $r10
-;() macrd $r3
-;() dot4 $g12, $r10
-;() macrd $r4
+() dot4 $g0, $r10
+() macrd $r1
+() dot4 $g4, $r10
+() macrd $r2
+() dot4 $g8, $r10
+() macrd $r3
+() dot4 $g12, $r10
+() macrd $r4
 
 ; Ship to rasterizer
 () out

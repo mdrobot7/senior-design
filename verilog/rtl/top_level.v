@@ -385,7 +385,7 @@ module top_level_m(
         .clk_i(clk),
         .nrst_i(nrst),
 
-        .sstream_i(frag_mstreamo),
+        .sstream_i(0),
         .sstream_o(),
         .mstream_i(inbox_mstreami),
         .mstream_o(inbox_mstreamo),

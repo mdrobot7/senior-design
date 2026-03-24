@@ -21,9 +21,6 @@ module rasterizer_wrapper_m(
     input  wire [`BUS_MIPORT] depth_mport_i,
     output wire [`BUS_MOPORT] depth_mport_o,
 
-    input  wire [`BUS_MIPORT] pix_mport_i,
-    output wire [`BUS_MOPORT] pix_mport_o,
-
     input  wire [`BUS_MIPORT] tex_mport_i,
     output wire [`BUS_MOPORT] tex_mport_o
 );

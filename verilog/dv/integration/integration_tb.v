@@ -107,11 +107,11 @@ module integration_tb();
         // If you get a cannot bind error here, add `define FPGA to the top of
         // sram_1024x32.v.
         $readmemh("../top_level/src/asm/vertex_shader_cached.txt", temp);
-        for (i = 0; i < 128; i = i + 1)
+        for (i = 0; i < 512; i = i + 1)
             top_level.core_cont.core_controller.inst_fetch.imem.sram.RAM[i] = temp[i];
         $readmemh("../top_level/src/asm/fragment_shader.txt", temp);
-        for (i = 0; i < 128; i = i + 1)
-            top_level.core_cont.core_controller.inst_fetch.imem.sram.RAM[128 + i] = temp[i];
+        for (i = 0; i < 512; i = i + 1)
+            top_level.core_cont.core_controller.inst_fetch.imem.sram.RAM[512 + i] = temp[i];
 
         // Index buffer
         WRITE_WORD(32'h80000 + 0 * 4, 0);
@@ -173,7 +173,27 @@ module integration_tb();
 
         wbmst.WRITE(32'h28000000 + 9 * 4, triangles * 3); // Job/index count
 
-        wbmst.WRITE(32'h28000000 + (10 + 46) * 4, 32'h00090000); // r46 = 0x00090000
+        wbmst.WRITE(32'h28000000 + (10 + 0) * 4, `FP(2));
+        wbmst.WRITE(32'h28000000 + (10 + 1) * 4, -`FP(2));
+        wbmst.WRITE(32'h28000000 + (10 + 2) * 4, 0);
+        wbmst.WRITE(32'h28000000 + (10 + 3) * 4, 0);
+
+        wbmst.WRITE(32'h28000000 + (10 + 4) * 4, `FP(1));
+        wbmst.WRITE(32'h28000000 + (10 + 5) * 4, `FP(1));
+        wbmst.WRITE(32'h28000000 + (10 + 6) * 4, `FP(1));
+        wbmst.WRITE(32'h28000000 + (10 + 7) * 4, 0);
+
+        wbmst.WRITE(32'h28000000 + (10 + 8) * 4, 0);
+        wbmst.WRITE(32'h28000000 + (10 + 9) * 4, 0);
+        wbmst.WRITE(32'h28000000 + (10 + 10) * 4, `FP(1));
+        wbmst.WRITE(32'h28000000 + (10 + 11) * 4, 0);
+
+        wbmst.WRITE(32'h28000000 + (10 + 12) * 4, 0);
+        wbmst.WRITE(32'h28000000 + (10 + 13) * 4, 0);
+        wbmst.WRITE(32'h28000000 + (10 + 14) * 4, 0);
+        wbmst.WRITE(32'h28000000 + (10 + 15) * 4, `FP(1));
+
+        wbmst.WRITE(32'h28000000 + (10 + 46) * 4, 32'h00090000); // g46 = 0x00090000
 
         wbmst.WRITE(32'h28000000 + 0 * 4, 5'b01010); // Dispatch indices, start
 
