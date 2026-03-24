@@ -36,8 +36,6 @@ include $(LIBRARY_DIR)/firmware_vexriscv/verilog/dv/make/lib-overrides.makefile
 
 # ---- Include Firmware Files ----
 
-include $(PWDD)/../firmware/Makefile
-
 SRC_DIR = $(PWDD)/src
 
 SOURCE_FILES += $(shell find $(SRC_DIR) -name "*.c")
@@ -54,7 +52,7 @@ CUSTOMASM_SOURCES = $(ASM_DIR)/edge_detect.s \
 					$(ASM_DIR)/vertex_shader_cached.s \
 					$(ASM_DIR)/vertex_shader.s
 
-INCLUDE_DIRS += -I$(ASM_DIR)
+INCLUDE_DIRS += -I$(ASM_DIR) -I$(SRC_DIR) -I$(SRC_DIR)/ugpu
 SOURCE_FILES += $(ASM_DIR)/programs.s
 
 $(BLOCKS).elf: $(BLOCKS).c $(LINKER_SCRIPT) $(VEX_STARTUP) $(SOURCE_FILES) assemble-customasm
