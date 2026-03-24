@@ -142,6 +142,9 @@ module core_controller_wrapper_m #(
     .vertorder_empty_i(vertorder_empty_i),
     .vertorder_clear_o(vertorder_clear_o),
 
+    .index_mstream_i(index_mstream_i),
+    .index_mstream_o(index_mstream_o),
+
     .fragfifo_full_i(fragfifo_full_i),
     .fragfifo_empty_i(fragfifo_empty_i),
     .fragfifo_done_mailing_i(fragfifo_done_mailing_i),
@@ -563,6 +566,10 @@ module core_controller_m #(
   input  wire                                       vertorder_empty_i,
   output wire                                       vertorder_clear_o,
 
+  // index buffer
+  input  wire [`STREAM_MIPORT(`WORD_WIDTH)] index_mstream_i,
+  output wire [`STREAM_MOPORT(`WORD_WIDTH)] index_mstream_o,
+
   // Rasterizer fragment output FIFO
   input  wire fragfifo_full_i,
   input  wire fragfifo_empty_i,
@@ -646,6 +653,9 @@ module core_controller_m #(
     .vertorder_mstream_i(vertorder_mstream_i),
     .vertorder_mstream_o(vertorder_mstream_o),
     .vertorder_full_i(vertorder_full_i),
+
+    .index_mstream_i(index_mstream_i),
+    .index_mstream_o(index_mstream_o),
 
     .index_buffer_addr_i(index_buffer_addr_i),
     .index_fetch_enable_i(dispatch_index_fetch_enable),

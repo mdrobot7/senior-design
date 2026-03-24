@@ -29,6 +29,10 @@ module dispatch_m #(
   output reg [`STREAM_MOPORT(`VERTEX_ORDER_WIDTH)] vertorder_mstream_o,
   input wire                                       vertorder_full_i,
 
+  // index buffer
+  input  wire [`STREAM_MIPORT(`WORD_WIDTH)] index_mstream_i,
+  output reg  [`STREAM_MOPORT(`WORD_WIDTH)] index_mstream_o,
+
   // Index fetcher
   input  wire [`WORD] index_buffer_addr_i,
   input  wire         index_fetch_enable_i,
@@ -120,6 +124,8 @@ module dispatch_m #(
       core_idx <= 0;
     end
     else if (clk_i) begin
+      index_mstream_o[`STREAM_MO_VALID(`WORD_WIDTH)] <= 0;
+
       case (state)
         STATE_DISABLED: begin
           if (reset_dispatch_i)
@@ -164,6 +170,10 @@ module dispatch_m #(
               vertorder_mstream_o[`STREAM_MO_VALID(`VERTEX_ORDER_WIDTH)] <= 1;
               index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
             end
+
+            index_mstream_o[`STREAM_MO_DATA(`WORD_WIDTH)] <= index_fetch_mstreamo[`STREAM_MO_DATA(`WORD_WIDTH)];
+            index_mstream_o[`STREAM_MO_LAST(`WORD_WIDTH)] <= 0;
+            index_mstream_o[`STREAM_MO_VALID(`WORD_WIDTH)] <= 1;
           end
 
           // Dumb but whatever

@@ -112,10 +112,8 @@ module top_level_m(
     wire         svc_test_found;
 
     wire [`SHADED_VERTEX] svc_store_vertex;
-    wire [`WORD]          svc_store_index = 2;
+    wire [`WORD]          svc_store_index;
     wire                  svc_store_valid;
-
-    wire [$clog2(`NUM_CORES + 1) - 1:0] svc_store_index_select;
 
     wire vob_full;
     wire vob_empty;
@@ -138,6 +136,9 @@ module top_level_m(
 
     wire [`STREAM_MIPORT(`FRAGMENT_WIDTH)] frag_mstreami;
     wire [`STREAM_MOPORT(`FRAGMENT_WIDTH)] frag_mstreamo;
+
+    wire [`STREAM_MIPORT(`WORD_WIDTH)] index_mstreami, buf_index_mstreami;
+    wire [`STREAM_MOPORT(`WORD_WIDTH)] index_mstreamo, buf_index_mstreamo;
 
     // Core Controller - Fragment FIFO
     wire fragfifo_full;
@@ -222,6 +223,9 @@ module top_level_m(
         .vertcache_test_valid_o(svc_test_valid),
         .vertcache_test_found_i(svc_test_found),
         .vertcache_clear_o(svc_clear),
+
+        .index_mstream_i(index_mstreami),
+        .index_mstream_o(index_mstreamo),
 
         .vertorder_mstream_i(order_mstreami),
         .vertorder_mstream_o(order_mstreamo),
@@ -327,6 +331,17 @@ module top_level_m(
         .clear_i(vob_clear)
     );
 
+    stream_fifo_m #(`WORD_WIDTH, 6) index_buffer(
+        .clk_i(clk),
+        .nrst_i(nrst),
+
+        .sstream_i(index_mstreamo),
+        .sstream_o(index_mstreami),
+
+        .mstream_i(buf_index_mstreami),
+        .mstream_o(buf_index_mstreamo)
+    );
+
     vertex_reorder_controller_m #(`NUM_CORES + 1) vrc(
         .clk_i(clk),
         .nrst_i(nrst),
@@ -341,11 +356,11 @@ module top_level_m(
         .mstream_o(vrc_mstreamo),
 
         .svc_store_vertex_o(svc_store_vertex),
-        .svc_store_index_select_o(svc_store_index_select),
-        .svc_store_valid_o()
+        .svc_store_valid_o(svc_store_valid)
     );
 
-    assign svc_store_valid = 0;
+    assign buf_index_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] = svc_store_valid;
+    assign svc_store_index = buf_index_mstreamo[`STREAM_MO_DATA(`WORD_WIDTH)];
 
     mem_write_m mem_write(
         .clk_i(clk),

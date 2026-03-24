@@ -16,7 +16,6 @@ module vertex_reorder_controller_m #(
     output wire [`STREAM_MOPORT(`SHADED_VERTEX_WIDTH * 3)] mstream_o,
 
     output reg [`SHADED_VERTEX] svc_store_vertex_o,
-    output reg [INPUT_INDEX_WIDTH - 1:0] svc_store_index_select_o,
     output reg svc_store_valid_o
 );
 
@@ -118,14 +117,12 @@ module vertex_reorder_controller_m #(
     end
 
     always @(*) begin
+        svc_store_vertex_o <= in_vert;
+
         if (in_valid && current_vertex != VERT_DONE) begin
-            svc_store_vertex_o <= in_vert;
-            svc_store_index_select_o <= order_index;
             svc_store_valid_o <= 1;
         end
         else begin
-            svc_store_vertex_o <= 0;
-            svc_store_index_select_o <= 0;
             svc_store_valid_o <= 0;
         end
     end
