@@ -9,7 +9,8 @@
 *   flush_dec_stage_i : high when decode stage should be flushed
 *   stall_i     : stall input, core stalls when high
 *   stall_o     : stall output, signals when core is stalling
-*   nsync_rst_i : synchrounous reset, active low
+*   nsync_rst_i : synchrounous reset (everything but mailboxes), active low
+*   nsync_rst_mailbox_i : synchronous mailbox reset, active low
 *   inbox_sstream_i     : inbox slave stream input interface
 *   inbox_sstream_o     : inbox slave stream output interface
 *   outbox_mstream_i    : outbox master stream input interface
@@ -30,6 +31,7 @@ module core_m(
     input  wire stall_i,
     output reg stall_o,
     input  wire nsync_rst_i,
+    input  wire nsync_rst_mailbox_i,
 
     input  wire [`STREAM_SIPORT(`MAILBOX_STREAM_SIZE)] inbox_sstream_i,
     output wire [`STREAM_SOPORT(`MAILBOX_STREAM_SIZE)] inbox_sstream_o,
@@ -215,7 +217,7 @@ module core_m(
     inbox_m inbox_module (
         .clk_i(clk_i),
         .nrst_i(nrst_i),
-        .nsync_rst_i(nsync_rst_i),
+        .nsync_rst_i(nsync_rst_mailbox_i),
         .inbox_read_req_i(inbox_read),
         .inbox_sstream_i(inbox_sstream_i),
         .inbox_sstream_o(inbox_sstream_o),
@@ -226,7 +228,7 @@ module core_m(
     outbox_m outbox_module (
         .clk_i(clk_i),
         .nrst_i(nrst_i),
-        .nsync_rst_i(nsync_rst_i),
+        .nsync_rst_i(nsync_rst_mailbox_i),
         .outbox_write_req_i(outbox_write),
         .outbox_mstream_i(outbox_mstream_i),
         .outbox_mstream_o(outbox_mstream_o),

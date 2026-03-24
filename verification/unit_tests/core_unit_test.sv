@@ -75,6 +75,7 @@ module core_m_unit_test;
     .stall_i(stall),
     .stall_o(stallo),
     .nsync_rst_i(nsync_rst),
+    .nsync_rst_mailbox_i(1'b1),
 
     .inbox_sstream_i(inbox_sstreami),
     .inbox_sstream_o(inbox_sstreamo),
