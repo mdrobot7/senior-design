@@ -58,11 +58,12 @@ module core_controller_wrapper_m #(
 
   // Shader core interface
   output wire [`WORD]           inst_o,
-  output wire [`NUM_CORES-1:0]  core_reset_o, // Core soft reset
+  output wire [`NUM_CORES-1:0]  core_reset_o,         // Core soft reset
+  output wire [`NUM_CORES-1:0]  core_reset_mailbox_o, // Core mailbox soft reset
   input  wire [`NUM_CORES-1:0]  core_stall_i,
-  output wire [`NUM_CORES-1:0]  core_stall_o, // Per-core stall control
+  output wire [`NUM_CORES-1:0]  core_stall_o,         // Per-core stall control
   input  wire [`NUM_CORES-1:0]  core_jump_i,
-  output wire                   core_jump_o,  // Flushes decode on all cores
+  output wire                   core_jump_o,          // Flushes decode on all cores
   output wire [`WORD]           global_regfile_rs1_data_o,
   output wire [`WORD]           global_regfile_rs2_data_o
 );
@@ -159,6 +160,7 @@ module core_controller_wrapper_m #(
 
     .inst_o(inst_o),
     .core_reset_o(core_reset_o),
+    .core_reset_mailbox_o(core_reset_mailbox_o),
     .core_stall_i(core_stall_i),
     .core_stall_o(core_stall_o),
     .core_jump_i(core_jump_i),
@@ -582,11 +584,12 @@ module core_controller_m #(
 
   // Shader core interface
   output reg  [`WORD]           inst_o,
-  output reg  [`NUM_CORES-1:0]  core_reset_o, // Core soft reset
+  output reg  [`NUM_CORES-1:0]  core_reset_o,         // Core soft reset
+  output reg  [`NUM_CORES-1:0]  core_reset_mailbox_o, // Core mailbox soft reset
   input  wire [`NUM_CORES-1:0]  core_stall_i,
-  output reg  [`NUM_CORES-1:0]  core_stall_o, // Per-core stall control
+  output reg  [`NUM_CORES-1:0]  core_stall_o,         // Per-core stall control
   input  wire [`NUM_CORES-1:0]  core_jump_i,
-  output reg                    core_jump_o,  // Flushes decode on all cores
+  output reg                    core_jump_o,          // Flushes decode on all cores
   output reg  [`WORD]           global_regfile_rs1_data_o,
   output wire [`WORD]           global_regfile_rs2_data_o
 );
@@ -775,8 +778,8 @@ module core_controller_m #(
             `CORE_CTRL_CMD_PAUSE:
               state <= STATE_PAUSED;
             `CORE_CTRL_CMD_RUN: begin
-              if (instfetch_prog_done || (state == STATE_VERTEX_SHADING && fragfifo_full_i)) begin
-                // Deadlock protection: if fragfifo fills up, immediately swap to frag shading
+              if (instfetch_prog_done || (state == STATE_VERTEX_SHADING && fragfifo_full_i) || (state == STATE_FRAGMENT_SHADING && vertorder_empty_i && !dispatch_model_done)) begin
+                // Deadlock protection: if fragfifo fills up, immediately swap to frag shading. if vert order buf is empty, swap to vert shading
                 state <= STATE_DONE;
               end
               else
@@ -842,8 +845,8 @@ module core_controller_m #(
       inst_o = instfetch_inst;
 
     // Core control signals
-    if (state == STATE_STOPPED)
-      core_reset_o = {`NUM_CORES{1'b1}};
+    if (state == STATE_STOPPED || state == STATE_DONE)
+      core_reset_o = 0;
     else if (state == STATE_DISPATCHING)
       core_reset_o = core_enable_i;
     else if (!dispatched)
@@ -852,6 +855,12 @@ module core_controller_m #(
     else
       // Hold disabled and undispatched cores in reset during execution
       core_reset_o = core_enable_i & ~dispatch_core_stall;
+
+    if (state == STATE_STOPPED)
+      core_reset_mailbox_o = 0;
+    else
+      core_reset_mailbox_o = {`NUM_CORES{1'b1}};
+
     if (state == STATE_DISPATCHING)
       core_stall_o = dispatch_core_stall;
     else if (state == STATE_PAUSED || core_stall_i)

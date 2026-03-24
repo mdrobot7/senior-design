@@ -172,6 +172,7 @@ module core_controller_m_unit_test;
   wire [3:0]                          state;
   wire [`WORD]                        inst;
   wire [`NUM_CORES-1:0]               core_reset;
+  wire [`NUM_CORES-1:0]               core_reset_mailbox;
   reg  [`NUM_CORES-1:0]               core_stalli;
   wire [`NUM_CORES-1:0]               core_stallo;
   reg  [`NUM_CORES-1:0]               core_jumpi;
@@ -235,6 +236,7 @@ module core_controller_m_unit_test;
 
     .inst_o(inst),
     .core_reset_o(core_reset),
+    .core_reset_mailbox_o(core_reset_mailbox),
     .core_stall_i(core_stalli),
     .core_stall_o(core_stallo),
     .core_jump_i(core_jumpi),
@@ -256,6 +258,7 @@ module core_controller_m_unit_test;
     .stall_i(core_stallo),
     .stall_o(core_stalli),
     .nsync_rst_i(core_reset),
+    .nsync_rst_mailbox_i(core_reset_mailbox),
     .inbox_sstream_i(core_inbox_sstreami),
     .inbox_sstream_o(core_inbox_sstreamo),
     .outbox_mstream_i(1'b0),
