@@ -21,7 +21,7 @@ module dispatch_m #(
 
   // Shaded vertex cache
   output wire [`WORD] vertcache_test_index_o,
-  output  reg         vertcache_test_valid_o,
+  output wire         vertcache_test_valid_o,
   input  wire         vertcache_test_found_i,
 
   // Vertex order buffer
@@ -105,10 +105,10 @@ module dispatch_m #(
                                   ? (index_fetch_model_done && index_fetch_empty)
                                   : (thread_id == num_dispatches_i);
   assign vertcache_test_index_o = index_fetch_mstreamo[`STREAM_MO_DATA(`WORD_WIDTH)];
+  assign vertcache_test_valid_o = (state == STATE_DISPATCHING_INDICES && !index_fetch_empty);
 
   always @(posedge clk_i, negedge nrst_i) begin
     if (!nrst_i) begin
-      vertcache_test_valid_o <= 0;
       vertorder_mstream_o <= 0;
       thread_id_o <= 0;
       core_stall_o <= {`NUM_CORES{1'b1}};
@@ -131,7 +131,6 @@ module dispatch_m #(
             if (dispatch_indices_i) begin
               state <= STATE_DISPATCHING_INDICES;
               index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 1;
-              vertcache_test_valid_o <= 1;
             end
             else
               state <= STATE_DISPATCHING_INTS;
@@ -171,14 +170,12 @@ module dispatch_m #(
           if (core_idx == `NUM_CORES - 1 && !index_fetch_empty)
             index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
           if (core_idx == `NUM_CORES || vertorder_full_i) begin
-            vertcache_test_valid_o <= 0;
             index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
             core_stall_o <= {`NUM_CORES{1'b1}};
             dispatch_done_o <= 1;
             state <= STATE_DISPATCH_DONE;
           end
           if (index_fetch_model_done && index_fetch_empty) begin
-            vertcache_test_valid_o <= 0;
             index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
             core_stall_o <= {`NUM_CORES{1'b1}};
             dispatch_done_o <= 1;
