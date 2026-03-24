@@ -18,6 +18,7 @@
 `include "core/signext.v"
 `include "core/mem_bus.v"
 `include "core/inbox.v"
+`include "core/outbox.v"
 
 `include "math/full_adder.v"
 `include "math/mul.v"
@@ -59,7 +60,7 @@ module core_m_unit_test;
 
 
   //===================================
-  // This is the UUT that we're 
+  // This is the UUT that we're
   // running the Unit Tests on
   //===================================
   core_m my_core_m(
@@ -74,6 +75,7 @@ module core_m_unit_test;
     .stall_i(stall),
     .stall_o(stallo),
     .nsync_rst_i(nsync_rst),
+    .nsync_rst_mailbox_i(1'b1),
 
     .inbox_sstream_i(inbox_sstreami),
     .inbox_sstream_o(inbox_sstreamo),
@@ -133,7 +135,7 @@ module core_m_unit_test;
   );
 
 
-  stream_slave_m #(.SIZE(`MAILBOX_STREAM_SIZE), .BUFFER_SIZE(`CORE_MAILBOX_HEIGHT)) outbox_slave (
+  stream_slave_m #(.SIZE(`MAILBOX_STREAM_SIZE), .BUFFER_SIZE(2*`CORE_MAILBOX_HEIGHT)) outbox_slave (
     .clk_i(clk),
     .sstream_o(outbox_mstreami),
     .sstream_i(outbox_mstreamo)
@@ -168,13 +170,14 @@ module core_m_unit_test;
     flush_dec_stage = 0;
     nsync_rst = 1;
     outbox <= 0;
+    inst = 32'h04000000; // nop
     clk_rst.RESET();
     clk_rst.WAIT_CYCLES(3);
   endtask
 
 
   //===================================
-  // Here we deconstruct anything we 
+  // Here we deconstruct anything we
   // need after running the Unit Tests
   //===================================
   task teardown();
@@ -198,18 +201,13 @@ module core_m_unit_test;
   //   `SVTEST_END
   //===================================
   `SVUNIT_TESTS_BEGIN
- 
+
   `SVTEST(set_regfile)
     integer i;
     //values from test_core.s
     $readmemh("mem_files/test_cores.mem", i_mem);
     for(i = 0; i < 17; i = i + 1) begin
       @(negedge clk);
-      if(stallo) begin
-        outbox_slave.READ(outbox);
-        @(negedge stallo);
-        @(negedge clk);
-      end
       inst = i_mem[i];
     end
     clk_rst.WAIT_CYCLES(5);
@@ -251,7 +249,7 @@ module core_m_unit_test;
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[5], -32'd5);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[6], 32'd6);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[7], -32'h7);
-    
+
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[8], 32'h5);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[9], 32'h1000);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[10], 32'hFFFFF371);
@@ -273,14 +271,17 @@ module core_m_unit_test;
 
     for(i = 0; i < 59; i = i + 1) begin
       @(negedge clk);
-      if(stallo) begin
-        outbox_slave.READ(outbox);
-        @(negedge stallo);
-        @(negedge clk);
-      end
       inst = i_mem[i];
     end
     clk_rst.WAIT_CYCLES(5);
+
+    // Wait for outbox to be read
+    for (i = 0; i < 100; i++) begin
+      clk_rst.WAIT_CYCLES(1);
+      if (outbox_slave.buffer_size == `CORE_MAILBOX_HEIGHT)
+        break;
+    end
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer_size, `CORE_MAILBOX_HEIGHT);
 
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[0], 32'd0);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[1], -32'd1);
@@ -290,7 +291,7 @@ module core_m_unit_test;
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[5], -32'd5);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[6], 32'd6);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[7], 32'hFFFFFFF9)
-    
+
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[8], 32'h5);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[9], 32'h00001000);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[10], 32'hFFFFF371);
@@ -315,18 +316,27 @@ module core_m_unit_test;
     integer i;
     $readmemh("mem_files/test_cores.mem", i_mem);
     clk_rst.RESET();
+    outbox_slave.buffer_head = 0;
+    outbox_slave.buffer_size = 0;
     clk_rst.WAIT_CYCLES(3);
 
     for(i = 0; i < 78; i = i + 1) begin
       @(negedge clk);
-      if(stallo) begin
-        outbox_slave.READ(outbox);
+      if (stallo) begin
         @(negedge stallo);
         @(negedge clk);
       end
       inst = i_mem[i];
     end
     clk_rst.WAIT_CYCLES(5);
+
+    // Wait for outbox to be read
+    for (i = 0; i < 100; i++) begin
+      clk_rst.WAIT_CYCLES(1);
+      if (outbox_slave.buffer_size == 2*`CORE_MAILBOX_HEIGHT)
+        break;
+    end
+    `FAIL_UNLESS_EQUAL(outbox_slave.buffer_size, 2*`CORE_MAILBOX_HEIGHT);
 
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[0], 32'd0);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[1], -32'd1);
@@ -336,7 +346,7 @@ module core_m_unit_test;
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[5], -32'd5);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[6], 32'd6);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[7], 32'hFFFFFFF9)
-    
+
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[8], 32'h5);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[9], 32'h0000107D);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[10], 32'h00019000);
@@ -381,7 +391,7 @@ module core_m_unit_test;
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[5], -32'd5);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[6], 32'd6);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[7], 32'h00000000)
-    
+
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[8], 32'h1);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[9], 32'h0);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[10], 32'h1);
@@ -424,7 +434,7 @@ module core_m_unit_test;
     @(negedge clk);
     `FAIL_IF(jump_request);
     i = i + 1;
-    inst = i_mem[i]; // speq $p0, $r1, $r1, should be flushed 
+    inst = i_mem[i]; // speq $p0, $r1, $r1, should be flushed
 
     //jump is now in ex, speq in decode, we should be jumping
     @(negedge clk);
@@ -445,7 +455,7 @@ module core_m_unit_test;
     @(negedge clk);
     `FAIL_IF(jump_request); // jump -8 should be annulled
     i = i + 1;
-    inst = i_mem[i]; // jump 4 
+    inst = i_mem[i]; // jump 4
 
     @(negedge clk);
     `FAIL_IF(jump_request); //jal -12 should be annulled
@@ -517,7 +527,7 @@ module core_m_unit_test;
     `FAIL_UNLESS_EQUAL(spi_chip1.mem[33], 8'hFF);
     `FAIL_UNLESS_EQUAL(spi_chip1.mem[34], 8'hFF);
     `FAIL_UNLESS_EQUAL(spi_chip1.mem[35], 8'hFF);
-        
+
     //regfile check
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[0], 32'h00000000);
     `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[1], 32'hFFFFFFFF);
@@ -591,7 +601,7 @@ module core_m_unit_test;
       clk_rst.WAIT_CYCLES(2);
       inst = 0;
       clk_rst.WAIT_CYCLES(10);
-      
+
 
       `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[1], 1);
       `FAIL_UNLESS_EQUAL(my_core_m.regfile.mem[2], 2);

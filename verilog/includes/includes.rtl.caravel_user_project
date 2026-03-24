@@ -43,14 +43,17 @@
 -v $(USER_PROJECT_VERILOG)/rtl/bus/word_stripe_cache.v
 -v $(USER_PROJECT_VERILOG)/rtl/bus/byte_stripe_cache.v
 
+-v $(USER_PROJECT_VERILOG)/rtl/core/accumulator.v
 -v $(USER_PROJECT_VERILOG)/rtl/core/alu.v
 -v $(USER_PROJECT_VERILOG)/rtl/core/core.v
 -v $(USER_PROJECT_VERILOG)/rtl/core/decoder.v
+-v $(USER_PROJECT_VERILOG)/rtl/core/forward.v
+-v $(USER_PROJECT_VERILOG)/rtl/core/inbox.v
+-v $(USER_PROJECT_VERILOG)/rtl/core/mem_bus.v
+-v $(USER_PROJECT_VERILOG)/rtl/core/outbox.v
+-v $(USER_PROJECT_VERILOG)/rtl/core/predicate.v
 -v $(USER_PROJECT_VERILOG)/rtl/core/regfile.v
 -v $(USER_PROJECT_VERILOG)/rtl/core/signext.v
--v $(USER_PROJECT_VERILOG)/rtl/core/predicate.v
--v $(USER_PROJECT_VERILOG)/rtl/core/forward.v
--v $(USER_PROJECT_VERILOG)/rtl/core/accumulator.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/core_controller/core_controller.v
 -v $(USER_PROJECT_VERILOG)/rtl/core_controller/dispatch.v
