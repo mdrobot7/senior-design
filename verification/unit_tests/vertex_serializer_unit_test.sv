@@ -58,6 +58,8 @@ module vertex_serializer_m_unit_test;
     for(i = 0; i < 8; i++)begin
       data[i] = i;
     end
+    mstream_i[`STREAM_MI_READY(`MAILBOX_STREAM_SIZE)] = 1;
+    clk_rst.WAIT_CYCLES(1);
     fake_raster.WRITE_LAST(data);
     clk_rst.WAIT_CYCLES(1);
     for(i = 0; i < 8; i++)begin

@@ -39,7 +39,7 @@ module vertex_serializer_m(
         end 
     end
 
-    assign sstream_o[`STREAM_SO_READY(`FRAGMENT_WIDTH)] = (tmp != 8'b0) ? 1'b0 : 1'b1;
+    assign sstream_o[`STREAM_SO_READY(`FRAGMENT_WIDTH)] = mstream_i[`STREAM_MI_READY(`MAILBOX_STREAM_SIZE)];
 
 
     assign mstream_o[`STREAM_MO_VALID(`MAILBOX_STREAM_SIZE)] = valid;
