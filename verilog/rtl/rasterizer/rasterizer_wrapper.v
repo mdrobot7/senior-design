@@ -68,7 +68,7 @@ module rasterizer_wrapper_m(
     reg [`WORD] u2a;
     reg [`WORD] u2b;
 
-    assign rast_busy_o = busy;
+    assign rast_busy_o = busy || run;
 
     rasterizer_m rasterizer(
         .clk_i(clk),

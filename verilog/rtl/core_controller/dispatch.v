@@ -31,7 +31,7 @@ module dispatch_m #(
 
   // index buffer
   input  wire [`STREAM_MIPORT(`WORD_WIDTH)] index_mstream_i,
-  output reg  [`STREAM_MOPORT(`WORD_WIDTH)] index_mstream_o,
+  output wire [`STREAM_MOPORT(`WORD_WIDTH)] index_mstream_o,
 
   // Index fetcher
   input  wire [`WORD] index_buffer_addr_i,
@@ -111,6 +111,10 @@ module dispatch_m #(
   assign vertcache_test_index_o = index_fetch_mstreamo[`STREAM_MO_DATA(`WORD_WIDTH)];
   assign vertcache_test_valid_o = (state == STATE_DISPATCHING_INDICES && !index_fetch_empty);
 
+  assign index_mstream_o[`STREAM_MO_DATA(`WORD_WIDTH)]  = vertcache_test_index_o;
+  assign index_mstream_o[`STREAM_MO_LAST(`WORD_WIDTH)]  = 0;
+  assign index_mstream_o[`STREAM_MO_VALID(`WORD_WIDTH)] = vertcache_test_valid_o;
+
   always @(posedge clk_i, negedge nrst_i) begin
     if (!nrst_i) begin
       vertorder_mstream_o <= 0;
@@ -124,8 +128,6 @@ module dispatch_m #(
       core_idx <= 0;
     end
     else if (clk_i) begin
-      index_mstream_o[`STREAM_MO_VALID(`WORD_WIDTH)] <= 0;
-
       case (state)
         STATE_DISABLED: begin
           if (reset_dispatch_i)
@@ -168,12 +170,8 @@ module dispatch_m #(
               // Grab from cache
               vertorder_mstream_o[`STREAM_SI_DATA(`VERTEX_ORDER_WIDTH)] <= `NUM_CORES;
               vertorder_mstream_o[`STREAM_MO_VALID(`VERTEX_ORDER_WIDTH)] <= 1;
-              index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
+              // index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
             end
-
-            index_mstream_o[`STREAM_MO_DATA(`WORD_WIDTH)] <= index_fetch_mstreamo[`STREAM_MO_DATA(`WORD_WIDTH)];
-            index_mstream_o[`STREAM_MO_LAST(`WORD_WIDTH)] <= 0;
-            index_mstream_o[`STREAM_MO_VALID(`WORD_WIDTH)] <= 1;
           end
 
           // Dumb but whatever
