@@ -57,6 +57,8 @@ module index_fetch_m_unit_test;
   reg  [`WORD]                       num_dispatches;
   reg                                model_done_clr;
   wire                               model_done;
+  reg                                clear;
+  wire                               clear_done;
   reg  [`STREAM_MIPORT(`WORD_WIDTH)] mstreami;
   wire [`STREAM_MOPORT(`WORD_WIDTH)] mstreamo;
   index_fetch_m #(
@@ -73,6 +75,8 @@ module index_fetch_m_unit_test;
     .num_dispatches_i(num_dispatches),
     .model_done_clr_i(model_done_clr),
     .model_done_o(model_done),
+    .clear_i(clear),
+    .clear_done_o(clear_done),
 
     .mstream_i(mstreami),
     .mstream_o(mstreamo)
@@ -96,6 +100,7 @@ module index_fetch_m_unit_test;
     index_buffer_addr <= 32'h00001000;
     num_dispatches <= 0;
     model_done_clr <= 0;
+    clear <= 0;
     mstreami <= 0;
     clk_rst.RESET();
   endtask
@@ -238,6 +243,36 @@ module index_fetch_m_unit_test;
       `FAIL_UNLESS_EQUAL(mstreamo[`STREAM_MO_VALID(`WORD_WIDTH)], 0); // FIFO empty
     end
     `FAIL_UNLESS_EQUAL(model_done, 1);
+  `SVTEST_END
+
+  `SVTEST(test_clear)
+    clk_rst.WAIT_CYCLES(1);
+    // 64 triangles, 64 * 3  words
+    for (int i = 0; i < 64 * 3 * 4; i++) begin
+      ram.mem[i] = $urandom;
+    end
+    num_dispatches = 64 * 3;
+
+    // Start fetching
+    enable = 1;
+    for (int i = 0; i < 10000000; i++) begin
+      clk_rst.WAIT_CYCLES(1);
+      if (dut.fifo_full)
+        break;
+    end
+    `FAIL_UNLESS_EQUAL(dut.fifo_full, 1);
+    enable = 0;
+    clk_rst.WAIT_CYCLES(1);
+
+    // Clear
+    clear = 1;
+    for (int i = 0; i < 100; i++) begin
+      clk_rst.WAIT_CYCLES(1);
+      if (clear_done)
+        break;
+    end
+    `FAIL_UNLESS_EQUAL(clear_done, 1);
+    `FAIL_UNLESS_EQUAL(mstreamo[`STREAM_MO_VALID(`WORD_WIDTH)], 0); // FIFO empty
   `SVTEST_END
 
   `SVUNIT_TESTS_END

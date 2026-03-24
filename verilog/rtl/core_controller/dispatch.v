@@ -16,22 +16,24 @@ module dispatch_m #(
   input wire nrst_i,
 
   // PKBus
-  input wire [`BUS_MIPORT] mport_i,
-  output reg [`BUS_MOPORT] mport_o,
+  input  wire [`BUS_MIPORT] mport_i,
+  output wire [`BUS_MOPORT] mport_o,
 
   // Shaded vertex cache
   output wire [`WORD] vertcache_test_index_o,
-  output  reg         vertcache_test_valid_o,
+  output wire         vertcache_test_valid_o,
   input  wire         vertcache_test_found_i,
 
   // Vertex order buffer
-  input wire [`STREAM_SOPORT(`NUM_CORES_WIDTH)] vertorder_sstreamo_i,
-  output reg [`STREAM_SIPORT(`NUM_CORES_WIDTH)] vertorder_sstreami_o,
-  input wire                                    vertorder_full_i,
+  input wire [`STREAM_MIPORT(`VERTEX_ORDER_WIDTH)] vertorder_mstream_i,
+  output reg [`STREAM_MOPORT(`VERTEX_ORDER_WIDTH)] vertorder_mstream_o,
+  input wire                                       vertorder_full_i,
 
   // Index fetcher
-  input wire [`WORD] index_buffer_addr_i,
-  input wire         index_fetch_enable_i,
+  input  wire [`WORD] index_buffer_addr_i,
+  input  wire         index_fetch_enable_i,
+  input  wire         index_fetch_clear_i,
+  output wire         index_fetch_clear_done_o,
 
   input wire                  reset_dispatch_i,   // Reset dispatch counter and state machine
   input wire                  enable_i,           // Start dispatching, stop when all cores OR vertex order buf is full
@@ -43,8 +45,8 @@ module dispatch_m #(
   output wire [`WORD]          inst_o,
   output  reg [`NUM_CORES-1:0] core_stall_o,
 
-  output reg dispatch_done_o, // 1: This round of dispatching is done
-  output reg model_done_o     // 1: Model or compute job is complete (dispatched num_dispatches_i jobs/indices)
+  output reg  dispatch_done_o, // 1: This round of dispatching is done
+  output wire model_done_o     // 1: Model or compute job is complete (dispatched num_dispatches_i jobs/indices)
 );
 
   localparam STATE_DISABLED            = 0;
@@ -83,6 +85,8 @@ module dispatch_m #(
     .num_dispatches_i(num_dispatches_i),
     .model_done_clr_i(reset_dispatch_i),
     .model_done_o(index_fetch_model_done),
+    .clear_i(index_fetch_clear_i),
+    .clear_done_o(index_fetch_clear_done_o),
 
     .mstream_i(index_fetch_mstreami),
     .mstream_o(index_fetch_mstreamo)
@@ -98,14 +102,14 @@ module dispatch_m #(
   wire [`NUM_CORES-1:0] core_stall_undispatched = {`NUM_CORES{1'b1}} << core_idx; // Handle partial dispatch by stalling cores without jobs
 
   assign model_done_o           = dispatch_indices_i
-                                  ? index_fetch_model_done
+                                  ? (index_fetch_model_done && index_fetch_empty)
                                   : (thread_id == num_dispatches_i);
   assign vertcache_test_index_o = index_fetch_mstreamo[`STREAM_MO_DATA(`WORD_WIDTH)];
+  assign vertcache_test_valid_o = (state == STATE_DISPATCHING_INDICES && !index_fetch_empty);
 
   always @(posedge clk_i, negedge nrst_i) begin
     if (!nrst_i) begin
-      vertcache_test_valid_o <= 0;
-      vertorder_sstreami_o <= 0;
+      vertorder_mstream_o <= 0;
       thread_id_o <= 0;
       core_stall_o <= {`NUM_CORES{1'b1}};
       dispatch_done_o <= 0;
@@ -127,7 +131,6 @@ module dispatch_m #(
             if (dispatch_indices_i) begin
               state <= STATE_DISPATCHING_INDICES;
               index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 1;
-              vertcache_test_valid_o <= 1;
             end
             else
               state <= STATE_DISPATCHING_INTS;
@@ -136,6 +139,7 @@ module dispatch_m #(
         STATE_DISPATCHING_INDICES: begin
           core_stall_o <= {`NUM_CORES{1'b1}};
           index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 1;
+          vertorder_mstream_o[`STREAM_MO_VALID(`VERTEX_ORDER_WIDTH)] <= 0;
 
           // Fetch index buffer, check cache, and assign to $tid accordingly.
           if (!core_enable_i[core_idx]) begin
@@ -149,13 +153,15 @@ module dispatch_m #(
             if (!vertcache_test_found_i) begin
               // Dispatch to core
               thread_id_o <= index_fetch_mstreamo[`STREAM_MO_DATA(`WORD_WIDTH)];
-              vertorder_sstreami_o[`STREAM_SI_DATA(`NUM_CORES_WIDTH)] <= core_idx;
+              vertorder_mstream_o[`STREAM_SI_DATA(`VERTEX_ORDER_WIDTH)] <= core_idx;
+              vertorder_mstream_o[`STREAM_MO_VALID(`VERTEX_ORDER_WIDTH)] <= 1;
               core_stall_o <= core_stall;
               core_idx <= core_idx + 1;
             end
             else begin
               // Grab from cache
-              vertorder_sstreami_o[`STREAM_SI_DATA(`NUM_CORES_WIDTH)] <= `NUM_CORES;
+              vertorder_mstream_o[`STREAM_SI_DATA(`VERTEX_ORDER_WIDTH)] <= `NUM_CORES;
+              vertorder_mstream_o[`STREAM_MO_VALID(`VERTEX_ORDER_WIDTH)] <= 1;
               index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
             end
           end
@@ -164,30 +170,34 @@ module dispatch_m #(
           if (core_idx == `NUM_CORES - 1 && !index_fetch_empty)
             index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
           if (core_idx == `NUM_CORES || vertorder_full_i) begin
-            core_idx <= 0;
-            vertcache_test_valid_o <= 0;
             index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
+            core_stall_o <= {`NUM_CORES{1'b1}};
+            dispatch_done_o <= 1;
             state <= STATE_DISPATCH_DONE;
           end
-          if (index_fetch_model_done) begin
-            core_idx <= 0;
-            vertcache_test_valid_o <= 0;
+          if (index_fetch_model_done && index_fetch_empty) begin
             index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
+            core_stall_o <= {`NUM_CORES{1'b1}};
+            dispatch_done_o <= 1;
             state <= STATE_MODEL_DONE;
           end
         end
         STATE_DISPATCHING_INTS: begin
           // Fill in $tid with increasing numbers
           if (core_idx == `NUM_CORES) begin
-            core_idx <= 0;
+            core_stall_o <= {`NUM_CORES{1'b1}};
+            dispatch_done_o <= 1;
             state <= STATE_DISPATCH_DONE;
           end
-          else if (thread_id == num_dispatches_i - 1) begin
-            core_idx <= 0;
+          else if (thread_id == num_dispatches_i) begin
+            core_stall_o <= {`NUM_CORES{1'b1}};
+            dispatch_done_o <= 1;
             state <= STATE_MODEL_DONE;
           end
-          else if (!core_enable_i[core_idx])
+          else if (!core_enable_i[core_idx]) begin
+            core_stall_o <= {`NUM_CORES{1'b1}};
             core_idx <= core_idx + 1; // Skip disabled cores
+          end
           else begin
             core_stall_o <= core_stall;
             thread_id_o <= thread_id;
@@ -197,18 +207,22 @@ module dispatch_m #(
         end
         STATE_DISPATCH_DONE: begin
           core_stall_o <= core_stall_undispatched;
+          vertorder_mstream_o[`STREAM_MO_VALID(`VERTEX_ORDER_WIDTH)] <= 0;
           dispatch_done_o <= 1;
           if (!enable_i) begin
             dispatch_done_o <= 0;
+            core_idx <= 0;
             state <= STATE_DISABLED;
           end
         end
         STATE_MODEL_DONE: begin
           core_stall_o <= core_stall_undispatched;
+          vertorder_mstream_o[`STREAM_MO_VALID(`VERTEX_ORDER_WIDTH)] <= 0;
           dispatch_done_o <= 1;
           if (reset_dispatch_i && !enable_i) begin
             dispatch_done_o <= 0;
             thread_id <= 0;
+            core_idx <= 0;
             state <= STATE_DISABLED;
           end
         end

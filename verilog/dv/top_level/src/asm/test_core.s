@@ -73,8 +73,9 @@ clrp (111)
 () lui $r15, 0x5555
 
 
-; Outbox
+; Inbox/Outbox
 () out
+() in
 
 
 ; MAC
@@ -180,6 +181,16 @@ skip3:
 () nop
 () li $r14, 24
 () lb $r13, 5[$r14]
+
+
+; Pipeline stage torture
+() lw $r7, 0[$zero]
+() nop
+() nop
+() jump foo
+
+foo:
+() nop
 
 
 ; Conditional: if (r8 == r9) {} else {}

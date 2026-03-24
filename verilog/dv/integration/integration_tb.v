@@ -174,7 +174,7 @@ module integration_tb();
 
         .jump_request_o(jump_request),
         .flush_dec_stage_i(fds),
-        
+
         .stall_i(stalli),
         .stall_o(stallo),
 
@@ -185,7 +185,7 @@ module integration_tb();
 
         .outbox_mstream_i(core_mstreami),
         .outbox_mstream_o(core_mstreamo),
-        
+
         .mport_i(core_mporti),
         .mport_o(core_mporto)
     );
@@ -243,13 +243,14 @@ module integration_tb();
     vertex_order_buffer_m #(6, 1) vob(
         .clk_i(clk),
         .nrst_i(nrst),
-        
+
         .sstream_i(order_mstreamo),
         .sstream_o(order_mstreami),
 
         .mstream_i(vob_mstreami),
         .mstream_o(vob_mstreamo),
 
+        .clear_i(1'b0),
         .full_o(),
         .empty_o()
     );
@@ -318,13 +319,13 @@ module integration_tb();
         .nrst_i(nrst),
 
         .busy_o(),
-        
+
         .sstream_i(frag_mstreamo),
         .sstream_o(frag_mstreami),
 
         .mport_i(write_mporti),
         .mport_o(write_mporto),
-        
+
         .fb_i(1'b0)
     );
 
@@ -512,4 +513,3 @@ module integration_tb();
     endtask
 
 endmodule
-
