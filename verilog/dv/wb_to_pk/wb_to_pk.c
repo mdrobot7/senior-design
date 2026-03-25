@@ -2,10 +2,18 @@
 #include <stub.h>
 
 // Valid addresses between USER_SPACE_ADDR and USER_SPACE_ADDR + USER_SPACE_SIZE
+#define STATUS (*((volatile uint32_t *) 0x30123000))   // wb addr reg 
 #define ADDR    (*((volatile uint32_t *) 0x30123400))   // wb addr reg 
 #define WDATA    (*((volatile uint32_t *) 0x30123800))   // wb write data reg
 #define WCOUNT    (*((volatile uint32_t *) 0x30123C00))   // wb write count reg
+#define RDATA (*((volatile uint32_t *) 0x30124000))   // wb write count reg
 
+
+
+  void wait_bridge() {
+    // Assuming STATUS reg (offset 0) returns 0 when STANDBY
+    while(STATUS != 0); 
+  }
 
 void main() {
   //need this for caravel
@@ -14,25 +22,32 @@ void main() {
   reg_wb_enable = 1;
   
 
+
+  //pk stream write 4 words
   ADDR    = 0x12345678;
   WCOUNT    = 0x00000004;
   WDATA    = 0xFAFAFAFA;
 
 
+
+  // pk stream write 255 words
   ADDR = 0x10804070;
   WCOUNT = 0x000000FF;
   WDATA = 0xFFFFFFFF;
   
-  ADDR = 0xFFFFFFFF;
+
+  wait_bridge();  // WAIT here so we don't overwrite ADDR too early
+
+  //wishbone read
+  ADDR    = 0x12345678;
 
   volatile uint32_t readValue;
+  readValue = RDATA;
 
-  readValue = WDATA;
 
+  // for (volatile int i = 0; i < 10 ; i++){
 
-  for (volatile int i = 0; i < 10 ; i++){
-
-  }
+  // }
 
   // if (REG0 != 0x01010101)
   //   test_fail();
