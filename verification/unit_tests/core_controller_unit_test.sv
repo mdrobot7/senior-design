@@ -452,7 +452,7 @@ module core_controller_m_unit_test;
 
   `SVTEST(exec_gpgpu)
     clk_rst.WAIT_CYCLES(1);
-    fill_imem("../../verilog/dv/top_level/src/asm/test_core.hex", 0);
+    fill_imem("mem_files/core_controller.mem", 0);
     fill_inbox();
 
     pc_gpgpu_compute = 0;
@@ -532,7 +532,7 @@ module core_controller_m_unit_test;
 
   `SVTEST(exec_gpgpu_cores_disabled)
     clk_rst.WAIT_CYCLES(1);
-    fill_imem("../../verilog/dv/top_level/src/asm/test_core.hex", 0);
+    fill_imem("mem_files/core_controller.mem", 0);
     fill_inbox();
 
     pc_gpgpu_compute = 0;
@@ -570,7 +570,7 @@ module core_controller_m_unit_test;
 
   `SVTEST(exec_gpgpu_completion)
     clk_rst.WAIT_CYCLES(1);
-    fill_imem("../../verilog/dv/top_level/src/asm/test_core.hex", 0);
+    fill_imem("mem_files/core_controller.mem", 0);
     fill_inbox();
 
     pc_gpgpu_compute = 0;
@@ -656,7 +656,7 @@ module core_controller_m_unit_test;
     // that. This is using test_core. It checks index dispatch and the
     // rasterization stop conditions.
     clk_rst.WAIT_CYCLES(1);
-    fill_imem("../../verilog/dv/top_level/src/asm/test_core.hex", 0);
+    fill_imem("mem_files/core_controller.mem", 0);
     fill_inbox();
 
     pc_gpgpu_compute = 0;
