@@ -83,7 +83,7 @@ void init() {
   reg_uart_enable = 1;
 
   init_io();
-  init_qspi();
+  // init_qspi();
   init_cores();
-  init_vga();
+  // init_vga();
 }

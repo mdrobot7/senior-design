@@ -58,10 +58,10 @@ module top_level_m(
         wbs_dat_o = 0;
         wbs_ack_o = 0;
 
-        `address_map(0, 32'h38000000, 32'hF8000000); // VGA
-        `address_map(1, 32'h30000000, 32'hF8000000); // Rasterizer
-        `address_map(2, 32'h28000000, 32'hF8000000); // Core Control
-        `address_map(3, 32'h20000000, 32'hF8000000); // Core IMem
+        `address_map(0, 32'h30000000, 32'hFF000000); // VGA
+        `address_map(1, 32'h31000000, 32'hFF000000); // Rasterizer
+        `address_map(2, 32'h32000000, 32'hFF000000); // Core Control
+        `address_map(3, 32'h33000000, 32'hFF000000); // Core IMem
     end
 
     wire [`BUS_MIPORT] vga_mporti;
@@ -287,7 +287,7 @@ module top_level_m(
         .mstream_o(core_deser_mstreamo)
     );
 
-    shaded_vertex_cache_m #(6) svc(
+    shaded_vertex_cache_m #(`SVC_SIZE) svc(
         .clk_i(clk),
         .nrst_i(nrst),
 
@@ -305,7 +305,7 @@ module top_level_m(
         .mstream_o(svc_mstreamo)
     );
 
-    stream_fifo_m #(`SHADED_VERTEX_WIDTH, 10) svb(
+    stream_fifo_m #(`SHADED_VERTEX_WIDTH, `SVC_BUFFER_SIZE) svb(
         .clk_i(clk),
         .nrst_i(nrst),
 
@@ -316,7 +316,7 @@ module top_level_m(
         .mstream_o(svb_mstreamo)
     );
 
-    vertex_order_buffer_m #(6, `VERTEX_ORDER_WIDTH) vob(
+    vertex_order_buffer_m #(`VOB_SIZE, `VERTEX_ORDER_WIDTH) vob(
         .clk_i(clk),
         .nrst_i(nrst),
 
@@ -331,7 +331,7 @@ module top_level_m(
         .clear_i(vob_clear)
     );
 
-    stream_fifo_m #(`WORD_WIDTH, 6) index_buffer(
+    stream_fifo_m #(`WORD_WIDTH, `VOB_SIZE) index_buffer(
         .clk_i(clk),
         .nrst_i(nrst),
 

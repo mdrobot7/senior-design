@@ -156,7 +156,7 @@ typedef struct {
   CC_GR_t GR[CC_GLOBAL_REGFILE_SIZE];
 } CC_t;
 
-#define CC_IMEM_ADDR (0x00000000UL)
+#define CC_IMEM_ADDR (0x33000000UL)
 #define CC_IMEM_SIZE (0x00001000UL)
 #define CC_IMEM      ((void *) CC_IMEM_ADDR)
 

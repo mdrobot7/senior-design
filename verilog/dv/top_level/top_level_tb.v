@@ -34,7 +34,7 @@ module top_level_tb;
 
 	assign uart_tx = mprj_io[6];
 
-	always #12.5 clock <= (clock === 1'b0);
+	always #10 clock <= (clock === 1'b0);
 
 	initial begin
 		clock = 0;
@@ -43,33 +43,67 @@ module top_level_tb;
 	initial begin
 		$dumpfile("top_level.vcd");
 		$dumpvars(0, top_level_tb);
-
-		// Repeat cycles of 1000 clock edges as needed to complete testbench
-		repeat (250) begin
-			repeat (1000) @(posedge clock);
-			// $display("+1000 cycles");
-		end
-		$display("%c[1;31m",27);
-		`ifdef GL
-			$display ("Monitor: Timeout, Test (GL) Failed");
-		`else
-			$display ("Monitor: Timeout, Test (RTL) Failed");
-		`endif
-		$display("%c[0m",27);
-		$finish;
 	end
 
-	initial begin
-		wait(gpio === 'b0 || gpio === 'b1);
-		if (gpio == 'b0) begin
-			$display("%c[1;31m",27);
-			$display("Test failed");
-			$display("%c[0m",27);
-		end else begin
-			$display("%c[1;32m",27);
-			$display("Test success");
-			$display("%c[0m",27);
-		end
+	initial begin : MAIN
+        integer i;
+        reg [`WORD] temp [1023:0];
+
+		wait(!RSTB);
+		wait(RSTB);
+
+        // sram_1024x32.v.
+        $readmemh("../top_level/src/asm/vertex_shader_cached.txt", temp);
+        for (i = 0; i < 512; i = i + 1)
+            uut.chip_core.mprj.top_level.core_cont.core_controller.inst_fetch.imem.sram.RAM[i] = temp[i];
+        $readmemh("../top_level/src/asm/fragment_shader.txt", temp);
+        for (i = 0; i < 512; i = i + 1)
+            uut.chip_core.mprj.top_level.core_cont.core_controller.inst_fetch.imem.sram.RAM[512 + i] = temp[i];
+
+        for (i = 0; i < 320 * 240 * 4; i = i + 1) begin
+            WRITE_MEM(`ADDR_DEPTH_BUFFER + i, 8'hff);
+        end
+
+        // Index buffer
+        WRITE_WORD(32'h80000 + 0 * 4, 0);
+        WRITE_WORD(32'h80000 + 1 * 4, 2);
+        WRITE_WORD(32'h80000 + 2 * 4, 1);
+        WRITE_WORD(32'h80000 + 3 * 4, 1);
+        WRITE_WORD(32'h80000 + 4 * 4, 2);
+        WRITE_WORD(32'h80000 + 5 * 4, 3);
+
+        // Vertex 0
+        WRITE_WORD(32'h90000 + 0 * 20 + 0, `FP(61));
+        WRITE_WORD(32'h90000 + 0 * 20 + 4, `FP(61));
+        WRITE_WORD(32'h90000 + 0 * 20 + 8, `FP(1));
+        WRITE_WORD(32'h90000 + 0 * 20 + 12, `FP(0));
+        WRITE_WORD(32'h90000 + 0 * 20 + 16, `FP(0));
+
+        // Vertex 1
+        WRITE_WORD(32'h90000 + 1 * 20 + 0, `FP(121));
+        WRITE_WORD(32'h90000 + 1 * 20 + 4, `FP(61));
+        WRITE_WORD(32'h90000 + 1 * 20 + 8, `FP(1));
+        WRITE_WORD(32'h90000 + 1 * 20 + 12, `FP(60));
+        WRITE_WORD(32'h90000 + 1 * 20 + 16, `FP(0));
+
+        // Vertex 2
+        WRITE_WORD(32'h90000 + 2 * 20 + 0, `FP(61));
+        WRITE_WORD(32'h90000 + 2 * 20 + 4, `FP(121));
+        WRITE_WORD(32'h90000 + 2 * 20 + 8, `FP(1));
+        WRITE_WORD(32'h90000 + 2 * 20 + 12, `FP(0));
+        WRITE_WORD(32'h90000 + 2 * 20 + 16, `FP(60));
+
+        // Vertex 3
+        WRITE_WORD(32'h90000 + 3 * 20 + 0, `FP(121));
+        WRITE_WORD(32'h90000 + 3 * 20 + 4, `FP(121));
+        WRITE_WORD(32'h90000 + 3 * 20 + 8, `FP(1));
+        WRITE_WORD(32'h90000 + 3 * 20 + 12, `FP(60));
+        WRITE_WORD(32'h90000 + 3 * 20 + 16, `FP(60));
+
+		wait(gpio);
+
+        `VGA_WRITE("output.bmp", uut.chip_core.mprj.spi_chip1.mem, `ADDR_FB0, 320, 240, `COLOR_TYPE_RGB332);
+
 		#100;
 		$finish;
 	end
@@ -134,6 +168,15 @@ module top_level_tb;
 		.resetb	  (RSTB)
 	);
 
+    // spi_chip_m #(5, 1, 600000) spi_chip1(
+    //     .clk_i(mprj_io[12]),
+    //     .cs_i(mprj_io[7]),
+    //     .mosi_i(mprj_io[19:16]),
+    //     .miso_o(mprj_io[19:16]),
+    //     .dqsm_o(mprj_io[13]),
+    //     .dqsm_i(mprj_io[13])
+    // );
+
 	spiflash #(
 		.FILENAME("top_level.hex")
 	) spiflash (
@@ -149,6 +192,30 @@ module top_level_tb;
 	tbuart tbuart (
 		.ser_rx(uart_tx)
 	);
+
+    task WRITE_MEM;
+        input [31:0] addr;
+        input [7:0] data;
+    begin
+        if (addr < `SPI_MEM_SIZE) begin
+            uut.chip_core.mprj.spi_chip1.mem[addr] = data;
+        end
+        else begin
+            // spi_chip2.mem[addr - `SPI_MEM_SIZE] = data;
+        end
+    end
+    endtask
+
+    task WRITE_WORD;
+        input [31:0] addr;
+        input [31:0] data;
+    begin
+        WRITE_MEM(addr + 0, data[7:0]);
+        WRITE_MEM(addr + 1, data[15:8]);
+        WRITE_MEM(addr + 2, data[23:16]);
+        WRITE_MEM(addr + 3, data[31:24]);
+    end
+    endtask
 
 endmodule
 `default_nettype wire

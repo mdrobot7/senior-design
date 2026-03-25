@@ -5,9 +5,9 @@
 
 #include <stdint.h>
 
-#define FB0_PK_ADDR   (QSPI0_MEM_ADDR_DEFAULT + 0x00000000)
-#define FB1_PK_ADDR   (QSPI1_MEM_ADDR_DEFAULT + 0x00000000)
-#define DEPTH_PK_ADDR (QSPI2_MEM_ADDR_DEFAULT + 0x00000000)
+#define FB0_PK_ADDR   (QSPI0_MEM_ADDR_DEFAULT + (0))
+#define FB1_PK_ADDR   (QSPI0_MEM_ADDR_DEFAULT + (0 + 320 * 240))
+#define DEPTH_PK_ADDR (QSPI0_MEM_ADDR_DEFAULT + (0 + 320 * 240 + 320 * 240))
 
 extern uint32_t _svertex_shader;
 extern uint32_t _evertex_shader;

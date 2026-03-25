@@ -1,2 +1,6 @@
 *.bin
 **/__pycache__/*
+
+/*.bmp
+/*.elf
+/model.v

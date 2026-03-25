@@ -154,9 +154,9 @@ module integration_tb();
         WRITE_WORD(32'h90000 + 3 * 20 + 16, `FP(60));
 
         // Rasterizer config
-        wbmst.WRITE(32'h30000000 + 0 * 4, `ADDR_FB1); // Texture addr
-        wbmst.WRITE(32'h30000000 + 1 * 4, 60); // Texture height
-        wbmst.WRITE(32'h30000000 + 2 * 4, 60); // Texture width
+        wbmst.WRITE(32'h31000000 + 0 * 4, `ADDR_FB1); // Texture addr
+        wbmst.WRITE(32'h31000000 + 1 * 4, 60); // Texture height
+        wbmst.WRITE(32'h31000000 + 2 * 4, 60); // Texture width
 
         for (i = 0; i < 60 * 60; i = i + 1) begin
             WRITE_MEM(`ADDR_FB1 + i, image.tex_data[i]);
@@ -167,15 +167,15 @@ module integration_tb();
         end
 
         // Core controller config
-        wbmst.WRITE(32'h28000000 + 2 * 4, 6'b111111); // Enable all cores
+        wbmst.WRITE(32'h32000000 + 2 * 4, 6'b111111); // Enable all cores
 
-        wbmst.WRITE(32'h28000000 + 5 * 4, 32'h00000000); // GPGPU entry point
-        wbmst.WRITE(32'h28000000 + 6 * 4, 32'h00000000); // Vert shade entry point
-        wbmst.WRITE(32'h28000000 + 7 * 4, 32'h00000200); // Frag shade entry point (word 128 -> byte 512)
+        wbmst.WRITE(32'h32000000 + 5 * 4, 32'h00000000); // GPGPU entry point
+        wbmst.WRITE(32'h32000000 + 6 * 4, 32'h00000000); // Vert shade entry point
+        wbmst.WRITE(32'h32000000 + 7 * 4, 32'h00000200); // Frag shade entry point (word 128 -> byte 512)
 
-        wbmst.WRITE(32'h28000000 + 8 * 4, 32'h00080000); // Index buffer addr
+        wbmst.WRITE(32'h32000000 + 8 * 4, 32'h00080000); // Index buffer addr
 
-        wbmst.WRITE(32'h28000000 + 9 * 4, triangles * 3); // Job/index count
+        wbmst.WRITE(32'h32000000 + 9 * 4, triangles * 3); // Job/index count
 
         $display(angle);
         $display($cos(angle));
@@ -184,29 +184,29 @@ module integration_tb();
         $display("%x", `REAL_TO_FP($cos(angle)));
         $display("%x", `REAL_TO_FP($sin(angle)));
 
-        wbmst.WRITE(32'h28000000 + (10 + 0) * 4, `REAL_TO_FP($cos(angle)));
-        wbmst.WRITE(32'h28000000 + (10 + 1) * 4, -`REAL_TO_FP($sin(angle)));
-        wbmst.WRITE(32'h28000000 + (10 + 2) * 4, 0);
-        wbmst.WRITE(32'h28000000 + (10 + 3) * 4, `FP(200));
+        wbmst.WRITE(32'h32000000 + (10 + 0) * 4, `REAL_TO_FP($cos(angle)));
+        wbmst.WRITE(32'h32000000 + (10 + 1) * 4, -`REAL_TO_FP($sin(angle)));
+        wbmst.WRITE(32'h32000000 + (10 + 2) * 4, 0);
+        wbmst.WRITE(32'h32000000 + (10 + 3) * 4, `FP(200));
 
-        wbmst.WRITE(32'h28000000 + (10 + 4) * 4, `REAL_TO_FP($sin(angle)));
-        wbmst.WRITE(32'h28000000 + (10 + 5) * 4, `REAL_TO_FP($cos(angle)));
-        wbmst.WRITE(32'h28000000 + (10 + 6) * 4, 0);
-        wbmst.WRITE(32'h28000000 + (10 + 7) * 4, `FP(100));
+        wbmst.WRITE(32'h32000000 + (10 + 4) * 4, `REAL_TO_FP($sin(angle)));
+        wbmst.WRITE(32'h32000000 + (10 + 5) * 4, `REAL_TO_FP($cos(angle)));
+        wbmst.WRITE(32'h32000000 + (10 + 6) * 4, 0);
+        wbmst.WRITE(32'h32000000 + (10 + 7) * 4, `FP(100));
 
-        wbmst.WRITE(32'h28000000 + (10 + 8) * 4, 0);
-        wbmst.WRITE(32'h28000000 + (10 + 9) * 4, 0);
-        wbmst.WRITE(32'h28000000 + (10 + 10) * 4, `FP(1));
-        wbmst.WRITE(32'h28000000 + (10 + 11) * 4, 0);
+        wbmst.WRITE(32'h32000000 + (10 + 8) * 4, 0);
+        wbmst.WRITE(32'h32000000 + (10 + 9) * 4, 0);
+        wbmst.WRITE(32'h32000000 + (10 + 10) * 4, `FP(1));
+        wbmst.WRITE(32'h32000000 + (10 + 11) * 4, 0);
 
-        wbmst.WRITE(32'h28000000 + (10 + 12) * 4, 0);
-        wbmst.WRITE(32'h28000000 + (10 + 13) * 4, 0);
-        wbmst.WRITE(32'h28000000 + (10 + 14) * 4, 0);
-        wbmst.WRITE(32'h28000000 + (10 + 15) * 4, `FP(1));
+        wbmst.WRITE(32'h32000000 + (10 + 12) * 4, 0);
+        wbmst.WRITE(32'h32000000 + (10 + 13) * 4, 0);
+        wbmst.WRITE(32'h32000000 + (10 + 14) * 4, 0);
+        wbmst.WRITE(32'h32000000 + (10 + 15) * 4, `FP(1));
 
-        wbmst.WRITE(32'h28000000 + (10 + 46) * 4, 32'h00090000); // g46 = 0x00090000
+        wbmst.WRITE(32'h32000000 + (10 + 46) * 4, 32'h00090000); // g46 = 0x00090000
 
-        wbmst.WRITE(32'h28000000 + 0 * 4, 5'b01010); // Dispatch indices, start
+        wbmst.WRITE(32'h32000000 + 0 * 4, 5'b01010); // Dispatch indices, start
 
         $display("Regs written");
 

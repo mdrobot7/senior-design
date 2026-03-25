@@ -13,23 +13,30 @@ typedef union {
   uint32_t reg;
 } RAST_TEXADDR_t;
 
-#define RAST_TEXDIM_WIDTH_Pos     (0)
-#define RAST_TEXDIM_WIDTH_Msk     (0xFFFFUL << RAST_TEXDIM_WIDTH_Pos)
-#define RAST_TEXDIM_WIDTH(value)  (RAST_TEXDIM_WIDTH_Msk & ((value) << RAST_TEXDIM_WIDTH_Pos))
-#define RAST_TEXDIM_HEIGHT_Pos    (16)
-#define RAST_TEXDIM_HEIGHT_Msk    (0xFFFFUL << RAST_TEXDIM_HEIGHT_Pos)
-#define RAST_TEXDIM_HEIGHT(value) (RAST_TEXDIM_HEIGHT_Msk & ((value) << RAST_TEXDIM_HEIGHT_Pos))
+#define RAST_TEXWIDTH_Pos     (0)
+#define RAST_TEXWIDTH_Msk     (0xFFFFUL << RAST_TEXDIM_WIDTH_Pos)
+#define RAST_TEXWIDTH(value)  (RAST_TEXDIM_WIDTH_Msk & ((value) << RAST_TEXDIM_WIDTH_Pos))
 typedef union {
   struct {
     uint32_t WIDTH  : 16;
-    uint32_t HEIGHT : 16;
   } bit;
   uint32_t reg;
-} RAST_TEXDIM_t;
+} RAST_TEXWIDTH_t;
+
+#define RAST_TEXHEIGHT_Pos     (0)
+#define RAST_TEXHEIGHT_Msk     (0xFFFFUL << RAST_TEXDIM_HEIGHT_Pos)
+#define RAST_TEXHEIGHT(value)  (RAST_TEXDIM_HEIGHT_Msk & ((value) << RAST_TEXDIM_HEIGHT_Pos))
+typedef union {
+  struct {
+    uint32_t HEIGHT  : 16;
+  } bit;
+  uint32_t reg;
+} RAST_TEXHEIGHT_t;
 
 typedef struct {
   RAST_TEXADDR_t TEXADDR;
-  RAST_TEXDIM_t TEXDIM;
+  RAST_TEXWIDTH_t TEXWIDTH;
+  RAST_TEXHEIGHT_t TEXHEIGHT;
 } RAST_t;
 
 #endif
