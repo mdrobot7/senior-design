@@ -120,6 +120,8 @@ module top_level_m(
     wire vob_clear;
 
     wire rast_busy;
+    wire mem_busy;
+    wire vrc_busy;
 
     wire [`STREAM_MIPORT(`SHADED_VERTEX_WIDTH)] svc_mstreami;
     wire [`STREAM_MOPORT(`SHADED_VERTEX_WIDTH)] svc_mstreamo;
@@ -346,6 +348,8 @@ module top_level_m(
         .clk_i(clk),
         .nrst_i(nrst),
 
+        .busy_o(vrc_busy),
+
         .order_sstream_i(vob_mstreamo),
         .order_sstream_o(vob_mstreami),
 
@@ -366,7 +370,7 @@ module top_level_m(
         .clk_i(clk),
         .nrst_i(nrst),
 
-        .busy_o(),
+        .busy_o(mem_busy),
 
         .sstream_i(frag_mstreamo),
         .sstream_o(frag_mstreami),

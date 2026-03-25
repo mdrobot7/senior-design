@@ -6,6 +6,8 @@ module vertex_reorder_controller_m #(
     input  wire clk_i,
     input  wire nrst_i,
 
+    output reg  busy_o,
+
     input  wire [`STREAM_SIPORT(INPUT_INDEX_WIDTH)] order_sstream_i,
     output wire [`STREAM_SOPORT(INPUT_INDEX_WIDTH)] order_sstream_o,
 
@@ -125,6 +127,8 @@ module vertex_reorder_controller_m #(
         else begin
             svc_store_valid_o <= 0;
         end
+
+        busy_o <= current_vertex != VERT_V0;
     end
 
 endmodule

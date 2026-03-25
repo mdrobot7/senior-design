@@ -28,19 +28,19 @@ void duwe_cube() {
   CC->INDEXADDR.reg = INDEX_BUFFER_PK_ADDR;
   CC->JOBS.reg      = NUM_INDICES;
 
-  CC->GR[0].reg     = 0x00001000;
+  CC->GR[0].reg     = 0x00008000;
   CC->GR[1].reg     = 0;
   CC->GR[2].reg     = 0;
   CC->GR[3].reg     = 0;
 
   CC->GR[4].reg     = 0;
-  CC->GR[5].reg     = 0x00001000;
+  CC->GR[5].reg     = 0x00008000;
   CC->GR[6].reg     = 0;
   CC->GR[7].reg     = 0;
 
   CC->GR[8].reg     = 0;
   CC->GR[9].reg     = 0;
-  CC->GR[10].reg    = 0x00001000;
+  CC->GR[10].reg    = 0x00008000;
   CC->GR[11].reg    = 0;
 
   CC->GR[12].reg    = 0;
