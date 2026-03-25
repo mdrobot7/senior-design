@@ -182,16 +182,19 @@ module core_controller_wrapper_m #(
   assign {pause_at_halt, dispatch_ctrl, cmd} = ctrl_reg[3:0];
   always @(posedge wb_clk_i, posedge wb_rst_i) begin : CTRL_REG
     reg prev_wbs_stbN0;
+    reg cmd_written_delay;
     if (wb_rst_i) begin
       cmd_written <= 0;
+      cmd_written_delay <= 0;
       prev_wbs_stbN0 <= 0;
     end
     else if (wb_clk_i) begin
       prev_wbs_stbN0 <= wbs_stbN[0];
+      cmd_written <= cmd_written_delay;
       if (!prev_wbs_stbN0 && wbs_stbN[0])
-        cmd_written <= 1;
+        cmd_written_delay <= 1;
       else
-        cmd_written <= 0;
+        cmd_written_delay <= 0;
     end
   end
   wishbone_register_m #(32'h00000000, 1, `WBREG_TYPE_REG) ctrl (
@@ -727,6 +730,10 @@ module core_controller_m #(
   wire should_dispatch  = (dispatch_ctrl_i != `CORE_CTRL_DISPATCH_DISABLE && next_prog != STATE_FRAGMENT_SHADING);
   reg  dispatched;
 
+  reg cores_mailed; // 1: Fragfifo was done mailing when this frag shade started, meaning this frag shade won't stall on inbox
+  wire vertshade_deadlock = (state == STATE_VERTEX_SHADING && fragfifo_full_i);
+  wire fragshade_deadlock = (state == STATE_FRAGMENT_SHADING && dispatch_model_done && vertorder_empty_i && !rast_busy_i && fragfifo_empty_i && !cores_mailed);
+
   always @(posedge clk_i, negedge nrst_i) begin
     if (!nrst_i) begin : RESET
       integer i;
@@ -752,7 +759,7 @@ module core_controller_m #(
 
       case (state)
         STATE_STOPPED: begin
-          if (cmd_i == `CORE_CTRL_CMD_RUN || cmd_i == `CORE_CTRL_CMD_STEP) begin
+          if ((cmd_i == `CORE_CTRL_CMD_RUN || cmd_i == `CORE_CTRL_CMD_STEP) && cmd_written_i) begin
             if (is_rasterization)
               cur_prog <= STATE_VERTEX_SHADING;
             else
@@ -792,10 +799,8 @@ module core_controller_m #(
             `CORE_CTRL_CMD_PAUSE:
               state <= STATE_PAUSED;
             `CORE_CTRL_CMD_RUN: begin
-              if (instfetch_prog_done || (state == STATE_VERTEX_SHADING && fragfifo_full_i) || (state == STATE_FRAGMENT_SHADING && vertorder_empty_i && !dispatch_model_done)) begin
-                // Deadlock protection: if fragfifo fills up, immediately swap to frag shading. if vert order buf is empty, swap to vert shading
+              if (instfetch_prog_done || vertshade_deadlock || fragshade_deadlock)
                 state <= STATE_DONE;
-              end
               else
                 instfetch_enable <= 1;
             end
@@ -823,7 +828,7 @@ module core_controller_m #(
         end
         STATE_DONE: begin
           job_done_o <= 1;
-          if (dispatch_model_done)
+          if (dispatch_model_done && next_prog == STATE_STOPPING)
             batch_done_o <= 1;
 
           cur_prog <= next_prog;
@@ -837,6 +842,8 @@ module core_controller_m #(
             instfetch_enable <= 1;
             state <= next_prog;
           end
+
+          cores_mailed <= fragfifo_done_mailing_i;
 
           if (cmd_i == `CORE_CTRL_CMD_STOP)
             state <= STATE_STOPPING;
@@ -890,22 +897,14 @@ module core_controller_m #(
       else
         next_prog = STATE_GPGPU_COMPUTE;
     end
-    else if (cur_prog == STATE_VERTEX_SHADING) begin
-      if (fragfifo_done_mailing_i || fragfifo_full_i || dispatch_model_done)
-        next_prog = STATE_FRAGMENT_SHADING;
-      else
-        next_prog = STATE_VERTEX_SHADING;
-    end
-    else if (cur_prog == STATE_FRAGMENT_SHADING) begin
-      if ((!fragfifo_done_mailing_i || vertorder_empty_i) && !dispatch_model_done)
-        next_prog = STATE_VERTEX_SHADING;
-      else if (fragfifo_done_mailing_i)
-        next_prog = STATE_FRAGMENT_SHADING;
-      else
+    else begin
+      if (dispatch_model_done && vertorder_empty_i && !rast_busy_i && fragfifo_empty_i)
         next_prog = STATE_STOPPING;
+      else if (fragfifo_done_mailing_i || dispatch_model_done)
+        next_prog = STATE_FRAGMENT_SHADING;
+      else
+        next_prog = STATE_VERTEX_SHADING;
     end
-    else
-      next_prog = STATE_STOPPING;
 
     // Entry point
     case (next_prog)
