@@ -10,15 +10,17 @@
 - [Design Proposal](#design-proposal)
   - [Data Path \& Software](#data-path--software)
   - [Hardware](#hardware)
-- [More Info](#more-info)
+- [Further Information](#further-information)
 
 # Overview
-This repository contains a 3D graphics accelerator. Specifically, we created a programmable pipeline embedded GPU (uGPU) that can rasterize 3D user models into 2D space. The data is stored in SRAM chips on an off chip PCBA, which utilize the SPI communication protocol. Then the computation work is done in the ASIC implementation, and is stored in frame buffers in the SRAM chips. When a frame is rendered on the screen, VGA is used to display the pixel information.
+This repository contains a 3D graphics accelerator. Specifically, we created a programmable pipeline embedded GPU (uGPU) that can rasterize 3D user models into 2D space. The model data is stored in PSRAM chips on an off chip PCBA, which utilize the SPI communication protocol. Rendering computation is done in the ASIC implementation, and is stored in frame buffers in the PSRAM chips. When a frame is rendered on the screen, VGA is used to display the pixel information.
 
 # Consumer Need
-Many modern graphics processing units (GPUs) are complex devices. For our project, we have elected to design and test a small footprint educational GPU through the Iowa State Chip Forge organization’s toolflow. This organization’s focus is to give students an opportunity to experience ASIC design, and the toolflow is an open-source solution to design ASICs. The μGPU provides a simple and relevant method for students to enter the world of GPU and ASIC design.
+Many modern graphics processing units (GPUs) are complex devices. For our project, we have elected to design and test a small footprint educational GPU through for students in the Chip Forge co-curricular at Iowa State University. This organization’s focus is to give students an opportunity to experience ASIC design, and the toolflow is an open-source solution to design ASICs. The μGPU provides a simple and relevant method for students to enter the world of GPU and ASIC design.
 
-The μGPU will be used to help students explore GPU design in a more consumable way than self-research and exploration. Our documentation and design can be used by students to help them understand the architecture choices we made and to help them consume the design in modularized pieces. Additionally, at Iowa State University there is a lack of formal instruction on hardware design for graphics. Students at other universities may not even have a course on GPU design offered and could use this document to help themselves learn key concepts for a relatively simple GPU design.
+The μGPU will be used to help students explore GPU design in a deeply tangible way that encourages further self-research and exploration. Our documentation and design can be used by students to help them understand the architecture choices we made and to help them consume the design in modularized pieces. Students at other universities may not even have a course on GPU design offered and could use this document to help themselves learn key concepts for a relatively simple GPU design.
+
+Additionally, μGPU supports general purpose GPU operations. It can be used to accelerate machine learning algorithms, do ray tracing workloads, and physics simulations using a custom ISA we developed. This means that μGPU can be used in place of GPU alternatives, while claiming a smaller physical footprint and a smaller power consumption.
 
 # Design Proposal
 The following is our proposed design based on our current development. As described in the overview, we have a PCBA to hold the memory chips, and to hold our VGA port to display to the monitor. A render of this PCBA can be seen below.
@@ -35,7 +37,7 @@ This PCBA contains a resistor ladder DAC to convert the digital pixel data to it
     Proposed Design Block Diagram
 </p>
 
-Our design is in the innermost dashed box. The 3D data enters through the SRAM chips, work is done by the rasterizer and the individual cores, then it is stored as a 2D frame in the offchip memory and read by the VGA module to display on the screen.
+Our design is in the innermost dashed box. The 3D data enters through the PSRAM chips, work is done by the rasterizer and the individual cores, then it is stored as a 2D frame in the offchip memory and read by the VGA module to display on the screen.
 
 
 ## Data Path & Software
@@ -62,5 +64,9 @@ The core controller is connected to the management core RISC-V processor, and it
     Core Controller Block Diagram
 </p>
 
-# More Info
-Additional information on this project can be found on our [webpage](https://sdmay26-24.sd.ece.iastate.edu/). Special consideration should be given to the [Design Document](https://sdmay26-24.sd.ece.iastate.edu/resources/designdocs/sdmay26-24_FINAL_DesignDoc.pdf). 
+# Further Information
+Additional information on this project can be found on our [webpage](https://sdmay26-24.sd.ece.iastate.edu/). Special consideration should be given to the [Design Document](https://sdmay26-24.sd.ece.iastate.edu/resources/designdocs/sdmay26-24_FINAL_DesignDoc.pdf).
+
+Additionally, this repository contains resources to assemble μGPU assembly into machine code, using the [customasm](https://github.com/hlorenzi/customasm) submodule and the assembly definition available at `verilog/dv/top_level/src/asm`. This can then be simulated with our python simulator available at `verilog/dv/top_level/scripts/simulator.py`.
+
+A bulk of our functional testing is not done in `verilog/dv`, but is done with [SVUnit](https://github.com/svunit/svunit) in `verification/unit_tests`.
