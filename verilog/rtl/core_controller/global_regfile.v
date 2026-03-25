@@ -36,16 +36,12 @@ module global_regfile_m (
     end
 
     always @(*) begin : READ
-        integer i;
-        reg [`WORD] r1_data;
-        reg [`WORD] r2_data;
-
         if (r1_addr_i >= `NUM_LOCAL_REGS)
-          r1_data_o = r1_data;
+          r1_data_o = mem[r1_addr_i];
         else
           r1_data_o = 0;
         if (r2_addr_i >= `NUM_LOCAL_REGS)
-          r2_data_o = r2_data;
+          r2_data_o = mem[r2_addr_i];
         else
           r2_data_o = 0;
     end
