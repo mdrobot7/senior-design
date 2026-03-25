@@ -1,5 +1,7 @@
 #include "matrix.h"
 
+#include "trig.h"
+
 #include <math.h>
 #include <string.h>
 
@@ -34,24 +36,24 @@ void mat4_rotate(mat4_t m, ugpu_fp_t rad_x, ugpu_fp_t rad_y, ugpu_fp_t rad_z) {
   // TODO: Rotation around an arbitrary axis (quaternions)?
   memset(m, 0, 4 * 4 * sizeof(ugpu_fp_t));
 
-  float sin_x = sin(UGPU_FIXED_TO_FLOAT(rad_x)); // TODO: Add picolibc to get math.h
-  float cos_x = cos(UGPU_FIXED_TO_FLOAT(rad_x));
-  float sin_y = sin(UGPU_FIXED_TO_FLOAT(rad_y));
-  float cos_y = cos(UGPU_FIXED_TO_FLOAT(rad_y));
-  float sin_z = sin(UGPU_FIXED_TO_FLOAT(rad_z));
-  float cos_z = cos(UGPU_FIXED_TO_FLOAT(rad_z));
+  ugpu_fp_t sin_x = sin_fp(rad_x);
+  ugpu_fp_t cos_x = cos_fp(rad_x);
+  ugpu_fp_t sin_y = sin_fp(rad_y);
+  ugpu_fp_t cos_y = cos_fp(rad_y);
+  ugpu_fp_t sin_z = sin_fp(rad_z);
+  ugpu_fp_t cos_z = cos_fp(rad_z);
 
-  m[0][0] = UGPU_FLOAT_TO_FIXED(cos_y * cos_z);
-  m[0][1] = UGPU_FLOAT_TO_FIXED(sin_x * sin_y * cos_z - cos_x * sin_z);
-  m[0][2] = UGPU_FLOAT_TO_FIXED(cos_x * sin_y * cos_z + sin_x * sin_z);
+  m[0][0] = UGPU_FIXED_MUL(cos_y, cos_z);
+  m[0][1] = UGPU_FIXED_MUL(UGPU_FIXED_MUL(sin_x, sin_y), cos_z) - UGPU_FIXED_MUL(cos_x, sin_z);
+  m[0][2] = UGPU_FIXED_MUL(UGPU_FIXED_MUL(cos_x, sin_y), cos_z) + UGPU_FIXED_MUL(sin_x, sin_z);
 
-  m[1][0] = UGPU_FLOAT_TO_FIXED(cos_y * sin_z);
-  m[1][1] = UGPU_FLOAT_TO_FIXED(sin_z * sin_y * sin_z + cos_x * cos_z);
-  m[1][2] = UGPU_FLOAT_TO_FIXED(cos_x * sin_y * sin_z - sin_x * cos_z);
+  m[1][0] = UGPU_FIXED_MUL(cos_y, sin_z);
+  m[1][1] = UGPU_FIXED_MUL(UGPU_FIXED_MUL(sin_z, sin_y), sin_z) + UGPU_FIXED_MUL(cos_x, cos_z);
+  m[1][2] = UGPU_FIXED_MUL(UGPU_FIXED_MUL(cos_x, sin_y), sin_z) - UGPU_FIXED_MUL(sin_x, cos_z);
 
-  m[2][0] = UGPU_FLOAT_TO_FIXED(-sin_y);
-  m[2][1] = UGPU_FLOAT_TO_FIXED(sin_x * cos_y);
-  m[2][2] = UGPU_FLOAT_TO_FIXED(cos_x * cos_y);
+  m[2][0] = -sin_y;
+  m[2][1] = UGPU_FIXED_MUL(sin_x, cos_y);
+  m[2][2] = UGPU_FIXED_MUL(cos_x, cos_y);
 
   m[3][3] = UGPU_FIXED(1);
 }
