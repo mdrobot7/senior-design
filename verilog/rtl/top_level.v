@@ -165,7 +165,7 @@ module top_level_m(
         .spi_dqsm_en_o(spi2_dqsm_en_o)
     );
 
-    core_m core(
+    core_m #(.SP(0)) core(
         .clk_i(clk),
         .nrst_i(nrst),
 
@@ -175,7 +175,7 @@ module top_level_m(
 
         .jump_request_o(jump_request),
         .flush_dec_stage_i(fds),
-        
+
         .stall_i(stalli),
         .stall_o(stallo),
 
@@ -304,4 +304,3 @@ module top_level_m(
 
 
 endmodule
-
