@@ -11,7 +11,7 @@ void main() {
   demos_init();
   duwe_cube();
 
-  delay_ms(50);
+  // delay_ms(50);
 
   reg_gpio_out = 1; // LED on
 }

@@ -390,11 +390,15 @@ module top_level_m(
         .mstream_i(inbox_mstreami),
         .mstream_o(inbox_mstreamo),
 
-        .empty_o(fragfifo_empty),
-        .full_o(fragfifo_full),
-        .done_mailing_o(fragfifo_done_mailing),
+        .empty_o(),
+        .full_o(),
+        .done_mailing_o(),
         .clear_i(fragfifo_clear)
     );
+
+    assign fragfifo_empty = 1;
+    assign fragfifo_full = 0;
+    assign fragfifo_done_mailing = 0;
 
     rasterizer_wrapper_m rasterizer(
         .wb_clk_i(wb_clk_i),
