@@ -11,6 +11,7 @@
   - [Data Path \& Software](#data-path)
   - [Hardware](#hardware)
   - [Supporting Circuitry](#supporting-circuitry)
+- [Testing](#testing)
 - [Further Information](#further-information)
 - [Acknowledgements](#acknowledgements)
 
@@ -54,7 +55,7 @@ The core controller is connected to the management area RISC-V processor, and it
 
 ## Supporting Circuitry
 <p align="center">
-  <img src="docs/source/_static/MemoryVGAPmod.png" alt="3D Render of MemoryVGAPmod"> <br>
+    <img src="docs/source/_static/MemoryVGAPmod.png" alt="3D Render of MemoryVGAPmod"> <br>
 </p>
 
 The uGPU requires additional hardware to support it. The PCB shown above contains 3 8MB QSPI PSRAM chips and a VGA resistor ladder, and is designed to plug into a 4-wide PMOD header for FPGA testing. The final design, provided on the ChipFoundry M.2 carrier board, will slot into a dedicated PCB containing the same PSRAM chips and VGA connector. The final design aims to move the VGA resistor ladder on-chip in an analog design, freeing up 5 IO pins for other functionality.
