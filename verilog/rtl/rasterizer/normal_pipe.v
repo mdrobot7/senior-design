@@ -24,6 +24,26 @@ module normal_pipe_m(
     output wire signed [`WORD] nz_o
 );
 
+    reg  d1in_valid;
+    wire d1in_ready;
+    wire d1out_valid;
+    reg  d1out_ready;
+    reg signed [`WORD_WIDTH - 1:0] d1a, d1b;
+    wire signed [`WORD_WIDTH - 1:0] d1y;
+
+    wire signed [`DIVIDER_WIDTH - 1:0] d1ae, d1be;
+    assign d1ae = d1a;
+    assign d1be = d1b;
+
+    assign div_si[`STREAM_SI_DATA(2 * `DIVIDER_WIDTH)] = { d1ae << `DECIMAL_POS, d1be };
+    assign div_si[`STREAM_SI_LAST(2 * `DIVIDER_WIDTH)] = 0;
+    assign div_si[`STREAM_SI_VALID(2 * `DIVIDER_WIDTH)] = d1in_valid;
+    assign d1in_ready = div_so[`STREAM_SO_READY(2 * `DIVIDER_WIDTH)];
+
+    assign div_mi[`STREAM_MI_READY(`DIVIDER_WIDTH)] = d1out_ready;
+    assign d1y = div_mo[`STREAM_MO_DATA(`DIVIDER_WIDTH)];
+    assign d1out_valid = div_mo[`STREAM_MO_VALID(`DIVIDER_WIDTH)];
+
     reg sub;
     reg  signed [`WORD_WIDTH - 1:0] as1a; reg  signed [`WORD_WIDTH - 1:0] as1b;
     wire signed [`WORD_WIDTH - 1:0] as1y;
@@ -123,7 +143,7 @@ module normal_pipe_m(
                 end
 
                 10: begin
-
+                    
                 end
             endcase
         end
