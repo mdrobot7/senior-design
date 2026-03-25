@@ -240,7 +240,7 @@ module top_level_m(
         .fragfifo_done_mailing_i(fragfifo_done_mailing),
         .fragfifo_clear_o(fragfifo_clear),
 
-        .rast_busy_i(rast_busy),
+        .rast_busy_i(rast_busy || vrc_busy),
 
         .inst_o(inst),
         .core_reset_o(nsync_rst), // Core soft reset
