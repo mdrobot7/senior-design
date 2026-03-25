@@ -34,6 +34,7 @@
 
 `include "core_controller/index_fetch.v"
 `include "core_controller/dispatch.v"
+`include "core_controller/global_regfile.v"
 `include "core_controller/inst_fetch.v"
 `include "core_controller/core_controller.v"
 
@@ -58,6 +59,8 @@ module core_controller_m_unit_test;
   localparam STATE_PAUSED           = 6; // Manual pause by management core or step-through
   localparam STATE_DONE             = 7;
   localparam STATE_STOPPING         = 8;
+
+  localparam SP = 32'hADEAFBEE;
 
   wire clk;
   wire nrst;
@@ -247,7 +250,7 @@ module core_controller_m_unit_test;
 
   reg  [`STREAM_SIPORT(`WORD_WIDTH)] core_inbox_sstreami;
   wire [`STREAM_SOPORT(`WORD_WIDTH)] core_inbox_sstreamo;
-  core_m core[`NUM_CORES-1:0] (
+  core_m #(.SP(SP)) core[`NUM_CORES-1:0] (
     .clk_i(clk),
     .nrst_i(nrst),
     .inst_i(inst),
@@ -449,7 +452,7 @@ module core_controller_m_unit_test;
 
   `SVTEST(exec_gpgpu)
     clk_rst.WAIT_CYCLES(1);
-    fill_imem("../../verilog/dv/top_level/src/asm/test_core.hex", 0);
+    fill_imem("mem_files/core_controller.mem", 0);
     fill_inbox();
 
     pc_gpgpu_compute = 0;
@@ -482,7 +485,7 @@ module core_controller_m_unit_test;
     `CHECK_REG(12, 32'h00000000, {`NUM_CORES{1'b1}});
     // r13: Undefined value in test_core.s
     `CHECK_REG(14, 32'h0000000A, {`NUM_CORES{1'b1}});
-    `CHECK_REG(15, 32'h0000000A, {`NUM_CORES{1'b1}});
+    `CHECK_REG(15,           SP, {`NUM_CORES{1'b1}});
   `SVTEST_END
 
   `SVTEST(exec_gpgpu_dispatch)
@@ -529,7 +532,7 @@ module core_controller_m_unit_test;
 
   `SVTEST(exec_gpgpu_cores_disabled)
     clk_rst.WAIT_CYCLES(1);
-    fill_imem("../../verilog/dv/top_level/src/asm/test_core.hex", 0);
+    fill_imem("mem_files/core_controller.mem", 0);
     fill_inbox();
 
     pc_gpgpu_compute = 0;
@@ -562,12 +565,12 @@ module core_controller_m_unit_test;
     `CHECK_REG(12, 32'h00000000, 6'b101010);
     // r13: Undefined value in test_core.s
     `CHECK_REG(14, 32'h0000000A, 6'b101010);
-    `CHECK_REG(15, 32'h0000000A, 6'b101010);
+    `CHECK_REG(15,           SP, 6'b111111); // Check all cores
   `SVTEST_END
 
   `SVTEST(exec_gpgpu_completion)
     clk_rst.WAIT_CYCLES(1);
-    fill_imem("../../verilog/dv/top_level/src/asm/test_core.hex", 0);
+    fill_imem("mem_files/core_controller.mem", 0);
     fill_inbox();
 
     pc_gpgpu_compute = 0;
@@ -606,7 +609,7 @@ module core_controller_m_unit_test;
       `CHECK_REG(12, 32'h00000000, 6'b101010);
       // r13: Undefined value in test_core.s
       `CHECK_REG(14, 32'h0000000A, 6'b101010);
-      `CHECK_REG(15, 32'h0000000A, 6'b101010);
+      `CHECK_REG(15,           SP, 6'b111111); // Check all cores
     end
 
     for (int i = 0; i < 10000000; i++) begin
@@ -645,7 +648,7 @@ module core_controller_m_unit_test;
     `CHECK_REG(12, 32'h00000000, 6'b101010);
     // r13: Undefined value in test_core.s
     `CHECK_REG(14, 32'h0000000A, 6'b101010);
-    `CHECK_REG(15, 32'h0000000A, 6'b101010);
+    `CHECK_REG(15,           SP, 6'b111111);
   `SVTEST_END
 
   `SVTEST(exec_raster)
@@ -653,7 +656,7 @@ module core_controller_m_unit_test;
     // that. This is using test_core. It checks index dispatch and the
     // rasterization stop conditions.
     clk_rst.WAIT_CYCLES(1);
-    fill_imem("../../verilog/dv/top_level/src/asm/test_core.hex", 0);
+    fill_imem("mem_files/core_controller.mem", 0);
     fill_inbox();
 
     pc_gpgpu_compute = 0;
@@ -693,7 +696,7 @@ module core_controller_m_unit_test;
       `CHECK_REG(12, 32'h00000000, 6'b101010);
       // r13: Undefined value in test_core.s
       `CHECK_REG(14, 32'h0000000A, 6'b101010);
-      `CHECK_REG(15, 32'h0000000A, 6'b101010);
+      `CHECK_REG(15,           SP, 6'b111111); // Check all cores
 
       job_done_clr <= 1;
       clk_rst.WAIT_CYCLES(1);
@@ -757,7 +760,7 @@ module core_controller_m_unit_test;
     `CHECK_REG(12, 32'h00000000, 6'b101010);
     // r13: Undefined value in test_core.s
     `CHECK_REG(14, 32'h0000000A, 6'b101010);
-    `CHECK_REG(15, 32'h0000000A, 6'b101010);
+    `CHECK_REG(15,           SP, 6'b111111); // Check all cores
   `SVTEST_END
 
   `SVUNIT_TESTS_END

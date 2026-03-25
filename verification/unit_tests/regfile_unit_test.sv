@@ -11,7 +11,7 @@ module regfile_m_unit_test;
 
 
   //===================================
-  // This is the UUT that we're 
+  // This is the UUT that we're
   // running the Unit Tests on
   //===================================
 
@@ -20,6 +20,8 @@ module regfile_m_unit_test;
 
   wire clk, nrst;
   clk_rst_m clk_rst(.clk_o(clk), .nrst_o(nrst));
+
+  reg nsync_rst;
   reg wr_en, inbox_write;
   reg[REG_WIDTH-1:0] wr_data;
   reg[3:0] wr_addr, r1_addr, r2_addr;
@@ -30,13 +32,16 @@ module regfile_m_unit_test;
 
   reg [REG_WIDTH-1:0] test_regfile [CORE_HEIGHT-1:0];
 
-  regfile_m #(REG_WIDTH, CORE_HEIGHT) core_regfile_m 
+  core_regfile_m #(.SP(32'hADEAFBEE)) core_regfile
   (
     .clk_i(clk),
     .nrst_i(nrst),
+    .nsync_rst_i(nsync_rst),
+
     .wr_en_i(wr_en),
     .wr_data_i(wr_data),
     .wr_addr_i(wr_addr),
+
     .r1_addr_i(r1_addr),
     .r2_addr_i(r2_addr),
 
@@ -69,7 +74,7 @@ module regfile_m_unit_test;
 
 
   //===================================
-  // Here we deconstruct anything we 
+  // Here we deconstruct anything we
   // need after running the Unit Tests
   //===================================
   task teardown();
@@ -99,6 +104,7 @@ module regfile_m_unit_test;
       test_regfile[i] = 0;
     end
 
+    nsync_rst = 1;
     for(i = 0; i < 100; i = i + 1) begin
       @(negedge clk);
       wr_en <= {$random};
@@ -115,7 +121,7 @@ module regfile_m_unit_test;
       @(posedge clk);
       r1_addr <= i;
       r2_addr <= i;
-      
+
       @(posedge clk);
       `FAIL_UNLESS_EQUAL(r1_data, r2_data);
       `FAIL_UNLESS_EQUAL(test_regfile[i], r1_data);
@@ -124,6 +130,7 @@ module regfile_m_unit_test;
 
 `SVTEST(mailbox_test)
     integer i, j;
+    nsync_rst = 1;
     for(i = 0; i < 100; i=i+1) begin
         inbox_write <= 1;
         wr_en <= 0;
@@ -134,7 +141,27 @@ module regfile_m_unit_test;
         @(posedge clk);
         `FAIL_UNLESS_EQUAL(inbox, outbox);
     end
-`SVTEST_END
+  `SVTEST_END
+
+  `SVTEST(sync_rst)
+    integer i;
+
+    nsync_rst = 1;
+    for (i = 0; i < `NUM_LOCAL_REGS; i++) begin
+      test_regfile[i] = $urandom;
+      core_regfile.mem[i] = test_regfile[i];
+    end
+
+    @(negedge clk);
+    nsync_rst = 0;
+    @(negedge clk);
+    nsync_rst = 1;
+
+    for (i = 0; i < `NUM_LOCAL_REGS - 1; i++) begin
+      `FAIL_UNLESS_EQUAL(core_regfile.mem[i], test_regfile[i]);
+    end
+    `FAIL_UNLESS_EQUAL(core_regfile.mem[`NUM_LOCAL_REGS-1], 32'hADEAFBEE);
+  `SVTEST_END
 
   `SVUNIT_TESTS_END
 

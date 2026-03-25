@@ -19,7 +19,9 @@
 *   mport_o     : pk bus master port out
 */
 
-module core_m(
+module core_m #(
+    parameter SP = 32'h00000000
+) (
     input  wire clk_i,
     input  wire nrst_i,
     input  wire[`WORD_WIDTH-1:0] inst_i,
@@ -143,9 +145,12 @@ module core_m(
         .control_sigs_o(decoder_output)
     );
 
-    regfile_m #(`WORD_WIDTH, `CORE_REGFILE_HEIGHT) regfile(
+    core_regfile_m #(
+        .SP(SP)
+    ) regfile (
         .clk_i(clk_i),
         .nrst_i(nrst_i),
+        .nsync_rst_i(nsync_rst_i),
         .wr_en_i(wb_ctl_sigs[`REGFILE_WRITE_IDX]),
         .wr_data_i(wb_data),
         .wr_addr_i(wb_addr),

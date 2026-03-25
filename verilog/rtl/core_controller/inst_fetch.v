@@ -104,13 +104,7 @@ module inst_fetch_m #(
   wire [`WORD]                 global_regfile_r1_data;
   assign                       global_regfile_read_data_o = !enable_i ? global_regfile_r1_data    : 0;
   assign                       global_regfile_rs1_data_o  = global_regfile_r1_data;
-  regfile_m #(
-    `WORD_WIDTH,
-    `NUM_GLOBAL_REGS,
-    `NUM_LOCAL_REGS,
-    1,
-    `REG_SOURCE_WIDTH
-  ) global_regfile (
+  global_regfile_m global_regfile (
     .clk_i(clk_i),
     .nrst_i(nrst_i),
 
@@ -121,11 +115,7 @@ module inst_fetch_m #(
     .r1_addr_i(global_regfile_r1_addr),  // Muxed between the shader cores and wishbone interface
     .r2_addr_i(inst_rs2),
     .r1_data_o(global_regfile_r1_data),  // Muxed between the shader cores and wishbone interface
-    .r2_data_o(global_regfile_rs2_data_o),
-
-    .inbox_write_i(1'b0),
-    .inbox_i({`WORD_WIDTH * `CORE_MAILBOX_HEIGHT{1'b0}}),
-    .outbox_o()
+    .r2_data_o(global_regfile_rs2_data_o)
   );
 
   assign imem_do_o    = imem_do;

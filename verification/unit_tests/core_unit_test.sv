@@ -63,7 +63,7 @@ module core_m_unit_test;
   // This is the UUT that we're
   // running the Unit Tests on
   //===================================
-  core_m my_core_m(
+  core_m #(.SP(0)) my_core_m (
     .clk_i(clk),
     .nrst_i(nrst),
     .inst_i(inst),
