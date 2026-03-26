@@ -1,6 +1,7 @@
 #ifndef _DEMOS_H
 #define _DEMOS_H
 
+#include "matrix/matrix.h"
 #include "ugpu.h"
 
 #include <stdint.h>
@@ -20,6 +21,7 @@ extern uint32_t * fragment_shader;
 extern uint32_t fragment_shader_len;
 
 void demos_init();
+void demos_copy_mvp(mat4_t m); // Copy MVP to g0 - g15
 
 // Standard vertex shade, passthrough fragment shade
 void duwe_cube();
