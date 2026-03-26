@@ -28,6 +28,14 @@ void main() {
   WCOUNT    = 0x00000004;
   WDATA    = 0xFAFAFAFA;
 
+  wait_bridge();
+
+  if (ADDR != 0x12345678)
+    test_fail(); 
+  if (WCOUNT != 0x00000005)
+    test_fail(); 
+  if (WDATA != 0xFAFAFAFA)
+    test_fail(); 
 
 
   // pk stream write 255 words
@@ -35,19 +43,29 @@ void main() {
   WCOUNT = 0x000000FF;
   WDATA = 0xFFFFFFFF;
   
+  wait_bridge();
 
-  wait_bridge();  // WAIT here so we don't overwrite ADDR too early
+  if (ADDR != 0x10804070)
+    test_fail(); 
+  if (WCOUNT != 0x00000100)
+    test_fail(); 
+  if (WDATA != 0xFFFFFFFF)
+    test_fail(); 
 
-  //wishbone read
-  ADDR    = 0x12345678;
+
+  //wishbone read (pk read)
+  ADDR = 0x12345678;
 
   volatile uint32_t readValue;
   readValue = RDATA;
 
+  wait_bridge();
 
-  // for (volatile int i = 0; i < 10 ; i++){
+  if (ADDR != 0x12345678)
+    test_fail(); 
+  if (RDATA != 0x00000000)
+    test_fail(); 
 
-  // }
 
   // if (REG0 != 0x01010101)
   //   test_fail();
