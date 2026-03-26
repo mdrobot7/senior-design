@@ -844,10 +844,12 @@ module core_controller_m #(
             state <= STATE_STOPPING;
           else if (should_dispatch) begin
             dispatch_enable <= 1;
+            dispatched <= 1;
             state <= STATE_DISPATCHING;
           end
           else begin
             instfetch_enable <= 1;
+            dispatched <= 0;
             state <= next_prog;
           end
 

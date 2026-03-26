@@ -100,7 +100,7 @@ module dispatch_m #(
 
   reg [`WORD] thread_id;
 
-  reg [`NUM_CORES_WIDTH-1:0] core_idx;
+  reg [`NUM_CORES_WIDTH:0] core_idx;
 
   wire [`NUM_CORES-1:0] core_stall              = ~(1 << core_idx);
   wire [`NUM_CORES-1:0] core_stall_undispatched = {`NUM_CORES{1'b1}} << core_idx; // Handle partial dispatch by stalling cores without jobs
@@ -170,7 +170,6 @@ module dispatch_m #(
               // Grab from cache
               vertorder_mstream_o[`STREAM_SI_DATA(`VERTEX_ORDER_WIDTH)] <= `NUM_CORES;
               vertorder_mstream_o[`STREAM_MO_VALID(`VERTEX_ORDER_WIDTH)] <= 1;
-              // index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
             end
           end
 
