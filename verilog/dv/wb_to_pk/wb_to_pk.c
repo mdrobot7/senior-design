@@ -8,10 +8,7 @@
 #define WCOUNT    (*((volatile uint32_t *) 0x30123C00))   // wb write count reg
 #define RDATA (*((volatile uint32_t *) 0x30124000))   // wb write count reg
 
-
-
   void wait_bridge() {
-    // Assuming STATUS reg (offset 0) returns 0 when STANDBY
     while(STATUS != 0); 
   }
 
@@ -21,8 +18,6 @@ void main() {
   while (reg_mprj_xfer == 1);
   reg_wb_enable = 1;
   
-
-
   //pk stream write 4 words
   ADDR    = 0x12345678;
   WCOUNT    = 0x00000004;
@@ -36,7 +31,6 @@ void main() {
     test_fail(); 
   if (WDATA != 0xFAFAFAFA)
     test_fail(); 
-
 
   // pk stream write 255 words
   ADDR = 0x10804070;
@@ -52,10 +46,8 @@ void main() {
   if (WDATA != 0xFFFFFFFF)
     test_fail(); 
 
-
   //wishbone read (pk read)
   ADDR = 0x12345678;
-
   volatile uint32_t readValue;
   readValue = RDATA;
 
@@ -65,7 +57,6 @@ void main() {
     test_fail(); 
   if (RDATA != 0x00000000)
     test_fail(); 
-
 
   // if (REG0 != 0x01010101)
   //   test_fail();
