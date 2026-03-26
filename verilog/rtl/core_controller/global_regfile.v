@@ -19,7 +19,7 @@ module global_regfile_m (
     output reg [`WORD] r2_data_o
 );
     localparam HIGHEST_ADDR = `NUM_LOCAL_REGS + `NUM_GLOBAL_REGS;
-    reg [`WORD] mem [HIGHEST_ADDR-1:`NUM_GLOBAL_REGS];
+    reg [`WORD] mem [HIGHEST_ADDR-1:`NUM_LOCAL_REGS];
 
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin : RESET
