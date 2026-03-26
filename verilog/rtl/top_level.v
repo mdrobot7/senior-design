@@ -235,12 +235,14 @@ module top_level_m(
         .vertorder_empty_i(vob_empty),
         .vertorder_clear_o(vob_clear),
 
+        .vertcont_busy_i(vrc_busy),
+
         .fragfifo_full_i(fragfifo_full),
         .fragfifo_empty_i(fragfifo_empty),
         .fragfifo_done_mailing_i(fragfifo_done_mailing),
         .fragfifo_clear_o(fragfifo_clear),
 
-        .rast_busy_i(rast_busy || vrc_busy),
+        .rast_busy_i(rast_busy),
 
         .inst_o(inst),
         .core_reset_o(nsync_rst), // Core soft reset

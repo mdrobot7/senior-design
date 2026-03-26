@@ -47,6 +47,9 @@ module core_controller_wrapper_m #(
   input  wire                                       vertorder_empty_i,
   output wire                                       vertorder_clear_o,
 
+  // Vertex reorder controller
+  input wire vertcont_busy_i,
+
   // index buffer
   input  wire [`STREAM_MIPORT(`WORD_WIDTH)] index_mstream_i,
   output wire [`STREAM_MOPORT(`WORD_WIDTH)] index_mstream_o,
@@ -141,6 +144,8 @@ module core_controller_wrapper_m #(
     .vertorder_full_i(vertorder_full_i),
     .vertorder_empty_i(vertorder_empty_i),
     .vertorder_clear_o(vertorder_clear_o),
+
+    .vertcont_busy_i(vertcont_busy_i),
 
     .index_mstream_i(index_mstream_i),
     .index_mstream_o(index_mstream_o),
@@ -569,6 +574,9 @@ module core_controller_m #(
   input  wire                                       vertorder_empty_i,
   output wire                                       vertorder_clear_o,
 
+  // Vertex reorder controller
+  input wire vertcont_busy_i,
+
   // index buffer
   input  wire [`STREAM_MIPORT(`WORD_WIDTH)] index_mstream_i,
   output wire [`STREAM_MOPORT(`WORD_WIDTH)] index_mstream_o,
@@ -732,7 +740,7 @@ module core_controller_m #(
 
   reg cores_mailed; // 1: Fragfifo was done mailing when this frag shade started, meaning this frag shade won't stall on inbox
   wire vertshade_deadlock = (state == STATE_VERTEX_SHADING && fragfifo_full_i);
-  wire fragshade_deadlock = (state == STATE_FRAGMENT_SHADING && dispatch_model_done && vertorder_empty_i && !rast_busy_i && fragfifo_empty_i && !cores_mailed);
+  wire fragshade_deadlock = (state == STATE_FRAGMENT_SHADING && dispatch_model_done && vertorder_empty_i && !vertcont_busy_i && !rast_busy_i && fragfifo_empty_i && !cores_mailed);
 
   always @(posedge clk_i, negedge nrst_i) begin
     if (!nrst_i) begin : RESET
@@ -765,7 +773,7 @@ module core_controller_m #(
             else
               cur_prog <= STATE_GPGPU_COMPUTE;
 
-            if (should_dispatch) begin
+            if (dispatch_ctrl_i != `CORE_CTRL_DISPATCH_DISABLE) begin
               dispatch_enable <= 1;
               dispatched <= 1;
               state <= STATE_DISPATCHING;
@@ -849,7 +857,7 @@ module core_controller_m #(
             state <= STATE_STOPPING;
         end
         STATE_STOPPING: begin
-          if (!rast_busy_i && dispatch_index_fetch_clear_done && vertorder_empty_i && fragfifo_empty_i)
+          if (!rast_busy_i && dispatch_index_fetch_clear_done && vertorder_empty_i && !vertcont_busy_i && fragfifo_empty_i)
             state <= STATE_STOPPED;
         end
       endcase
@@ -898,7 +906,7 @@ module core_controller_m #(
         next_prog = STATE_GPGPU_COMPUTE;
     end
     else begin
-      if (dispatch_model_done && vertorder_empty_i && !rast_busy_i && fragfifo_empty_i)
+      if (dispatch_model_done && vertorder_empty_i && !vertcont_busy_i && !rast_busy_i && fragfifo_empty_i)
         next_prog = STATE_STOPPING;
       else if (fragfifo_done_mailing_i || dispatch_model_done)
         next_prog = STATE_FRAGMENT_SHADING;

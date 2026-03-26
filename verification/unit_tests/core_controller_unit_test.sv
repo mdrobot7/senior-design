@@ -96,28 +96,6 @@ module core_controller_m_unit_test;
     .bad_read_o()
   );
 
-  wire [`STREAM_MOPORT(`VERTEX_ORDER_WIDTH)] vertorder_mstreamo;
-  wire [`STREAM_MIPORT(`VERTEX_ORDER_WIDTH)] vertorder_mstreami;
-  wire                                       vertorder_clear;
-  wire                                       vertorder_full;
-  wire                                       vertorder_empty;
-  vertex_order_buffer_m #(
-    .ENTRIES(16),
-    .INDEX_WIDTH(`VERTEX_ORDER_WIDTH)
-  ) vertorder (
-    .clk_i(clk),
-    .nrst_i(nrst),
-
-    .sstream_i(vertorder_mstreamo),
-    .sstream_o(vertorder_mstreami),
-    .mstream_i(1'b0),
-    .mstream_o(),
-
-    .clear_i(vertorder_clear),
-    .full_o(vertorder_full),
-    .empty_o(vertorder_empty)
-  );
-
   wire                  vertcache_clear;
   wire [`WORD]          vertcache_test_index;
   wire                  vertcache_test_valid;
@@ -156,6 +134,10 @@ module core_controller_m_unit_test;
   reg  [`SRAM_1024x32_ADDR_WIDTH-1:0] pc_vertex_shading;
   reg  [`SRAM_1024x32_ADDR_WIDTH-1:0] pc_fragment_shading;
   reg  [`SRAM_1024x32_ADDR_WIDTH-1:0] pc_gpgpu_compute;
+  reg                                 vertorder_full;
+  reg                                 vertorder_empty;
+  wire                                vertorder_clear;
+  reg                                 vertcont_busy;
   reg                                 fragfifo_full;
   reg                                 fragfifo_empty;
   reg                                 fragfifo_done_mailing;
@@ -211,11 +193,13 @@ module core_controller_m_unit_test;
     .vertcache_test_found_i(vertcache_test_found),
     .vertcache_clear_o(vertcache_clear),
 
-    .vertorder_mstream_o(vertorder_mstreamo),
-    .vertorder_mstream_i(vertorder_mstreami),
+    .vertorder_mstream_o(),
+    .vertorder_mstream_i(0),
     .vertorder_full_i(vertorder_full),
     .vertorder_empty_i(vertorder_empty),
     .vertorder_clear_o(vertorder_clear),
+
+    .vertcont_busy_i(vertcont_busy),
 
     .fragfifo_full_i(fragfifo_full),
     .fragfifo_empty_i(fragfifo_empty),
@@ -328,12 +312,16 @@ module core_controller_m_unit_test;
     pc_vertex_shading = 0;
     pc_fragment_shading = 0;
     pc_gpgpu_compute = 0;
+    vertorder_full = 0;
+    vertorder_empty = 0;
+    vertcont_busy = 0;
     fragfifo_full = 0;
     fragfifo_empty = 1;
     fragfifo_done_mailing = 0;
     rast_busy = 0;
     core_enable = 0;
     cmd = 0;
+    cmd_written = 0;
     pause_at_halt = 0;
     index_buffer_addr = 0;
     dispatch_ctrl = 0;
@@ -458,9 +446,13 @@ module core_controller_m_unit_test;
     pc_gpgpu_compute = 0;
     core_enable = {`NUM_CORES{1'b1}};
     cmd = `CORE_CTRL_CMD_RUN;
+    cmd_written = 1;
     pause_at_halt = 1;
     dispatch_ctrl = `CORE_CTRL_DISPATCH_DISABLE;
     num_dispatches = 100;
+
+    clk_rst.WAIT_CYCLES(1);
+    cmd_written = 0;
 
     for (int i = 0; i < 10000000; i++) begin
       clk_rst.WAIT_CYCLES(1);
@@ -511,7 +503,10 @@ module core_controller_m_unit_test;
     clk_rst.WAIT_CYCLES(1);
 
     cmd = `CORE_CTRL_CMD_RUN;
+    cmd_written = 1;
+
     clk_rst.WAIT_CYCLES(1);
+    cmd_written = 0;
 
     for (int i = 0; i < 10000000; i++) begin
       clk_rst.WAIT_CYCLES(1);
@@ -538,9 +533,13 @@ module core_controller_m_unit_test;
     pc_gpgpu_compute = 0;
     core_enable = 6'b101010;
     cmd = `CORE_CTRL_CMD_RUN;
+    cmd_written = 1;
     pause_at_halt = 1;
     dispatch_ctrl = `CORE_CTRL_DISPATCH_INT;
     num_dispatches = 100;
+
+    clk_rst.WAIT_CYCLES(1);
+    cmd_written = 0;
 
     for (int i = 0; i < 10000000; i++) begin
       clk_rst.WAIT_CYCLES(1);
@@ -576,9 +575,13 @@ module core_controller_m_unit_test;
     pc_gpgpu_compute = 0;
     core_enable = 6'b101010;
     cmd = `CORE_CTRL_CMD_RUN;
+    cmd_written = 1;
     pause_at_halt = 0;
     dispatch_ctrl = `CORE_CTRL_DISPATCH_INT;
     num_dispatches = 11;
+
+    clk_rst.WAIT_CYCLES(1);
+    cmd_written = 0;
 
     for (int run = 0; run < 3; run++) begin
       for (int i = 0; i < 10000000; i++) begin
@@ -617,7 +620,6 @@ module core_controller_m_unit_test;
       if (job_done)
         break;
     end
-    cmd = `CORE_CTRL_CMD_STOP;
     `FAIL_UNLESS_EQUAL(state, STATE_STOPPING);
     `FAIL_UNLESS_EQUAL(job_done, 1);
     job_done_clr <= 1;
@@ -664,6 +666,7 @@ module core_controller_m_unit_test;
     pc_fragment_shading = 0;
     core_enable = 6'b101010;
     cmd = `CORE_CTRL_CMD_RUN;
+    cmd_written = 1;
     pause_at_halt = 0;
     dispatch_ctrl = `CORE_CTRL_DISPATCH_INDEX;
     num_dispatches = 11;
@@ -671,6 +674,9 @@ module core_controller_m_unit_test;
     rast_busy = 1;
     fragfifo_done_mailing = 1;
     fragfifo_empty = 0;
+
+    clk_rst.WAIT_CYCLES(1);
+    cmd_written = 0;
 
     for (int run = 0; run < 7; run++) begin
       for (int i = 0; i < 10000000; i++) begin
@@ -713,14 +719,25 @@ module core_controller_m_unit_test;
       fragfifo_done_mailing = !fragfifo_done_mailing; // flip between vertex and frag shading
     end
 
+    // "Empty" the pipeline
+    vertorder_empty = 1;
+    vertcont_busy = 0;
+    rast_busy = 0;
+    fragfifo_empty = 1;
+
     for (int i = 0; i < 10000000; i++) begin
       clk_rst.WAIT_CYCLES(1);
       if (job_done)
         break;
     end
-    cmd = `CORE_CTRL_CMD_STOP;
     `FAIL_UNLESS_EQUAL(state, STATE_STOPPING);
     `FAIL_UNLESS_EQUAL(job_done, 1);
+    `FAIL_UNLESS_EQUAL(dut.dispatch_index_fetch_clear, 1);
+    `FAIL_UNLESS_EQUAL(vertorder_clear, 1);
+    `FAIL_UNLESS_EQUAL(fragfifo_clear, 1);
+    clk_rst.WAIT_CYCLES(1);
+    `FAIL_UNLESS_EQUAL(state, STATE_STOPPED);
+
     job_done_clr <= 1;
     clk_rst.WAIT_CYCLES(1);
     job_done_clr <= 0;
@@ -730,17 +747,6 @@ module core_controller_m_unit_test;
     clk_rst.WAIT_CYCLES(1);
     batch_done_clr <= 0;
     `FAIL_UNLESS_EQUAL(batch_done, 0);
-
-    `FAIL_UNLESS_EQUAL(dut.dispatch_index_fetch_clear, 1);
-    `FAIL_UNLESS_EQUAL(vertorder_clear, 1);
-    `FAIL_UNLESS_EQUAL(fragfifo_clear, 1);
-    clk_rst.WAIT_CYCLES(1);
-    rast_busy = 0;
-    clk_rst.WAIT_CYCLES(1);
-    `FAIL_UNLESS_EQUAL(state, STATE_STOPPING);
-    fragfifo_empty = 1;
-    clk_rst.WAIT_CYCLES(2);
-    `FAIL_UNLESS_EQUAL(state, STATE_STOPPED);
 
     $display("Checking final run, expecting core to be stopped...");
     // Core 5 won't execute code, but the regfile will stay the same
@@ -792,6 +798,7 @@ module core_controller_m_unit_test;
     for (int i = 0; i < `CORE_MAILBOX_HEIGHT - 1; i++)
       stream_master.WRITE($urandom);
     stream_master.WRITE_LAST($urandom);
+    clk_rst.WAIT_CYCLES(1);
   end
   endtask
 
