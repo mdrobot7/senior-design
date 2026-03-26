@@ -19,7 +19,7 @@ module vertex_serializer_m#(
     reg [PARALLEL_SIZE-1:0] tmp;
     reg valid;
     reg ready;
-    reg tmp_last;
+    // reg tmp_last;
 
     always @(posedge clk_i or negedge nrst_i) begin
         if(!nrst_i) begin
@@ -30,9 +30,10 @@ module vertex_serializer_m#(
             ready <= mstream_i[`STREAM_MI_READY(SERIAL_SIZE)];
         end else begin
             if(valid)
-            count <= count + 3'd1;
-            if ((count == 3'd0) && (sstream_i[`STREAM_SI_VALID(PARALLEL_SIZE)] == 1'b1)) begin
-                tmp_last <= sstream_i[`STREAM_SI_LAST(PARALLEL_SIZE)]; 
+                count <= count + 3'd1;
+            else
+                ready <= mstream_i[`STREAM_MI_READY(SERIAL_SIZE)];
+            if ((count == 3'd0) && (sstream_i[`STREAM_SI_VALID(PARALLEL_SIZE)] == 1'b1) && ready) begin
                 tmp <= sstream_i[`STREAM_SI_DATA(PARALLEL_SIZE)];
                 last <= 1'b0;
                 valid <= 1'b1;
@@ -41,10 +42,11 @@ module vertex_serializer_m#(
             else
                 tmp <= (tmp >> SERIAL_SIZE);
             if (count == 3'd6)
-                last <= tmp_last;
+                last <= 1;
             if (count == 3'd7) begin
                 ready <= mstream_i[`STREAM_MI_READY(SERIAL_SIZE)];
                 valid <= 1'b0;
+                last <= 1'b0;
             end 
         end
     end

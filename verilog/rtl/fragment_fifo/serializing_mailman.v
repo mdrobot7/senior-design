@@ -20,7 +20,6 @@ module serializing_mailman #(
 wire [`STREAM_MIPORT_SIZE(PARALLEL_SIZE) * `NUM_CORES - 1:0] parallel_mstream_i;
 wire [`STREAM_MOPORT_SIZE(PARALLEL_SIZE) * `NUM_CORES - 1:0] parallel_mstream_o;
 
-integer i;
 
 fragment_fifo_m #(
     .SIZE(PARALLEL_SIZE),
@@ -46,6 +45,5 @@ vertex_serializer_m #(.PARALLEL_SIZE(PARALLEL_SIZE), .SERIAL_SIZE(SERIAL_SIZE)) 
     .mstream_i(mstream_i),
     .mstream_o(mstream_o)
 );
-
 
 endmodule

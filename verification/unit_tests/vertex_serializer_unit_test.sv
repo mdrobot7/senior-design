@@ -60,14 +60,14 @@ module vertex_serializer_m_unit_test;
     integer i;
     logic [7:0][31:0] data;
 
-    for(i = 0; i < 8; i++)begin
+    for(i = 0; i < 8; i=i+1)begin
       data[i] = i;
     end
     mstream_i[`STREAM_MI_READY(SERIAL_SIZE)] = 1;
     clk_rst.WAIT_CYCLES(1);
     fake_raster.WRITE_LAST(data);
     clk_rst.WAIT_CYCLES(1);
-    for(i = 0; i < 8; i++)begin
+    for(i = 0; i < 8; i=i+1)begin
       $display("READY: %b", sstream_o[`STREAM_SO_READY(PARALLEL_SIZE)]);
       $display("Serializer: %h", mstream_o[`STREAM_MO_DATA(SERIAL_SIZE)]);
       $display("VALID: %b", mstream_o[`STREAM_MO_VALID(SERIAL_SIZE)]);
@@ -80,7 +80,6 @@ module vertex_serializer_m_unit_test;
       if(i == 7)
         `FAIL_UNLESS(mstream_o[`STREAM_MO_LAST(SERIAL_SIZE)] == 1'b1)
       clk_rst.WAIT_CYCLES(1);
-      
     end
   `SVTEST_END
 

@@ -70,56 +70,107 @@ module serializing_mailman_unit_test;
 
   `SVUNIT_TESTS_BEGIN
 
-  // `SVTEST(mc_flags)
-  //   integer n;
-  //   clear_i = 1'b0;
-  //   `FAIL_UNLESS(empty == 1'b1)
-  //   `FAIL_UNLESS(full == 1'b0)
-  //   // Load FIFO with data
-  //   for (n = 0; n < DEPTH; n = n + 1) begin
-  //     fake_raster.WRITE_LAST(n);
-  //     clk_rst.WAIT_CYCLES(1);
-  //     `FAIL_UNLESS(empty == 1'b0)
-  //     if(n!=DEPTH-1) begin
-  //       `FAIL_UNLESS(full == 1'b0)
-  //     end
-  //   end
-  //   `FAIL_UNLESS(full == 1'b1)
-  // `SVTEST_END
+  `SVTEST(mc_flags)
+    integer n;
+    clear_i = 1'b0;
+    `FAIL_UNLESS(empty == 1'b1)
+    `FAIL_UNLESS(full == 1'b0)
+    // Load FIFO with data
+    for (n = 0; n < DEPTH; n = n + 1) begin
+      fake_raster.WRITE_LAST(n);
+      clk_rst.WAIT_CYCLES(1);
+      `FAIL_UNLESS(empty == 1'b0)
+      if(n!=DEPTH-1) begin
+        `FAIL_UNLESS(full == 1'b0)
+      end
+    end
+    `FAIL_UNLESS(full == 1'b1)
+    mstream_i[MI_Size*0 + `STREAM_MI_READY(SERIAL_SIZE)] = 1'b1;
+    clk_rst.WAIT_CYCLES(2);
+    `FAIL_UNLESS(full == 1'b0)
+
+  `SVTEST_END
 
   `SVTEST(data_serialization)
       integer n, i, j;
       reg [`NUM_CORES-1:0] seen_valid_last;
+      logic [7:0][31:0] data;
+
       clear_i = 1'b0;
       for (i = 0; i < `NUM_CORES; i = i + 1) begin 
         mstream_i[MI_Size*i + `STREAM_MI_READY(SERIAL_SIZE)] = 1'b0;
       end
       for (n = 1; n < DEPTH+1; n = n + 1) begin
-        fake_raster.WRITE_LAST(n); 
+        for(i = 0; i < 8; i=i+1)begin
+          data[i] = i+(n*16);
+        end
+        fake_raster.WRITE_LAST(data); 
         clk_rst.WAIT_CYCLES(1);
       end
       for (i = 0; i < `NUM_CORES; i = i + 1) begin 
         mstream_i[MI_Size*i + `STREAM_MI_READY(SERIAL_SIZE)] = 1'b1;
+        clk_rst.WAIT_CYCLES(1);
         while(1) begin
-          if (mstream_o[MO_Size*i + `STREAM_MO_VALID(SERIAL_SIZE)] && mstream_o[MO_Size*i + `STREAM_MO_LAST(SERIAL_SIZE)]) begin
-            $display("i=%0d data=%h", i, mstream_o[(MO_Size*i) +: SERIAL_SIZE]);
-            seen_valid_last[i] = 1'b1;
-            mstream_i[MI_Size*i + `STREAM_MI_READY(SERIAL_SIZE)] = 1'b0;
+          if(seen_valid_last[i] == 1'b1)
             break;
+          if (mstream_o[MO_Size*i + `STREAM_MO_VALID(SERIAL_SIZE)]) begin
+            $display("VALID:i=%0d data=%h", i, mstream_o[(MO_Size*i) +: SERIAL_SIZE]);
+            if (mstream_o[MO_Size*i + `STREAM_MO_LAST(SERIAL_SIZE)]) begin
+              seen_valid_last[i] = 1'b1;
+              mstream_i[MI_Size*i + `STREAM_MI_READY(SERIAL_SIZE)] = 1'b0;
+            end
           end
-          else begin
-            clk_rst.WAIT_CYCLES(1);
-          end
+          clk_rst.WAIT_CYCLES(1);
         end
         clk_rst.WAIT_CYCLES(1);
       end
-      clk_rst.WAIT_CYCLES(1);
       for (i = 0; i < `NUM_CORES; i = i + 1) begin 
         `FAIL_UNLESS(seen_valid_last[i] == 1'b1);
       end
   `SVTEST_END
+  
+  //  This test is bad but I think it works if tested correctly
+  //   `SVTEST(parallel_serialization)
+  //     integer n, i, j;
+  //     reg [`NUM_CORES-1:0] seen_valid_last;
+  //     logic [7:0][31:0] data;
 
-
+  //     clear_i = 1'b0;
+  //     for (i = 0; i < `NUM_CORES; i = i + 1) begin 
+  //       mstream_i[MI_Size*i + `STREAM_MI_READY(SERIAL_SIZE)] = 1'b0;
+  //     end
+  //     for (n = 1; n < DEPTH+1; n = n + 1) begin
+  //       for(i = 0; i < 8; i=i+1)begin
+  //         data[i] = i+(n*16);
+  //       end
+  //       fake_raster.WRITE_LAST(data); 
+  //       clk_rst.WAIT_CYCLES(1);
+  //     end
+  //     for (i = 0; i < `NUM_CORES; i = i + 1) begin 
+  //       mstream_i[MI_Size*i + `STREAM_MI_READY(SERIAL_SIZE)] = 1'b1;
+  //     end
+  //     clk_rst.WAIT_CYCLES(1);
+  //     while(1) begin
+  //       for (i = 0; i < `NUM_CORES; i = i + 1) begin 
+  //       if(seen_valid_last[i] == 1'b1)
+  //         break;
+  //       if (mstream_o[MO_Size*i + `STREAM_MO_VALID(SERIAL_SIZE)]) begin
+  //         $display("VALID:i=%0d data=%h", i, mstream_o[(MO_Size*i) +: SERIAL_SIZE]);
+  //         if (mstream_o[MO_Size*i + `STREAM_MO_LAST(SERIAL_SIZE)]) begin
+  //           seen_valid_last[i] = 1'b1;
+  //           mstream_i[MI_Size*i + `STREAM_MI_READY(SERIAL_SIZE)] = 1'b0;
+  //         end
+  //       end
+  //       clk_rst.WAIT_CYCLES(1);
+  //     end
+  //     clk_rst.WAIT_CYCLES(1);
+  //     if(seen_valid_last =='1)
+  //       break;
+  //   end
+  //   for (i = 0; i < `NUM_CORES; i = i + 1) begin 
+  //     `FAIL_UNLESS(seen_valid_last[i] == 1'b1);
+  //   end
+  // `SVTEST_END
 
   `SVUNIT_TESTS_END
 
