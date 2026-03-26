@@ -24,10 +24,12 @@ module serializing_mailman_unit_test;
   wire [`STREAM_SOPORT(PARALLEL_SIZE)] sstream_o;
 
   reg clear_i;
+  reg force_mail_i;
 
   reg  [MI_Size*`NUM_CORES-1:0] mstream_i;
   wire [MO_Size*`NUM_CORES-1:0] mstream_o;
 
+  wire[$clog2(`NUM_CORES)-1 : 0]  cores_mailed_o;
   wire empty;
   wire full;
   wire done_mailing;
@@ -39,10 +41,12 @@ module serializing_mailman_unit_test;
     .clk_i(clk),
     .nrst_i(nrst),
     .clear_i(clear_i),
+    .force_mail_i(force_mail_i),
     .sstream_i(sstream_i),
     .sstream_o(sstream_o),
     .mstream_i(mstream_i),
     .mstream_o(mstream_o),
+    .cores_mailed_o(cores_mailed_o),
     .empty_o(empty),
     .full_o(full),
     .done_mailing_o(done_mailing)
