@@ -9,7 +9,7 @@
 void main() {
   init();
   demos_init();
-  duwe_cube();
+  duwe_plane();
 
   // delay_ms(50);
 

@@ -73,29 +73,29 @@ module top_level_tb;
         WRITE_WORD(32'h80000 + 5 * 4, 3);
 
         // Vertex 0
-        WRITE_WORD(32'h90000 + 0 * 20 + 0, `FP(61));
-        WRITE_WORD(32'h90000 + 0 * 20 + 4, `FP(61));
+        WRITE_WORD(32'h90000 + 0 * 20 + 0, -`FP(1) / 10);
+        WRITE_WORD(32'h90000 + 0 * 20 + 4, -`FP(1) / 10);
         WRITE_WORD(32'h90000 + 0 * 20 + 8, `FP(1));
         WRITE_WORD(32'h90000 + 0 * 20 + 12, `FP(0));
         WRITE_WORD(32'h90000 + 0 * 20 + 16, `FP(0));
 
         // Vertex 1
-        WRITE_WORD(32'h90000 + 1 * 20 + 0, `FP(121));
-        WRITE_WORD(32'h90000 + 1 * 20 + 4, `FP(61));
+        WRITE_WORD(32'h90000 + 1 * 20 + 0, `FP(1) / 10);
+        WRITE_WORD(32'h90000 + 1 * 20 + 4, -`FP(1) / 10);
         WRITE_WORD(32'h90000 + 1 * 20 + 8, `FP(1));
         WRITE_WORD(32'h90000 + 1 * 20 + 12, `FP(60));
         WRITE_WORD(32'h90000 + 1 * 20 + 16, `FP(0));
 
         // Vertex 2
-        WRITE_WORD(32'h90000 + 2 * 20 + 0, `FP(61));
-        WRITE_WORD(32'h90000 + 2 * 20 + 4, `FP(121));
+        WRITE_WORD(32'h90000 + 2 * 20 + 0, -`FP(1) / 10);
+        WRITE_WORD(32'h90000 + 2 * 20 + 4, `FP(10) / 5);
         WRITE_WORD(32'h90000 + 2 * 20 + 8, `FP(1));
         WRITE_WORD(32'h90000 + 2 * 20 + 12, `FP(0));
         WRITE_WORD(32'h90000 + 2 * 20 + 16, `FP(60));
 
         // Vertex 3
-        WRITE_WORD(32'h90000 + 3 * 20 + 0, `FP(121));
-        WRITE_WORD(32'h90000 + 3 * 20 + 4, `FP(121));
+        WRITE_WORD(32'h90000 + 3 * 20 + 0, `FP(1) / 10);
+        WRITE_WORD(32'h90000 + 3 * 20 + 4, `FP(1) / 10);
         WRITE_WORD(32'h90000 + 3 * 20 + 8, `FP(1));
         WRITE_WORD(32'h90000 + 3 * 20 + 12, `FP(60));
         WRITE_WORD(32'h90000 + 3 * 20 + 16, `FP(60));

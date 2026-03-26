@@ -19,7 +19,7 @@ void mat4_rotated(mat4_t m, ugpu_fp_t deg_x, ugpu_fp_t deg_y, ugpu_fp_t deg_z);
 
 // MVP matrix constructors
 void mat4_view(mat4_t m, ugpu_fp_t cam_x, ugpu_fp_t cam_y, ugpu_fp_t cam_z, ugpu_fp_t cam_rad_x, ugpu_fp_t cam_rad_y, ugpu_fp_t cam_rad_z); // Creates a view matrix using a camera position and rotation
-void mat4_perspective(mat4_t m, ugpu_fp_t fov_radians, ugpu_fp_t z_near, ugpu_fp_t z_far);
+void mat4_perspective(mat4_t m, ugpu_fp_t aspect_ratio, ugpu_fp_t fov_radians, ugpu_fp_t z_near, ugpu_fp_t z_far);
 void mat4_screen(mat4_t m, uint32_t screen_width, uint32_t screen_height);
 
 // Matrix multiplication

@@ -76,14 +76,14 @@ void mat4_view(mat4_t m, ugpu_fp_t cam_x, ugpu_fp_t cam_y, ugpu_fp_t cam_z, ugpu
   mat4_inv(m, camera_matrix);
 }
 
-void mat4_perspective(mat4_t m, ugpu_fp_t fov_radians, ugpu_fp_t z_near, ugpu_fp_t z_far) {
+void mat4_perspective(mat4_t m, ugpu_fp_t aspect_ratio, ugpu_fp_t fov_radians, ugpu_fp_t z_near, ugpu_fp_t z_far) {
   ugpu_fp_t s = UGPU_FIXED_DIV(UGPU_FIXED(1), tan_fp(fov_radians >> 1));
 
   memset(m, 0, MAT4_SIZE);
-  m[0][0] = s;
+  m[0][0] = UGPU_FIXED_DIV(s, aspect_ratio);
   m[1][1] = s;
-  m[2][2] = -z_far;
-  m[2][3] = UGPU_FIXED_MUL(-z_far, z_near);
+  m[2][2] = -UGPU_FIXED_DIV(z_far + z_near, z_far - z_near);
+  m[2][3] = -UGPU_FIXED_DIV(2 * UGPU_FIXED_MUL(z_far, z_near), z_far - z_near);
   m[3][2] = UGPU_FIXED(-1);
 }
 
@@ -96,7 +96,7 @@ void mat4_screen(mat4_t m, uint32_t screen_width, uint32_t screen_height) {
   mat4_identity(m);
   m[0][0] = half_width_fixed;
   m[0][3] = half_width_fixed;
-  m[1][1] = -half_height_fixed;
+  m[1][1] = half_height_fixed;
   m[1][3] = half_height_fixed;
 }
 

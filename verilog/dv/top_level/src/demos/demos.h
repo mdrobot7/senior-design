@@ -24,6 +24,7 @@ void demos_init();
 void demos_copy_mvp(mat4_t m); // Copy MVP to g0 - g15
 
 // Standard vertex shade, passthrough fragment shade
+void duwe_plane();
 void duwe_cube();
 void duwe_cube_spin();
 void cow();
