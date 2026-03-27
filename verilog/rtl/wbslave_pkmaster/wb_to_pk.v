@@ -27,14 +27,16 @@ module wb_to_pk_m
     reg [NUM_REGS-1:0] wbs_stbN;
     wire [NUM_REGS-1:0] wbs_ackN;
     wire [`WORD_WIDTH-1:0] wbs_datN [NUM_REGS-1:0];
-    wire rdata_ready = (state == PK_STREAM_READ && mport_i[`BUS_MI_ACK]);
-
+    wire rdata_ready = (state == PK_CLEANUP);
 
     //wire mux/decoder logic
-    wire [$clog2(NUM_REGS)-1:0] word_offset = { ~wbs_adr_i[12], wbs_adr_i[11:10] }; // leaves bits of addr 4:2 as word offset 000 001 010 100 101
+    wire [$clog2(NUM_REGS)-1:0] word_offset = {2'b00, wbs_adr_i[31:2]};
+
     always @ (*) begin
         wbs_stbN = 0;
-        
+        mport_o[`BUS_MO_DATA] = wdata_reg;
+        mport_o[`BUS_MO_ADDR] = addr_reg;
+
         if(word_offset < NUM_REGS) begin 
             if (word_offset == WBS_ACK_RDATA)
                 wbs_stbN[WBS_ACK_RDATA] = wbs_stb_i && rdata_ready;
@@ -50,8 +52,6 @@ module wb_to_pk_m
 
 
     reg [`WORD] status_reg;
-    wire [`WORD] status_reg_unused;
-
 
     wishbone_register_m #(32'h00000000, 1, `WBREG_TYPE_REG) status (
         .wb_clk_i(wb_clk_i),
@@ -65,16 +65,17 @@ module wb_to_pk_m
         .wbs_ack_o(wbs_ackN[0]),
         .wbs_dat_o(wbs_datN[0]),
 
-        .access_read_mask_i(32'hFFFFFFFF), 
-        .access_write_mask_i(32'hFFFFFFFF),
-        .periph_read_mask_i(0),
+        .access_read_mask_i(32'h0000000F), 
+        .access_write_mask_i(32'h0000000F),
+        .periph_read_mask_i(32'h0000000F),
 
         .enable_prot_i(32'h00000000), 
         .enable_i(0), 
 
         .reg_i(status_reg), 
-        .reg_o(status_reg_unused) 
+        .reg_o() 
     );
+
 
     wire [`WORD] addr_reg;
 
@@ -145,7 +146,7 @@ module wb_to_pk_m
 
         .access_read_mask_i(32'hFFFFFFFF), 
         .access_write_mask_i(32'hFFFFFFFF),
-        .periph_read_mask_i(32'hFFFFFFFF),
+        .periph_read_mask_i(32'h00000000),
 
         .enable_prot_i(32'h00000000), 
         .enable_i(0), 
@@ -154,8 +155,8 @@ module wb_to_pk_m
         .reg_o(wcount_reg) 
     );
 
+
     reg [`WORD] rdata_reg;
-    wire [`WORD] rdata_reg_unused;
 
     wishbone_register_m #(32'h00000000, 1, `WBREG_TYPE_REG) rdata (
         .wb_clk_i(wb_clk_i),
@@ -177,20 +178,18 @@ module wb_to_pk_m
         .enable_i(0), 
 
         .reg_i(rdata_reg),
-        .reg_o(rdata_reg_unused)
+        .reg_o()
     );
 
 
     localparam STANDBY = 0; 
-    localparam WISHBONE_WRITE_PREP = 1;
-    localparam PK_WRITE_PREP  = 2;
-    localparam PK_STREAM_WRITE = 3;
-    localparam WISHBONE_READ_PREP = 4;
-    localparam PK_READ_PREP = 5;
-    localparam PK_STREAM_READ = 6;
-    localparam PK_CLEANUP = 7;
+    localparam PK_WRITE_PREP  = 1;
+    localparam PK_STREAM_WRITE = 2;
+    localparam PK_READ_PREP = 3;
+    localparam PK_WORD_READ = 4;
+    localparam PK_CLEANUP = 5;
     
-    reg [7:0] state;
+    reg [5:0] state;
 
     always@ (posedge wb_clk_i or posedge wb_rst_i) begin
         if (wb_rst_i) begin
@@ -202,96 +201,67 @@ module wb_to_pk_m
 	else begin
         case (state) 
             STANDBY: begin  //wait until wishbone master wants to use bridge
+                status_reg <= STANDBY;
                 mport_o[`BUS_MO_REQ]  <= 0;
-                status_reg <= 0;
-                if (wbs_stb_i && wbs_we_i)    
-                    state  <= WISHBONE_WRITE_PREP;
+
+                if ((wbs_ackN[WBS_ACK_WDATA]) && wbs_we_i)    
+                    state  <= PK_WRITE_PREP;
                 else if (wbs_stb_i && !wbs_we_i)
                     if (word_offset == WBS_ACK_RDATA)
                         state <= PK_READ_PREP;
-                    else
-                        state <= WISHBONE_READ_PREP;
             end
-            WISHBONE_WRITE_PREP: begin //wait until a wb data reg slave is ready (ack_o is 1)
-                status_reg <= 1;
-                if (wbs_ackN[WBS_ACK_WDATA] == 1)
-                    state <= PK_WRITE_PREP;  
-                else if (wbs_ackN[WBS_ACK_ADDR] == 1)
-                    state <= STANDBY;
-                else if (wbs_ackN[WBS_ACK_WCOUNT] == 1)
-                    state <= STANDBY;
-       
-            end  
-            WISHBONE_READ_PREP: begin //wait until a wb data reg slave is ready (ack_o is 1)
-                status_reg <= 4;
-                if (wbs_ackN[WBS_ACK_WDATA] == 1)
-                    state <= STANDBY;  
-                else if (wbs_ackN[WBS_ACK_ADDR] == 1)
-                    state <= STANDBY;
-                else if (wbs_ackN[WBS_ACK_STATUS] == 1)
-                    state <= STANDBY;                    
-                   
-            end 
             PK_WRITE_PREP: begin //data now on wishbone, pk stream write now occurs
-                status_reg <= 2;
+                status_reg <= PK_WRITE_PREP;
                 mport_o[`BUS_MO_REQ] <= 1;
                 mport_o[`BUS_MO_RW] <= `BUS_WRITE;
                 mport_o[`BUS_MO_SEQMST] <= 0;
                 mport_o[`BUS_MO_SIZE]   <= `BUS_SIZE_STREAM;
-                mport_o[`BUS_MO_ADDR]   <= addr_reg;
-                mport_o[`BUS_MO_DATA]   <= wdata_reg;
 
-                if(mport_i[`BUS_MI_ACK] == 1)
+                if(mport_i[`BUS_MI_ACK])
                     state <= PK_STREAM_WRITE;
                 else
                     state <= PK_WRITE_PREP;
             end
             PK_STREAM_WRITE: begin
-                status_reg <= 3;
-                if (mport_i[`BUS_MI_SEQSLV] == 0) begin
-                    if(wcount_inc_reg + 1 == wcount_reg) 
+                status_reg <= PK_STREAM_WRITE;
+                
+                if (mport_i[`BUS_MI_SEQSLV]) begin
+                    if(wcount_inc_reg + 1 >= wcount_reg) begin
                         mport_o[`BUS_MO_SEQMST] <= 1;
-                    if (wcount_reg >= wcount_inc_reg) begin
-                        mport_o[`BUS_MO_DATA]   <= wdata_reg;
-                        wcount_inc_reg <= wcount_inc_reg + 1;
+                        state <= PK_CLEANUP;
                     end
                     else begin
-                        state <= PK_CLEANUP;
+                        wcount_inc_reg <= wcount_inc_reg + 1;
                     end
                 end
             end
             PK_CLEANUP: begin
-                status_reg <= 7;
+                status_reg <= PK_CLEANUP;
+
                 if(!mport_i[`BUS_MI_ACK]) begin
                     mport_o[`BUS_MO_REQ] <= 0;
                     mport_o[`BUS_MO_SEQMST] <= 0;
-                    mport_o[`BUS_MO_DATA] <= 0;
-
+                    wcount_inc_reg <= 0;
                     state <= STANDBY;
                 end
             end
             PK_READ_PREP: begin 
-                    status_reg <= 5;
-
+                    status_reg <= PK_READ_PREP;
                     mport_o[`BUS_MO_REQ] <= 1;
                     mport_o[`BUS_MO_RW] <= `BUS_READ;
                     mport_o[`BUS_MO_SEQMST] <= 0;
-                    mport_o[`BUS_MO_SIZE]   <= `BUS_SIZE_STREAM;
-                    mport_o[`BUS_MO_ADDR]   <= addr_reg;
+                    mport_o[`BUS_MO_SIZE]   <= `BUS_SIZE_WORD;
 
-                    if(mport_i[`BUS_MI_ACK] == 1)
-                        state <= PK_STREAM_READ;
+                    if(mport_i[`BUS_MI_ACK])
+                        state <= PK_WORD_READ;
                     else
                         state <= PK_READ_PREP;
             end
-            PK_STREAM_READ: begin
-                status_reg <= 6;
-                mport_o[`BUS_MO_SEQMST] <= 1;
+            PK_WORD_READ: begin
+                status_reg <= PK_WORD_READ;
+                rdata_reg <= mport_i[`BUS_MI_DATA];
 
-                if (mport_i[`BUS_MI_SEQSLV] == 1 && mport_i[`BUS_MI_ACK] == 1) begin
-                    rdata_reg <= mport_i[`BUS_MI_DATA];
-                    state <= PK_CLEANUP;
-                end
+                state <= PK_CLEANUP;
             end
         endcase
     end
