@@ -13,6 +13,6 @@ typedef int32_t ugpu_fp_t;
 #define UGPU_FIXED_TO_FLOAT(n) ((float) (n) / (1 << UGPU_DECIMAL_POS))
 
 #define UGPU_FIXED_MUL(a, b) ((ugpu_fp_t) (((int64_t) (a) * (int64_t) (b)) >> UGPU_DECIMAL_POS))
-#define UGPU_FIXED_DIV(a, b) ((ugpu_fp_t) ((((int64_t) (a) << UGPU_DECIMAL_POS) / (int64_t) (b))))
+#define UGPU_FIXED_DIV(a, b) ((ugpu_fp_t) (((((int64_t) (a)) << UGPU_DECIMAL_POS) / (int64_t) (b))))
 
 #endif

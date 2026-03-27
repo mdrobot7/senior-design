@@ -42,6 +42,8 @@ module vertex_order_buffer_m #(
     assign empty_o = !mstream_o[`STREAM_MO_VALID(INDEX_WIDTH)];
 
     always @(*) begin
+      mstreami <= 0;
+
       if (clear_i)
         mstreami[`STREAM_MI_READY(INDEX_WIDTH)] <= 1;
     end

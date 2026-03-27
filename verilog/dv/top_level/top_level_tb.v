@@ -45,6 +45,8 @@ module top_level_tb;
 		$dumpvars(0, top_level_tb);
 	end
 
+	image_m image();
+
 	initial begin : MAIN
         integer i;
         reg [`WORD] temp [1023:0];
@@ -60,45 +62,70 @@ module top_level_tb;
         for (i = 0; i < 512; i = i + 1)
             uut.chip_core.mprj.top_level.core_cont.core_controller.inst_fetch.imem.sram.RAM[512 + i] = temp[i];
 
+        for (i = 0; i < 60 * 60; i = i + 1) begin
+            WRITE_MEM(`ADDR_FB1 + i, image.tex_data[i]);
+        end
+
         for (i = 0; i < 320 * 240 * 4; i = i + 1) begin
             WRITE_MEM(`ADDR_DEPTH_BUFFER + i, 8'hff);
         end
 
         // Index buffer
-        WRITE_WORD(32'h80000 + 0 * 4, 0);
-        WRITE_WORD(32'h80000 + 1 * 4, 2);
-        WRITE_WORD(32'h80000 + 2 * 4, 1);
-        WRITE_WORD(32'h80000 + 3 * 4, 1);
-        WRITE_WORD(32'h80000 + 4 * 4, 2);
-        WRITE_WORD(32'h80000 + 5 * 4, 3);
+        WRITE_WORD(32'h80000 +  0 * 4, 0);
+        WRITE_WORD(32'h80000 +  1 * 4, 2);
+        WRITE_WORD(32'h80000 +  2 * 4, 1);
+        WRITE_WORD(32'h80000 +  3 * 4, 1);
+        WRITE_WORD(32'h80000 +  4 * 4, 2);
+        WRITE_WORD(32'h80000 +  5 * 4, 3);
+
+        WRITE_WORD(32'h80000 +  6 * 4, 0);
+        WRITE_WORD(32'h80000 +  7 * 4, 4);
+        WRITE_WORD(32'h80000 +  8 * 4, 5);
+        WRITE_WORD(32'h80000 +  9 * 4, 5);
+        WRITE_WORD(32'h80000 + 10 * 4, 4);
+        WRITE_WORD(32'h80000 + 11 * 4, 2);
 
         // Vertex 0
-        WRITE_WORD(32'h90000 + 0 * 20 + 0, -`FP(1) / 10);
-        WRITE_WORD(32'h90000 + 0 * 20 + 4, -`FP(1) / 10);
-        WRITE_WORD(32'h90000 + 0 * 20 + 8, `FP(1));
+        WRITE_WORD(32'h90000 + 0 * 20 + 0, -`FP(1) / 4);
+        WRITE_WORD(32'h90000 + 0 * 20 + 4, -`FP(1) / 4);
+        WRITE_WORD(32'h90000 + 0 * 20 + 8, `FP(1) / 4);
         WRITE_WORD(32'h90000 + 0 * 20 + 12, `FP(0));
         WRITE_WORD(32'h90000 + 0 * 20 + 16, `FP(0));
 
         // Vertex 1
-        WRITE_WORD(32'h90000 + 1 * 20 + 0, `FP(1) / 10);
-        WRITE_WORD(32'h90000 + 1 * 20 + 4, -`FP(1) / 10);
-        WRITE_WORD(32'h90000 + 1 * 20 + 8, `FP(1));
+        WRITE_WORD(32'h90000 + 1 * 20 + 0, `FP(1) / 4);
+        WRITE_WORD(32'h90000 + 1 * 20 + 4, -`FP(1) / 4);
+        WRITE_WORD(32'h90000 + 1 * 20 + 8, `FP(1) / 4);
         WRITE_WORD(32'h90000 + 1 * 20 + 12, `FP(60));
         WRITE_WORD(32'h90000 + 1 * 20 + 16, `FP(0));
 
         // Vertex 2
-        WRITE_WORD(32'h90000 + 2 * 20 + 0, -`FP(1) / 10);
-        WRITE_WORD(32'h90000 + 2 * 20 + 4, `FP(10) / 5);
-        WRITE_WORD(32'h90000 + 2 * 20 + 8, `FP(1));
+        WRITE_WORD(32'h90000 + 2 * 20 + 0, -`FP(1) / 4);
+        WRITE_WORD(32'h90000 + 2 * 20 + 4, `FP(1) / 4);
+        WRITE_WORD(32'h90000 + 2 * 20 + 8, `FP(1) / 4);
         WRITE_WORD(32'h90000 + 2 * 20 + 12, `FP(0));
         WRITE_WORD(32'h90000 + 2 * 20 + 16, `FP(60));
 
         // Vertex 3
-        WRITE_WORD(32'h90000 + 3 * 20 + 0, `FP(1) / 10);
-        WRITE_WORD(32'h90000 + 3 * 20 + 4, `FP(1) / 10);
-        WRITE_WORD(32'h90000 + 3 * 20 + 8, `FP(1));
+        WRITE_WORD(32'h90000 + 3 * 20 + 0, `FP(1) / 4);
+        WRITE_WORD(32'h90000 + 3 * 20 + 4, `FP(1) / 4);
+        WRITE_WORD(32'h90000 + 3 * 20 + 8, `FP(1) / 4);
         WRITE_WORD(32'h90000 + 3 * 20 + 12, `FP(60));
         WRITE_WORD(32'h90000 + 3 * 20 + 16, `FP(60));
+
+        // Vertex 4
+        WRITE_WORD(32'h90000 + 4 * 20 + 0, -`FP(1) / 4);
+        WRITE_WORD(32'h90000 + 4 * 20 + 4, -`FP(1) / 4);
+        WRITE_WORD(32'h90000 + 4 * 20 + 8, -`FP(1) / 4);
+        WRITE_WORD(32'h90000 + 4 * 20 + 12, `FP(60));
+        WRITE_WORD(32'h90000 + 4 * 20 + 16, `FP(60));
+
+        // Vertex 5
+        WRITE_WORD(32'h90000 + 5 * 20 + 0, -`FP(1) / 4);
+        WRITE_WORD(32'h90000 + 5 * 20 + 4, `FP(1) / 4);
+        WRITE_WORD(32'h90000 + 5 * 20 + 8, -`FP(1) / 4);
+        WRITE_WORD(32'h90000 + 5 * 20 + 12, `FP(60));
+        WRITE_WORD(32'h90000 + 5 * 20 + 16, `FP(60));
 
 		wait(gpio);
 

@@ -8,7 +8,7 @@
 #define INDEX_BUFFER_PK_ADDR  (QSPI0_MEM_ADDR_DEFAULT + 0x80000)
 
 #define NUM_VERTICES (4)
-#define NUM_INDICES  (6)
+#define NUM_INDICES  (12)
 static const uint32_t vertices[NUM_VERTICES] = {}; // TODO
 static const uint32_t indices[NUM_INDICES]   = {}; // TODO
 
@@ -28,20 +28,25 @@ void duwe_plane() {
   CC->INDEXADDR.reg = INDEX_BUFFER_PK_ADDR;
   CC->JOBS.reg      = NUM_INDICES;
 
-#define PI_180_FIXED UGPU_FLOAT_TO_FIXED(3.14159265f / 180.0f)
+#define PI_180_FIXED 1144
 
-  mat4_t mvp;
+  mat4_t mvp = { { 7864320, 0, -10485760, 36700160, }, { 0, 7864320, -7864320, 15728640, }, { 0, 0, -65544, 122896, }, { 0, 0, -65536, 131072, }, };
 
   // mat4_t rot;
   // mat4_rotated(rot, 0, UGPU_FIXED(20), 0);
 
-  mat4_t persp;
-  mat4_perspective(persp, UGPU_FIXED_DIV(UGPU_FIXED(320), UGPU_FIXED(240)), UGPU_FIXED_MUL(UGPU_FIXED(90), PI_180_FIXED), UGPU_FIXED(1) / 16, UGPU_FIXED(1000));
+  // mat4_t trans;
+  // mat4_trans(trans, 0, 0, UGPU_FIXED(-1));
 
-  mat4_t screen;
-  mat4_screen(screen, 320, 240);
+  // mat4_t persp;
+  // mat4_perspective(persp, UGPU_FIXED_DIV(UGPU_FIXED(320), UGPU_FIXED(240)), UGPU_FIXED_MUL(UGPU_FIXED(90), PI_180_FIXED), UGPU_FIXED(1) / 16, UGPU_FIXED(1000));
 
-  mat4_muld(mvp, persp, screen);
+  // mat4_t screen;
+  // mat4_screen(screen, 320, 240);
+
+  // mat4_muld(mvp, rot, trans);
+  // mat4_muld(mvp, mvp, persp);
+  // mat4_muld(mvp, mvp, screen);
 
   for (int i = 0; i < 4; i++) {
     for (int j = 0; j < 4; j++) {
