@@ -176,8 +176,9 @@ module dispatch_m #(
           // Dumb but whatever
           if (core_idx == `NUM_CORES - 1 && !index_fetch_empty)
             index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
-          if (core_idx == `NUM_CORES - 1 || vertorder_full_i) begin
+          if (core_idx == `NUM_CORES || vertorder_full_i) begin
             index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
+            vertorder_mstream_o[`STREAM_MO_VALID(`VERTEX_ORDER_WIDTH)] <= 0;
             core_stall_o <= {`NUM_CORES{1'b1}};
             dispatch_done_o <= 1;
             state <= STATE_DISPATCH_DONE;
