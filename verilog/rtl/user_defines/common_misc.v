@@ -13,7 +13,8 @@
 `define NUM_CORES (3)
 `define NUM_CORES_WIDTH ($clog2(`NUM_CORES))
 
-`define VOB_SIZE (`NUM_CORES * 2)
+// `define VOB_SIZE (`NUM_CORES * 2)
+`define VOB_SIZE (12)
 `define SVC_SIZE (12)
 `define SVC_BUFFER_SIZE (12)
 
