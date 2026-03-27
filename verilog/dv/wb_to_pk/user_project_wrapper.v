@@ -85,9 +85,6 @@ always @* begin
 
     // Add entries here to allocate more address ranges
     `address_map(0, 32'h30123000, 32'hFFFFF000);
-    `address_map(0, 32'h30124000, 32'hFFFFF000);
-
-
 end
 
 
@@ -96,10 +93,6 @@ end
 
   wire [`BUS_SIPORT] sportai;
   wire [`BUS_SOPORT] sportao;
-
-
-// DUT
-//instiantiate managment core, bridge, bus_arb ()
 
 
 wb_to_pk_m my_wb_to_pk (
@@ -117,7 +110,6 @@ wb_to_pk_m my_wb_to_pk (
     .mport_i(mportai),
     .mport_o(mportao)
 );
-
 
 
  busarb_m #(1, 1, 1) arbiter (
