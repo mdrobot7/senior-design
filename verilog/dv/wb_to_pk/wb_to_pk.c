@@ -57,6 +57,8 @@ void main() {
     test_fail(); 
   if (RDATA != 0xFAFAFAFA)
     test_fail(); 
+  if (readValue != 4210752250)
+    test_fail(); 
 
   //wishbone read (pk read)
   ADDR = 0x00000080;
@@ -68,7 +70,8 @@ void main() {
     test_fail(); 
   if (RDATA != 0x10804070)
     test_fail(); 
-
+  if (readValue != 276840560)
+    test_fail(); 
 
   // //pk stream write 0 words (write of 0 words will still write, edge case issue)
   // ADDR    = 0x000001F0;
