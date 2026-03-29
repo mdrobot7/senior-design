@@ -70,7 +70,7 @@ void main() {
     test_fail(); 
 
 
-  // //pk stream write 0 words
+  // //pk stream write 0 words (write of 0 words will still write, edge case issue)
   // ADDR    = 0x000001F0;
   // WCOUNT    = 0x00000000;
   // WDATA    = 0x400500FF;

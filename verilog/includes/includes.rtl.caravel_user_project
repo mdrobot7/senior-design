@@ -45,7 +45,7 @@
 
 -v $(USER_PROJECT_VERILOG)/rtl/core/accumulator.v
 -v $(USER_PROJECT_VERILOG)/rtl/core/alu.v
-#-v $(USER_PROJECT_VERILOG)/rtl/core/core.v
+-v $(USER_PROJECT_VERILOG)/rtl/core/core.v
 -v $(USER_PROJECT_VERILOG)/rtl/core/decoder.v
 -v $(USER_PROJECT_VERILOG)/rtl/core/forward.v
 -v $(USER_PROJECT_VERILOG)/rtl/core/inbox.v
