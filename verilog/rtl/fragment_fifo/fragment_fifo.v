@@ -24,6 +24,9 @@ module fragment_fifo_m #(
     wire [`STREAM_MIPORT(SIZE)] internal_mstream_i;
     wire [`STREAM_MOPORT(SIZE)] internal_mstream_o;
 
+    integer j;
+
+
     stream_fifo_m #(.SIZE(SIZE), .DEPTH(DEPTH) ) fifo (
         .clk_i(clk_i),
         .nrst_i(nrst_i),
@@ -53,38 +56,35 @@ module fragment_fifo_m #(
             sel_i <= {{(`NUM_CORES-1){1'b0}}, 1'b1};
         end
         else begin
-            if(force_mail_i) begin
-                if(!empty_o)
-                    cores_mailed_o <= cores_mailed_o + 1'b1;
-                else
-                    sel_i[0] = 1'b1;
-            end
-            else begin
-                cores_mailed_o <= '0;
-                if (fifo_has_data && !cur_core_ready) begin
-                    sel_i <= (sel_i << 1) | (sel_i >> (`NUM_CORES - 1));
-                    //TODO TEST THIS WITH NUM_CORES 1
+        // Override only valid bit for selected core
+            for (j = 0; j < `NUM_CORES; j = j + 1) begin
+                if (!clear_i && sel_i[j] && fifo_has_data) begin
+                    mstream_o[j * MO_Size + `STREAM_MO_VALID(SIZE)] = 1'b1;
+                end
+                else begin
+                    mstream_o[j * MO_Size + `STREAM_MO_VALID(SIZE)] = 1'b0;
                 end
             end
+            if(fifo_has_data && cur_core_ready)begin
+                if(force_mail_i) begin
+                    cores_mailed_o <= cores_mailed_o + 1'b1;
+                end
+                else begin
+                    cores_mailed_o <= '0;
+                end
+            end
+            if (fifo_has_data && !cur_core_ready) begin
+                sel_i <= (sel_i << 1) | (sel_i >> (`NUM_CORES - 1));
+            end
         end 
-
-        
-        
     end
 
     // Assign mstream_o VALID bit for selected core
-    integer j;
-    always @(*) begin
+    always @(mstream_i) begin
         // Assign all outputs from internal FIFO default 
         for (j = 0; j < `NUM_CORES; j = j + 1) begin
             mstream_o[j * MO_Size +: MO_Size] = internal_mstream_o;
-        end
-        // Override only valid bit for selected core
-        for (j = 0; j < `NUM_CORES; j = j + 1) begin
-            if (!clear_i && sel_i[j] && fifo_has_data)
-                mstream_o[j * MO_Size + `STREAM_MO_VALID(SIZE)] = 1'b1;
-            else
-                mstream_o[j * MO_Size + `STREAM_MO_VALID(SIZE)] = 1'b0;
+            mstream_o[j * MO_Size + `STREAM_MO_VALID(SIZE)] = 1'b0;
         end
     end
 
