@@ -13,62 +13,54 @@
       "dir::../../verilog/rtl/metadata_cache.v"
   ],
   "VERILOG_FILES_BLACKBOX": [
-      "dir::../../verilog/rtl/sram_wrapper_bb.v"
+      "dir::../../ip/CF_SRAM_1024x32/hdl/CF_SRAM_1024x32_stub.v"
   ],
+    "SYNTH_USE_PG_PINS_DEFINES": "USE_POWER_PINS",
+    "ERROR_ON_LINTER_ERRORS": false,
+    "CLOCK_PERIOD": 25,
+    "CLOCK_PORT": "CLKin",
+    "FP_SIZING": "absolute",
+    "DIE_AREA": "0.000 0.000 1000 1000",
+    "PL_TARGET_DENSITY": 0.15,
+    "FP_PIN_ORDER_CFG": "dir::pin_order.cfg",
+    "VDD_NETS": [
+        "vccd1"
+    ],
+    "GND_NETS": [
+        "vssd1"
+    ],
     "SYNTH_READ_BLACKBOX_LIB": true,
     "EXTRA_GDS_FILES": [
-        "dir::../../gds/CF_SRAM_1024x32_wrapper.gds"
+        "dir::../../ip/CF_SRAM_1024x32/gds/CF_SRAM_1024x32.gds"
     ],
     "EXTRA_LEFS": [
-        "dir::../../lef/CF_SRAM_1024x32_wrapper.lef"
+        "dir::../../ip/CF_SRAM_1024x32/lef/CF_SRAM_1024x32.lef"
     ],
     "EXTRA_LIBS": [
-        "dir::../../lib/CF_SRAM_1024x32_wrapper.lib"
+        "dir::../../ip/CF_SRAM_1024x32/lib/CF_SRAM_1024x32_tt_180V_25C.lib"
     ],
-  "FP_PDN_MACRO_HOOKS": "sram vccd1 vssd1 vccd1 vssd1,sram vccd1 vssd1 vpwrac vssd1,sram vccd1 vssd1 vpwrpc vssd1",
-  "SYNTH_USE_PG_PINS_DEFINES": "USE_POWER_PINS",
-  "SYNTH_POWER_DEFINE": "USE_POWER_PINS",
-  "VERILOG_POWER_DEFINE": "USE_POWER_PINS",
-  "FP_PDN_HORIZONTAL_LAYER": "met4",
-  "FP_PDN_VERTICAL_LAYER": "met3",
-  "ERROR_ON_LINTER_ERRORS": false,
-  "FP_PDN_MULTILAYER": true,
-  "FP_PDN_CHECK_NODES": false,
-  "RUN_IRDROP_REPORT": false,
-  "ROUTING_CORES": 4,
-  "FP_PDN_VPITCH": 50,
-  "FP_PDN_HPITCH": 50,
-  "CLOCK_PERIOD": 25,
-  "RUN_LINTER": 1,
-  "CLOCK_PORT": "clk_i",
-  "CLOCK_NET": "clk_i",
-  "MACRO_PLACEMENT_CFG": "dir::macro.cfg",
-  "FP_SIZING": "absolute",
-  "DIE_AREA": "0 0 800 900",
-  "PL_TARGET_DENSITY": 0.2,
-  "FP_PIN_ORDER_CFG": "dir::pin_order.cfg",
-  "MAX_TRANSITION_CONSTRAINT": 1.0,
-  "MAX_FANOUT_CONSTRAINT": 16,
-  "PL_RESIZER_SETUP_SLACK_MARGIN": 0.4,
-  "GLB_RESIZER_SETUP_SLACK_MARGIN": 0.2,
-  "GLB_RESIZER_HOLD_SLACK_MARGIN": 0.2,
-  "PL_RESIZER_HOLD_SLACK_MARGIN": 0.4,
-  "PL_RESIZER_DESIGN_OPTIMIZATIONS": 1,
-  "PL_RESIZER_TIMING_OPTIMIZATIONS": 1,
-  "GLB_RESIZER_DESIGN_OPTIMIZATIONS": 1,
-  "GLB_RESIZER_TIMING_OPTIMIZATIONS": 1,
-  "MAGIC_DEF_LABELS": 1,
-  "SYNTH_BUFFERING": 0,
-  "SYNTH_STRATEGY": "AREA 0",
-  "RUN_HEURISTIC_DIODE_INSERTION": 1,
-  "HEURISTIC_ANTENNA_THRESHOLD": 110,
-  "GRT_REPAIR_ANTENNAS": 1,
-  "VDD_NETS": [
-      "vccd1"
-  ],
-  "GND_NETS": [
-      "vssd1"
-  ],
+    "MACRO_PLACEMENT_CFG": "dir::macro.cfg",
+    "FP_PDN_HORIZONTAL_LAYER": "met3",
+    "FP_PDN_VERTICAL_LAYER": "met2",
+    "RUN_IRDROP_REPORT": false,
+    "FP_PDN_CHECK_NODES": false,
+    "FP_PDN_CFG": "dir::pdn.tcl",
+    "FP_PDN_MACRO_HOOKS": "i_sram vccd1 vssd1 vpwra vgnd,i_sram vccd1 vssd1 vpb vnb,i_sram vccd1 vssd1 vpwrp vgnd,i_sram vccd1 vssd1 vpwrm vgnd",
+    "QUIT_ON_LINTER_ERRORS": false,
+    "QUIT_ON_SYNTH_CHECKS": false,
+    "QUIT_ON_YOSYS_WARNINGS": false,
+    "PL_TIME_DRIVEN": false,
+    "PL_ROUTABILITY_DRIVEN": true,
+    "GRT_ALLOW_CONGESTION": true,
+    "GRT_ADJUSTMENT": 0,
+    "PL_RESIZER_DESIGN_OPTIMIZATIONS": 1,
+    "PL_RESIZER_TIMING_OPTIMIZATIONS": 1,
+    "GLB_RESIZER_DESIGN_OPTIMIZATIONS": 1,
+    "GLB_RESIZER_TIMING_OPTIMIZATIONS": 1,
+    "QUIT_ON_MAGIC_DRC": false,
+    "MAGIC_EXT_USE_GDS": false,
+    "MAGIC_CAPTURE_ERRORS": false,
+    "QUIT_ON_ILLEGAL_OVERLAPS": false,
   "IO_SYNC": 0,
   "BASE_SDC_FILE": "dir::base_user_proj_example.sdc",
   "RUN_CVC": 1,

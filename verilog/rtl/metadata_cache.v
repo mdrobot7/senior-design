@@ -95,7 +95,7 @@ reg sram_en;
 reg [31:0] sram_out_data; // data output from sram
   
 // CF_SRAM_1024x32_macro for rtl sim
-CF_SRAM_1024x32_wrapper sram (
+CF_SRAM_1024x32 i_sram (
   .DO(sram_out_data), 
   .ScanOutCC(),
 
