@@ -57,11 +57,11 @@ library (metadata_cache_m) {
   cell ("metadata_cache_m") {
     pin("clk_i") {
       direction : input;
-      capacitance : 0.0110;
+      capacitance : 0.0033;
     }
     pin("nrst_i") {
       direction : input;
-      capacitance : 0.0108;
+      capacitance : 0.0087;
     }
     bus("m_mem_i") {
       bus_type : m_mem_i;
@@ -73,63 +73,63 @@ library (metadata_cache_m) {
     }
     pin("m_mem_i[32]") {
       direction : input;
-      capacitance : 0.0108;
+      capacitance : 0.0094;
     }
     pin("m_mem_i[31]") {
       direction : input;
-      capacitance : 0.0096;
+      capacitance : 0.0089;
     }
     pin("m_mem_i[30]") {
       direction : input;
-      capacitance : 0.0093;
+      capacitance : 0.0085;
     }
     pin("m_mem_i[29]") {
       direction : input;
-      capacitance : 0.0095;
+      capacitance : 0.0087;
     }
     pin("m_mem_i[28]") {
       direction : input;
-      capacitance : 0.0093;
+      capacitance : 0.0088;
     }
     pin("m_mem_i[27]") {
       direction : input;
-      capacitance : 0.0111;
+      capacitance : 0.0084;
     }
     pin("m_mem_i[26]") {
       direction : input;
-      capacitance : 0.0084;
+      capacitance : 0.0085;
     }
     pin("m_mem_i[25]") {
       direction : input;
-      capacitance : 0.0088;
+      capacitance : 0.0084;
     }
     pin("m_mem_i[24]") {
       direction : input;
-      capacitance : 0.0093;
+      capacitance : 0.0085;
     }
     pin("m_mem_i[23]") {
       direction : input;
-      capacitance : 0.0085;
+      capacitance : 0.0090;
     }
     pin("m_mem_i[22]") {
       direction : input;
-      capacitance : 0.0083;
+      capacitance : 0.0085;
     }
     pin("m_mem_i[21]") {
       direction : input;
-      capacitance : 0.0085;
+      capacitance : 0.0084;
     }
     pin("m_mem_i[20]") {
       direction : input;
-      capacitance : 0.0083;
+      capacitance : 0.0089;
     }
     pin("m_mem_i[19]") {
       direction : input;
-      capacitance : 0.0086;
+      capacitance : 0.0085;
     }
     pin("m_mem_i[18]") {
       direction : input;
-      capacitance : 0.0083;
+      capacitance : 0.0085;
     }
     pin("m_mem_i[17]") {
       direction : input;
@@ -137,47 +137,47 @@ library (metadata_cache_m) {
     }
     pin("m_mem_i[16]") {
       direction : input;
-      capacitance : 0.0093;
+      capacitance : 0.0085;
     }
     pin("m_mem_i[15]") {
       direction : input;
-      capacitance : 0.0109;
+      capacitance : 0.0088;
     }
     pin("m_mem_i[14]") {
       direction : input;
-      capacitance : 0.0108;
+      capacitance : 0.0086;
     }
     pin("m_mem_i[13]") {
       direction : input;
-      capacitance : 0.0109;
+      capacitance : 0.0085;
     }
     pin("m_mem_i[12]") {
       direction : input;
-      capacitance : 0.0108;
+      capacitance : 0.0090;
     }
     pin("m_mem_i[11]") {
       direction : input;
-      capacitance : 0.0109;
+      capacitance : 0.0087;
     }
     pin("m_mem_i[10]") {
       direction : input;
-      capacitance : 0.0093;
+      capacitance : 0.0088;
     }
     pin("m_mem_i[9]") {
       direction : input;
-      capacitance : 0.0097;
+      capacitance : 0.0086;
     }
     pin("m_mem_i[8]") {
       direction : input;
-      capacitance : 0.0083;
+      capacitance : 0.0088;
     }
     pin("m_mem_i[7]") {
       direction : input;
-      capacitance : 0.0085;
+      capacitance : 0.0091;
     }
     pin("m_mem_i[6]") {
       direction : input;
-      capacitance : 0.0086;
+      capacitance : 0.0089;
     }
     pin("m_mem_i[5]") {
       direction : input;
@@ -185,23 +185,23 @@ library (metadata_cache_m) {
     }
     pin("m_mem_i[4]") {
       direction : input;
-      capacitance : 0.0085;
+      capacitance : 0.0092;
     }
     pin("m_mem_i[3]") {
       direction : input;
-      capacitance : 0.0086;
+      capacitance : 0.0087;
     }
     pin("m_mem_i[2]") {
       direction : input;
-      capacitance : 0.0085;
+      capacitance : 0.0093;
     }
     pin("m_mem_i[1]") {
       direction : input;
-      capacitance : 0.0086;
+      capacitance : 0.0087;
     }
     pin("m_mem_i[0]") {
       direction : input;
-      capacitance : 0.0085;
+      capacitance : 0.0090;
     }
     }
     bus("m_mem_o") {
@@ -210,83 +210,83 @@ library (metadata_cache_m) {
       capacitance : 0.0000;
     pin("m_mem_o[68]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0009;
     }
     pin("m_mem_o[67]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0010;
     }
     pin("m_mem_o[66]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0010;
     }
     pin("m_mem_o[65]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0011;
     }
     pin("m_mem_o[64]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0009;
     }
     pin("m_mem_o[63]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0010;
     }
     pin("m_mem_o[62]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0008;
     }
     pin("m_mem_o[61]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0011;
     }
     pin("m_mem_o[60]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0009;
     }
     pin("m_mem_o[59]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0008;
     }
     pin("m_mem_o[58]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0012;
     }
     pin("m_mem_o[57]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0012;
     }
     pin("m_mem_o[56]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0009;
     }
     pin("m_mem_o[55]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0018;
     }
     pin("m_mem_o[54]") {
       direction : output;
-      capacitance : 0.0008;
+      capacitance : 0.0012;
     }
     pin("m_mem_o[53]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0011;
     }
     pin("m_mem_o[52]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0009;
     }
     pin("m_mem_o[51]") {
       direction : output;
-      capacitance : 0.0009;
+      capacitance : 0.0008;
     }
     pin("m_mem_o[50]") {
       direction : output;
-      capacitance : 0.0009;
+      capacitance : 0.0016;
     }
     pin("m_mem_o[49]") {
       direction : output;
-      capacitance : 0.0009;
+      capacitance : 0.0011;
     }
     pin("m_mem_o[48]") {
       direction : output;
@@ -294,15 +294,15 @@ library (metadata_cache_m) {
     }
     pin("m_mem_o[47]") {
       direction : output;
-      capacitance : 0.0009;
+      capacitance : 0.0024;
     }
     pin("m_mem_o[46]") {
       direction : output;
-      capacitance : 0.0009;
+      capacitance : 0.0012;
     }
     pin("m_mem_o[45]") {
       direction : output;
-      capacitance : 0.0009;
+      capacitance : 0.0011;
     }
     pin("m_mem_o[44]") {
       direction : output;
@@ -310,31 +310,31 @@ library (metadata_cache_m) {
     }
     pin("m_mem_o[43]") {
       direction : output;
-      capacitance : 0.0013;
+      capacitance : 0.0014;
     }
     pin("m_mem_o[42]") {
       direction : output;
-      capacitance : 0.0005;
+      capacitance : 0.0012;
     }
     pin("m_mem_o[41]") {
       direction : output;
-      capacitance : 0.0009;
+      capacitance : 0.0011;
     }
     pin("m_mem_o[40]") {
       direction : output;
-      capacitance : 0.0009;
+      capacitance : 0.0013;
     }
     pin("m_mem_o[39]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0008;
     }
     pin("m_mem_o[38]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0012;
     }
     pin("m_mem_o[37]") {
       direction : output;
-      capacitance : 0.0006;
+      capacitance : 0.0009;
     }
     pin("m_mem_o[36]") {
       direction : output;
@@ -342,27 +342,27 @@ library (metadata_cache_m) {
     }
     pin("m_mem_o[35]") {
       direction : output;
-      capacitance : 0.0006;
+      capacitance : 0.0010;
     }
     pin("m_mem_o[34]") {
       direction : output;
-      capacitance : 0.0006;
+      capacitance : 0.0010;
     }
     pin("m_mem_o[33]") {
       direction : output;
-      capacitance : 0.0006;
+      capacitance : 0.0009;
     }
     pin("m_mem_o[32]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0006;
     }
     pin("m_mem_o[31]") {
       direction : output;
-      capacitance : 0.0005;
+      capacitance : 0.0015;
     }
     pin("m_mem_o[30]") {
       direction : output;
-      capacitance : 0.0009;
+      capacitance : 0.0012;
     }
     pin("m_mem_o[29]") {
       direction : output;
@@ -374,11 +374,11 @@ library (metadata_cache_m) {
     }
     pin("m_mem_o[27]") {
       direction : output;
-      capacitance : 0.0011;
+      capacitance : 0.0014;
     }
     pin("m_mem_o[26]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0013;
     }
     pin("m_mem_o[25]") {
       direction : output;
@@ -386,15 +386,15 @@ library (metadata_cache_m) {
     }
     pin("m_mem_o[24]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0009;
     }
     pin("m_mem_o[23]") {
       direction : output;
-      capacitance : 0.0011;
+      capacitance : 0.0015;
     }
     pin("m_mem_o[22]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0012;
     }
     pin("m_mem_o[21]") {
       direction : output;
@@ -402,67 +402,67 @@ library (metadata_cache_m) {
     }
     pin("m_mem_o[20]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0009;
     }
     pin("m_mem_o[19]") {
       direction : output;
-      capacitance : 0.0005;
+      capacitance : 0.0014;
     }
     pin("m_mem_o[18]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0010;
     }
     pin("m_mem_o[17]") {
       direction : output;
-      capacitance : 0.0005;
+      capacitance : 0.0011;
     }
     pin("m_mem_o[16]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0009;
     }
     pin("m_mem_o[15]") {
       direction : output;
-      capacitance : 0.0005;
+      capacitance : 0.0009;
     }
     pin("m_mem_o[14]") {
       direction : output;
-      capacitance : 0.0008;
+      capacitance : 0.0006;
     }
     pin("m_mem_o[13]") {
       direction : output;
-      capacitance : 0.0011;
+      capacitance : 0.0007;
     }
     pin("m_mem_o[12]") {
       direction : output;
-      capacitance : 0.0009;
+      capacitance : 0.0007;
     }
     pin("m_mem_o[11]") {
       direction : output;
-      capacitance : 0.0011;
+      capacitance : 0.0007;
     }
     pin("m_mem_o[10]") {
       direction : output;
-      capacitance : 0.0007;
+      capacitance : 0.0006;
     }
     pin("m_mem_o[9]") {
       direction : output;
-      capacitance : 0.0006;
+      capacitance : 0.0007;
     }
     pin("m_mem_o[8]") {
       direction : output;
-      capacitance : 0.0008;
+      capacitance : 0.0007;
     }
     pin("m_mem_o[7]") {
       direction : output;
-      capacitance : 0.0012;
+      capacitance : 0.0007;
     }
     pin("m_mem_o[6]") {
       direction : output;
-      capacitance : 0.0008;
+      capacitance : 0.0006;
     }
     pin("m_mem_o[5]") {
       direction : output;
-      capacitance : 0.0005;
+      capacitance : 0.0008;
     }
     pin("m_mem_o[4]") {
       direction : output;
@@ -470,7 +470,7 @@ library (metadata_cache_m) {
     }
     pin("m_mem_o[3]") {
       direction : output;
-      capacitance : 0.0006;
+      capacitance : 0.0007;
     }
     pin("m_mem_o[2]") {
       direction : output;
@@ -478,7 +478,7 @@ library (metadata_cache_m) {
     }
     pin("m_mem_o[1]") {
       direction : output;
-      capacitance : 0.0005;
+      capacitance : 0.0008;
     }
     pin("m_mem_o[0]") {
       direction : output;
@@ -491,7 +491,7 @@ library (metadata_cache_m) {
       capacitance : 0.0000;
     pin("s_core_i[68]") {
       direction : input;
-      capacitance : 0.0026;
+      capacitance : 0.0030;
     }
     pin("s_core_i[67]") {
       direction : input;
@@ -507,19 +507,19 @@ library (metadata_cache_m) {
     }
     pin("s_core_i[64]") {
       direction : input;
-      capacitance : 0.0033;
+      capacitance : 0.0026;
     }
     pin("s_core_i[63]") {
       direction : input;
-      capacitance : 0.0031;
+      capacitance : 0.0026;
     }
     pin("s_core_i[62]") {
       direction : input;
-      capacitance : 0.0033;
+      capacitance : 0.0026;
     }
     pin("s_core_i[61]") {
       direction : input;
-      capacitance : 0.0034;
+      capacitance : 0.0031;
     }
     pin("s_core_i[60]") {
       direction : input;
@@ -531,7 +531,7 @@ library (metadata_cache_m) {
     }
     pin("s_core_i[58]") {
       direction : input;
-      capacitance : 0.0031;
+      capacitance : 0.0027;
     }
     pin("s_core_i[57]") {
       direction : input;
@@ -547,19 +547,19 @@ library (metadata_cache_m) {
     }
     pin("s_core_i[54]") {
       direction : input;
-      capacitance : 0.0035;
+      capacitance : 0.0027;
     }
     pin("s_core_i[53]") {
       direction : input;
-      capacitance : 0.0031;
+      capacitance : 0.0037;
     }
     pin("s_core_i[52]") {
       direction : input;
-      capacitance : 0.0034;
+      capacitance : 0.0026;
     }
     pin("s_core_i[51]") {
       direction : input;
-      capacitance : 0.0027;
+      capacitance : 0.0033;
     }
     pin("s_core_i[50]") {
       direction : input;
@@ -567,67 +567,67 @@ library (metadata_cache_m) {
     }
     pin("s_core_i[49]") {
       direction : input;
-      capacitance : 0.0031;
+      capacitance : 0.0036;
     }
     pin("s_core_i[48]") {
       direction : input;
-      capacitance : 0.0031;
+      capacitance : 0.0027;
     }
     pin("s_core_i[47]") {
       direction : input;
-      capacitance : 0.0027;
+      capacitance : 0.0032;
     }
     pin("s_core_i[46]") {
       direction : input;
-      capacitance : 0.0027;
+      capacitance : 0.0032;
     }
     pin("s_core_i[45]") {
       direction : input;
-      capacitance : 0.0027;
+      capacitance : 0.0037;
     }
     pin("s_core_i[44]") {
       direction : input;
-      capacitance : 0.0027;
+      capacitance : 0.0032;
     }
     pin("s_core_i[43]") {
       direction : input;
-      capacitance : 0.0051;
+      capacitance : 0.0031;
     }
     pin("s_core_i[42]") {
       direction : input;
-      capacitance : 0.0054;
+      capacitance : 0.0031;
     }
     pin("s_core_i[41]") {
       direction : input;
-      capacitance : 0.0054;
+      capacitance : 0.0035;
     }
     pin("s_core_i[40]") {
       direction : input;
-      capacitance : 0.0049;
+      capacitance : 0.0031;
     }
     pin("s_core_i[39]") {
       direction : input;
-      capacitance : 0.0050;
+      capacitance : 0.0032;
     }
     pin("s_core_i[38]") {
       direction : input;
-      capacitance : 0.0050;
+      capacitance : 0.0031;
     }
     pin("s_core_i[37]") {
       direction : input;
-      capacitance : 0.0034;
+      capacitance : 0.0030;
     }
     pin("s_core_i[36]") {
       direction : input;
-      capacitance : 0.0050;
+      capacitance : 0.0026;
     }
     pin("s_core_i[35]") {
       direction : input;
-      capacitance : 0.0050;
+      capacitance : 0.0031;
     }
     pin("s_core_i[34]") {
       direction : input;
-      capacitance : 0.0050;
+      capacitance : 0.0031;
     }
     pin("s_core_i[33]") {
       direction : input;
@@ -639,59 +639,59 @@ library (metadata_cache_m) {
     }
     pin("s_core_i[31]") {
       direction : input;
-      capacitance : 0.0031;
+      capacitance : 0.0026;
     }
     pin("s_core_i[30]") {
       direction : input;
-      capacitance : 0.0031;
+      capacitance : 0.0026;
     }
     pin("s_core_i[29]") {
       direction : input;
-      capacitance : 0.0031;
+      capacitance : 0.0029;
     }
     pin("s_core_i[28]") {
       direction : input;
-      capacitance : 0.0033;
+      capacitance : 0.0026;
     }
     pin("s_core_i[27]") {
       direction : input;
-      capacitance : 0.0033;
+      capacitance : 0.0026;
     }
     pin("s_core_i[26]") {
       direction : input;
-      capacitance : 0.0033;
+      capacitance : 0.0026;
     }
     pin("s_core_i[25]") {
       direction : input;
-      capacitance : 0.0033;
+      capacitance : 0.0029;
     }
     pin("s_core_i[24]") {
       direction : input;
-      capacitance : 0.0032;
+      capacitance : 0.0026;
     }
     pin("s_core_i[23]") {
       direction : input;
-      capacitance : 0.0036;
+      capacitance : 0.0031;
     }
     pin("s_core_i[22]") {
       direction : input;
-      capacitance : 0.0033;
+      capacitance : 0.0031;
     }
     pin("s_core_i[21]") {
       direction : input;
-      capacitance : 0.0033;
+      capacitance : 0.0029;
     }
     pin("s_core_i[20]") {
       direction : input;
-      capacitance : 0.0033;
+      capacitance : 0.0026;
     }
     pin("s_core_i[19]") {
       direction : input;
-      capacitance : 0.0033;
+      capacitance : 0.0026;
     }
     pin("s_core_i[18]") {
       direction : input;
-      capacitance : 0.0033;
+      capacitance : 0.0031;
     }
     pin("s_core_i[17]") {
       direction : input;
@@ -699,31 +699,31 @@ library (metadata_cache_m) {
     }
     pin("s_core_i[16]") {
       direction : input;
-      capacitance : 0.0033;
+      capacitance : 0.0031;
     }
     pin("s_core_i[15]") {
       direction : input;
-      capacitance : 0.0035;
+      capacitance : 0.0031;
     }
     pin("s_core_i[14]") {
       direction : input;
-      capacitance : 0.0036;
+      capacitance : 0.0026;
     }
     pin("s_core_i[13]") {
       direction : input;
-      capacitance : 0.0033;
+      capacitance : 0.0029;
     }
     pin("s_core_i[12]") {
       direction : input;
-      capacitance : 0.0033;
+      capacitance : 0.0026;
     }
     pin("s_core_i[11]") {
       direction : input;
-      capacitance : 0.0034;
+      capacitance : 0.0026;
     }
     pin("s_core_i[10]") {
       direction : input;
-      capacitance : 0.0033;
+      capacitance : 0.0031;
     }
     pin("s_core_i[9]") {
       direction : input;
@@ -731,39 +731,39 @@ library (metadata_cache_m) {
     }
     pin("s_core_i[8]") {
       direction : input;
-      capacitance : 0.0033;
+      capacitance : 0.0031;
     }
     pin("s_core_i[7]") {
       direction : input;
-      capacitance : 0.0033;
+      capacitance : 0.0031;
     }
     pin("s_core_i[6]") {
       direction : input;
-      capacitance : 0.0034;
+      capacitance : 0.0031;
     }
     pin("s_core_i[5]") {
       direction : input;
-      capacitance : 0.0052;
+      capacitance : 0.0033;
     }
     pin("s_core_i[4]") {
       direction : input;
-      capacitance : 0.0085;
+      capacitance : 0.0031;
     }
     pin("s_core_i[3]") {
       direction : input;
-      capacitance : 0.0081;
+      capacitance : 0.0031;
     }
     pin("s_core_i[2]") {
       direction : input;
-      capacitance : 0.0082;
+      capacitance : 0.0031;
     }
     pin("s_core_i[1]") {
       direction : input;
-      capacitance : 0.0082;
+      capacitance : 0.0033;
     }
     pin("s_core_i[0]") {
       direction : input;
-      capacitance : 0.0082;
+      capacitance : 0.0033;
     }
     }
     bus("s_core_o") {
@@ -772,11 +772,11 @@ library (metadata_cache_m) {
       capacitance : 0.0000;
     pin("s_core_o[33]") {
       direction : output;
-      capacitance : 0.0009;
+      capacitance : 0.0013;
     }
     pin("s_core_o[32]") {
       direction : output;
-      capacitance : 0.0012;
+      capacitance : 0.0013;
     }
     pin("s_core_o[31]") {
       direction : output;
@@ -784,31 +784,31 @@ library (metadata_cache_m) {
     }
     pin("s_core_o[30]") {
       direction : output;
-      capacitance : 0.0012;
+      capacitance : 0.0014;
     }
     pin("s_core_o[29]") {
       direction : output;
-      capacitance : 0.0015;
+      capacitance : 0.0017;
     }
     pin("s_core_o[28]") {
       direction : output;
-      capacitance : 0.0019;
+      capacitance : 0.0015;
     }
     pin("s_core_o[27]") {
       direction : output;
-      capacitance : 0.0008;
+      capacitance : 0.0011;
     }
     pin("s_core_o[26]") {
       direction : output;
-      capacitance : 0.0010;
+      capacitance : 0.0011;
     }
     pin("s_core_o[25]") {
       direction : output;
-      capacitance : 0.0012;
+      capacitance : 0.0014;
     }
     pin("s_core_o[24]") {
       direction : output;
-      capacitance : 0.0012;
+      capacitance : 0.0014;
     }
     pin("s_core_o[23]") {
       direction : output;
@@ -816,31 +816,31 @@ library (metadata_cache_m) {
     }
     pin("s_core_o[22]") {
       direction : output;
-      capacitance : 0.0011;
+      capacitance : 0.0014;
     }
     pin("s_core_o[21]") {
       direction : output;
-      capacitance : 0.0012;
+      capacitance : 0.0017;
     }
     pin("s_core_o[20]") {
       direction : output;
-      capacitance : 0.0016;
+      capacitance : 0.0013;
     }
     pin("s_core_o[19]") {
       direction : output;
-      capacitance : 0.0016;
+      capacitance : 0.0012;
     }
     pin("s_core_o[18]") {
       direction : output;
-      capacitance : 0.0008;
+      capacitance : 0.0011;
     }
     pin("s_core_o[17]") {
       direction : output;
-      capacitance : 0.0010;
+      capacitance : 0.0014;
     }
     pin("s_core_o[16]") {
       direction : output;
-      capacitance : 0.0011;
+      capacitance : 0.0013;
     }
     pin("s_core_o[15]") {
       direction : output;
@@ -848,15 +848,15 @@ library (metadata_cache_m) {
     }
     pin("s_core_o[14]") {
       direction : output;
-      capacitance : 0.0012;
+      capacitance : 0.0014;
     }
     pin("s_core_o[13]") {
       direction : output;
-      capacitance : 0.0011;
+      capacitance : 0.0017;
     }
     pin("s_core_o[12]") {
       direction : output;
-      capacitance : 0.0011;
+      capacitance : 0.0014;
     }
     pin("s_core_o[11]") {
       direction : output;
@@ -864,31 +864,31 @@ library (metadata_cache_m) {
     }
     pin("s_core_o[10]") {
       direction : output;
-      capacitance : 0.0014;
+      capacitance : 0.0012;
     }
     pin("s_core_o[9]") {
       direction : output;
-      capacitance : 0.0017;
+      capacitance : 0.0014;
     }
     pin("s_core_o[8]") {
       direction : output;
-      capacitance : 0.0008;
+      capacitance : 0.0015;
     }
     pin("s_core_o[7]") {
       direction : output;
-      capacitance : 0.0010;
+      capacitance : 0.0011;
     }
     pin("s_core_o[6]") {
       direction : output;
-      capacitance : 0.0011;
+      capacitance : 0.0014;
     }
     pin("s_core_o[5]") {
       direction : output;
-      capacitance : 0.0011;
+      capacitance : 0.0017;
     }
     pin("s_core_o[4]") {
       direction : output;
-      capacitance : 0.0011;
+      capacitance : 0.0014;
     }
     pin("s_core_o[3]") {
       direction : output;
@@ -896,7 +896,7 @@ library (metadata_cache_m) {
     }
     pin("s_core_o[2]") {
       direction : output;
-      capacitance : 0.0012;
+      capacitance : 0.0013;
     }
     pin("s_core_o[1]") {
       direction : output;
@@ -904,7 +904,7 @@ library (metadata_cache_m) {
     }
     pin("s_core_o[0]") {
       direction : output;
-      capacitance : 0.0015;
+      capacitance : 0.0014;
     }
     }
   }
