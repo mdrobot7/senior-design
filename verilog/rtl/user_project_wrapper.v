@@ -89,8 +89,10 @@ module user_project_wrapper #(
     wire spi1_clk;
     wire spi1_cs;
     wire [3:0] spi1_mosi;
-    wire [3:0] spi1_miso;
-    wire spi1_dqsmi;
+    // wire [3:0] spi1_miso;
+    reg [3:0] spi1_miso;
+    // wire spi1_dqsmi;
+    reg spi1_dqsmi;
     wire spi1_dqsmo;
     wire [3:0] spi1_sio_en;
     wire spi1_dqsm_en;
@@ -98,8 +100,10 @@ module user_project_wrapper #(
     wire spi2_clk;
     wire spi2_cs;
     wire [3:0] spi2_mosi;
-    wire [3:0] spi2_miso;
-    wire spi2_dqsmi;
+    // wire [3:0] spi2_miso;
+    reg [3:0] spi2_miso;
+    // wire spi2_dqsmi;
+    reg spi2_dqsmi;
     wire spi2_dqsmo;
     wire [3:0] spi2_sio_en;
     wire spi2_dqsm_en;
@@ -151,27 +155,27 @@ module user_project_wrapper #(
         io_oeb <= 0;
         io_out <= 0;
 
-        // io_oeb[11:8] <= spi1_sio_en;
-        // io_oeb[13]    <= spi1_dqsm_en;
+        io_oeb[11:8] <= spi1_sio_en;
+        io_oeb[13]    <= spi1_dqsm_en;
 
-        // io_out[11:8] <= spi1_mosi;
-        // io_out[7]    <= spi1_cs;
-        // io_out[12]   <= spi1_clk;
-        // io_out[13]   <= spi1_dqsmo;
+        io_out[11:8] <= spi1_mosi;
+        io_out[7]    <= spi1_cs;
+        io_out[12]   <= spi1_clk;
+        io_out[13]   <= spi1_dqsmo;
 
-        // spi1_miso  <= io_in[11:8];
-        // spi1_dqsmi <= io_in[13];
+        spi1_miso  <= io_in[11:8];
+        spi1_dqsmi <= io_in[13];
 
-        // io_oeb[19:16] <= spi2_sio_en;
-        // io_oeb[13]    <= spi2_dqsm_en;
+        io_oeb[19:16] <= spi2_sio_en;
+        io_oeb[21]    <= spi2_dqsm_en;
 
-        // io_out[19:16] <= spi2_mosi;
-        // io_out[15]    <= spi2_cs;
-        // io_out[20]   <= spi2_clk;
-        // io_out[21]   <= spi2_dqsmo;
+        io_out[19:16] <= spi2_mosi;
+        io_out[15]    <= spi2_cs;
+        io_out[20]   <= spi2_clk;
+        io_out[21]   <= spi2_dqsmo;
 
-        // spi2_miso  <= io_in[19:16];
-        // spi2_dqsmi <= io_in[21];
+        spi2_miso  <= io_in[19:16];
+        spi2_dqsmi <= io_in[21];
 
         io_out[26:24] <= red;
         io_out[30:28] <= green;
@@ -181,23 +185,23 @@ module user_project_wrapper #(
         io_out[22] <= vsync;
     end
 
-    spi_chip_m #(5, 1, 600000) spi_chip1(
-        .clk_i(spi1_clk),
-        .cs_i(spi1_cs),
-        .mosi_i(spi1_mosi),
-        .miso_o(spi1_miso),
-        .dqsm_o(spi1_dqsmi),
-        .dqsm_i(spi1_dqsmo)
-    );
+    // spi_chip_m #(5, 1, 600000) spi_chip1(
+    //     .clk_i(spi1_clk),
+    //     .cs_i(spi1_cs),
+    //     .mosi_i(spi1_mosi),
+    //     .miso_o(spi1_miso),
+    //     .dqsm_o(spi1_dqsmi),
+    //     .dqsm_i(spi1_dqsmo)
+    // );
 
-    spi_chip_m #(5, 1, 500000) spi_chip2(
-        .clk_i(spi2_clk),
-        .cs_i(spi2_cs),
-        .mosi_i(spi2_mosi),
-        .miso_o(spi2_miso),
-        .dqsm_o(spi2_dqsmi),
-        .dqsm_i(spi2_dqsmo)
-    );
+    // spi_chip_m #(5, 1, 500000) spi_chip2(
+    //     .clk_i(spi2_clk),
+    //     .cs_i(spi2_cs),
+    //     .mosi_i(spi2_mosi),
+    //     .miso_o(spi2_miso),
+    //     .dqsm_o(spi2_dqsmi),
+    //     .dqsm_i(spi2_dqsmo)
+    // );
 
 endmodule	// user_project_wrapper
 

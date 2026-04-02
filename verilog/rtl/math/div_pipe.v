@@ -1,7 +1,7 @@
 // adapted from https://github.com/risclite/verilog-divider/blob/master/divfunc.v
 
 // enable this when you want any performance
-`define SIM_DIV
+// `define SIM_DIV
 
 module div_pipe_m #(
     parameter WIDTH = 32,

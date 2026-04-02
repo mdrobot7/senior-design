@@ -384,23 +384,23 @@ module top_level_m(
     );
 
     // TODO: Fix output stream sizes (josh problem)
-    fragment_fifo_m #(
-        .SIZE(`FRAGMENT_WIDTH),
-        .DEPTH(10)
-    ) frag_fifo (
-        .clk_i(clk),
-        .nrst_i(nrst),
+    // fragment_fifo_m #(
+    //     .SIZE(`FRAGMENT_WIDTH),
+    //     .DEPTH(10)
+    // ) frag_fifo (
+    //     .clk_i(clk),
+    //     .nrst_i(nrst),
 
-        .sstream_i(0),
-        .sstream_o(),
-        .mstream_i(inbox_mstreami),
-        .mstream_o(inbox_mstreamo),
+    //     .sstream_i(0),
+    //     .sstream_o(),
+    //     .mstream_i(inbox_mstreami),
+    //     .mstream_o(inbox_mstreamo),
 
-        .empty_o(),
-        .full_o(),
-        .done_mailing_o(),
-        .clear_i(fragfifo_clear)
-    );
+    //     .empty_o(),
+    //     .full_o(),
+    //     .done_mailing_o(),
+    //     .clear_i(fragfifo_clear)
+    // );
 
     assign fragfifo_empty = 1;
     assign fragfifo_full = 0;

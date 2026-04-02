@@ -71,7 +71,7 @@ module fragment_fifo_m #(
                     cores_mailed_o <= cores_mailed_o + 1'b1;
                 end
                 else begin
-                    cores_mailed_o <= '0;
+                    cores_mailed_o <= 0;
                 end
             end
             if (fifo_has_data && !cur_core_ready) begin

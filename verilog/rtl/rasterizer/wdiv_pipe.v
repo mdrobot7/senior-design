@@ -103,11 +103,11 @@ module wdiv_pipe_m(
             9: `DIV(v2z_i, v2w_i)
 
             10: begin
-                if (busy_i) in_state <= in_state + 1;
+                if (busy_i) next_in_state <= in_state + 1;
             end
 
             11: begin
-                if (!busy_i) in_state <= 0;
+                if (!busy_i) next_in_state <= 0;
             end
         endcase
 

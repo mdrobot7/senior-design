@@ -14,7 +14,7 @@ module div_pipe_rasterizer_m(
 `define FPGA
 
 `ifdef FPGA
-    div_pipe_m #(DIV_WIDTH, 42'b00_00001000_10010010_01010010_10010101_01010101) div_pipe(
+    div_pipe_m #(DIV_WIDTH, 42'b10_10101010_10101010_01011111_11010111_11111111) div_pipe(
         .clk_i(clk_i),
         .nrst_i(nrst_i),
 

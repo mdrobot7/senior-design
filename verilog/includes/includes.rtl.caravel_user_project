@@ -90,6 +90,10 @@
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/tex_sample.v
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/normal_pipe.v
 
+-v $(USER_PROJECT_VERILOG)/rtl/fragment_fifo/fragment_fifo.v
+-v $(USER_PROJECT_VERILOG)/rtl/fragment_fifo/serializing_mailman.v
+-v $(USER_PROJECT_VERILOG)/rtl/fragment_fifo/vertex_serializer.v
+
 -v $(USER_PROJECT_VERILOG)/rtl/spi_mem.v
 -v $(USER_PROJECT_VERILOG)/rtl/vertex_order_buffer.v
 -v $(USER_PROJECT_VERILOG)/rtl/shaded_vertex_cache.v
@@ -99,7 +103,6 @@
 -v $(USER_PROJECT_VERILOG)/rtl/image.v
 -v $(USER_PROJECT_VERILOG)/rtl/vertex_deserializer.v
 -v $(USER_PROJECT_VERILOG)/rtl/mem_write.v
--v $(USER_PROJECT_VERILOG)/rtl/fragment_fifo.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/wbslave_pkmaster/wb_to_pk.v
 

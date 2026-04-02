@@ -25,7 +25,7 @@ module vertex_serializer_m#(
         if(!nrst_i) begin
             count <= 3'd0;
             last <= 1'b0;
-            tmp <= '0;
+            tmp <= 0;
             valid <= 1'b0;
             ready <= mstream_i[`STREAM_MI_READY(SERIAL_SIZE)];
         end else begin
