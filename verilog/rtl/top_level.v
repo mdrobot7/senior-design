@@ -299,7 +299,7 @@ module top_level_m(
 
         .test_index_i(svc_test_index),
         .test_valid_i(svc_test_valid),
-        .test_found_o(svc_test_found),
+        .test_found_o(),
 
         .store_vertex_i(svc_store_vertex),
         .store_index_i(svc_store_index),
@@ -308,6 +308,7 @@ module top_level_m(
         .mstream_i(svc_mstreami),
         .mstream_o(svc_mstreamo)
     );
+    assign svc_test_found = 0;
 
     stream_fifo_m #(`SHADED_VERTEX_WIDTH, `SVC_BUFFER_SIZE) svb(
         .clk_i(clk),

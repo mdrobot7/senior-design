@@ -185,24 +185,6 @@ module user_project_wrapper #(
         io_out[22] <= vsync;
     end
 
-    // spi_chip_m #(5, 1, 600000) spi_chip1(
-    //     .clk_i(spi1_clk),
-    //     .cs_i(spi1_cs),
-    //     .mosi_i(spi1_mosi),
-    //     .miso_o(spi1_miso),
-    //     .dqsm_o(spi1_dqsmi),
-    //     .dqsm_i(spi1_dqsmo)
-    // );
-
-    // spi_chip_m #(5, 1, 500000) spi_chip2(
-    //     .clk_i(spi2_clk),
-    //     .cs_i(spi2_cs),
-    //     .mosi_i(spi2_mosi),
-    //     .miso_o(spi2_miso),
-    //     .dqsm_o(spi2_dqsmi),
-    //     .dqsm_i(spi2_dqsmo)
-    // );
-
 endmodule	// user_project_wrapper
 
 `default_nettype wire

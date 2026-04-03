@@ -129,7 +129,7 @@ module top_level_tb;
 
 		wait(gpio);
 
-        `VGA_WRITE("output.bmp", uut.chip_core.mprj.spi_chip1.mem, `ADDR_FB0, 320, 240, `COLOR_TYPE_RGB332);
+        `VGA_WRITE("output.bmp", spi_chip1.mem, `ADDR_FB0, 320, 240, `COLOR_TYPE_RGB332);
 
 		#100;
 		$finish;
@@ -195,14 +195,23 @@ module top_level_tb;
 		.resetb	  (RSTB)
 	);
 
-    // spi_chip_m #(5, 1, 600000) spi_chip1(
-    //     .clk_i(mprj_io[12]),
-    //     .cs_i(mprj_io[7]),
-    //     .mosi_i(mprj_io[19:16]),
-    //     .miso_o(mprj_io[19:16]),
-    //     .dqsm_o(mprj_io[13]),
-    //     .dqsm_i(mprj_io[13])
-    // );
+    spi_chip_m #(`SPI_MEM_SIZE) spi_chip1(
+        .clk_i(uut.chip_core.mprj.spi1_clk),
+        .cs_i(uut.chip_core.mprj.spi1_cs),
+        .mosi_i(uut.chip_core.mprj.spi1_mosi),
+        .miso_o(mprj_io[11:8]),
+        .dqsm_o(mprj_io[13]),
+        .dqsm_i(uut.chip_core.mprj.spi1_dqsmo)
+    );
+
+    spi_chip_m #(`SPI_MEM_SIZE) spi_chip2(
+        .clk_i(uut.chip_core.mprj.spi2_clk),
+        .cs_i(uut.chip_core.mprj.spi2_cs),
+        .mosi_i(uut.chip_core.mprj.spi2_mosi),
+        .miso_o(mprj_io[19:16]),
+        .dqsm_o(mprj_io[21]),
+        .dqsm_i(uut.chip_core.mprj.spi2_dqsmo)
+    );
 
 	spiflash #(
 		.FILENAME("top_level.hex")
@@ -225,10 +234,10 @@ module top_level_tb;
         input [7:0] data;
     begin
         if (addr < `SPI_MEM_SIZE) begin
-            uut.chip_core.mprj.spi_chip1.mem[addr] = data;
+            spi_chip1.mem[addr] = data;
         end
         else begin
-            // spi_chip2.mem[addr - `SPI_MEM_SIZE] = data;
+            spi_chip2.mem[addr - `SPI_MEM_SIZE] = data;
         end
     end
     endtask
