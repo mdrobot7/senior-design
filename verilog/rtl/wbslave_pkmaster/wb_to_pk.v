@@ -28,14 +28,15 @@ module wb_to_pk_m
     reg [NUM_REGS-1:0] wbs_stbN;
     wire [NUM_REGS-1:0] wbs_ackN;
     wire [`WORD_WIDTH-1:0] wbs_datN [NUM_REGS-1:0];
-    wire rdata_ready = (state == PK_CLEANUP);
+    wire rdata_ready = (state == PK_WORD_READ || state == PK_CLEANUP);
 
     //wire mux/decoder logic
     wire [$clog2(NUM_REGS)-1:0] word_offset = {2'b00, wbs_adr_i[31:2]};
 
     always @ (*) begin
         wbs_stbN = 0;
-        
+        wbs_dat_o = wbs_datN[word_offset]; 
+
         if(word_offset < NUM_REGS) begin 
             if (word_offset == RDATA_INDEX) begin
                 wbs_stbN[RDATA_INDEX] = wbs_stb_i && rdata_ready;
@@ -199,7 +200,6 @@ module wb_to_pk_m
 	else begin
         mport_o[`BUS_MO_DATA] <= wdata_reg;
         mport_o[`BUS_MO_ADDR] <= addr_reg;
-        wbs_dat_o <= wbs_datN[word_offset]; 
 
 
         case (state) 
@@ -209,7 +209,7 @@ module wb_to_pk_m
 
                 if ((wbs_ackN[WDATA_INDEX]) && wbs_we_i)    
                     state  <= PK_WRITE_PREP;
-                else if (wbs_stb_i && !wbs_we_i)
+                else if (wbs_stb_i && !wbs_we_i && !wbs_ack_o)
                     if (word_offset == RDATA_INDEX)
                         state <= PK_READ_PREP;
             end
@@ -229,7 +229,7 @@ module wb_to_pk_m
                 status_reg <= PK_STREAM_WRITE;
                 
                 if (mport_i[`BUS_MI_SEQSLV]) begin
-                    if(wcount_inc_reg + 1 >= wcount_reg) begin
+                    if(wcount_inc_reg + 2 >= wcount_reg) begin
                         mport_o[`BUS_MO_SEQMST] <= 1;
                         state <= PK_CLEANUP;
                     end
