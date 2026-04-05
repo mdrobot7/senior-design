@@ -613,7 +613,7 @@ module core_controller_m #(
   input  wire [`NUM_CORES-1:0]  core_jump_i,
   output reg                    core_jump_o,          // Flushes decode on all cores
   output reg  [`WORD]           global_regfile_rs1_data_o,
-  output wire [`WORD]           global_regfile_rs2_data_o
+  output reg  [`WORD]           global_regfile_rs2_data_o
 );
 
   localparam INST_NOP        = 32'h04000000;
@@ -694,6 +694,7 @@ module core_controller_m #(
   wire                               instfetch_prog_done;
   wire [`WORD]                       instfetch_inst;
   wire [`WORD]                       instfetch_global_regfile_rs1_data;
+  wire [`WORD]                       instfetch_global_regfile_rs2_data;
   inst_fetch_m #(
     CALL_STACK_LEN
   ) inst_fetch (
@@ -726,7 +727,7 @@ module core_controller_m #(
     .core_stall_i(core_stall_i),
     .core_jump_i(core_jump_i),
     .global_regfile_rs1_data_o(instfetch_global_regfile_rs1_data),
-    .global_regfile_rs2_data_o(global_regfile_rs2_data_o)
+    .global_regfile_rs2_data_o(instfetch_global_regfile_rs2_data)
   );
 
   assign vertcache_clear_o = (state == STATE_STOPPED);
@@ -929,10 +930,14 @@ module core_controller_m #(
     endcase
 
     // Global regfile/thread ID
-    if (state == STATE_DISPATCHING)
+    if (state == STATE_DISPATCHING) begin
       global_regfile_rs1_data_o = dispatch_thread_id;
-    else
+      global_regfile_rs2_data_o = 0;
+    end
+    else begin
       global_regfile_rs1_data_o = instfetch_global_regfile_rs1_data;
+      global_regfile_rs2_data_o = instfetch_global_regfile_rs2_data;
+    end
   end
 
 endmodule
