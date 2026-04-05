@@ -32,9 +32,20 @@ module top_level_tb;
 	wire uart_tx;
 	wire [37:0] mprj_io;
 
+    integer current_cycle;
+
 	assign uart_tx = mprj_io[6];
 
 	always #10 clock <= (clock === 1'b0);
+
+    always @(posedge clock) begin
+        if (!RSTB) begin
+            current_cycle = 0;
+        end
+        else begin
+            current_cycle = current_cycle + 1;
+        end
+    end
 
 	initial begin
 		clock = 0;
@@ -128,6 +139,14 @@ module top_level_tb;
         WRITE_WORD(32'h90000 + 5 * 20 + 16, `FP(60));
 
 		wait(gpio);
+    
+        $display("Elapsed %d clock cycles", current_cycle);
+        $display("%d FPS at 10 MHz", 10000000.0 / current_cycle);
+        $display("%d FPS at 20 MHz", 20000000.0 / current_cycle);
+        $display("%d FPS at 30 MHz", 30000000.0 / current_cycle);
+        $display("%d FPS at 40 MHz", 40000000.0 / current_cycle);
+        $display("%d FPS at 50 MHz", 50000000.0 / current_cycle);
+        $display("%d FPS at 100 MHz", 100000000.0 / current_cycle);
 
         `VGA_WRITE("output.bmp", spi_chip1.mem, `ADDR_FB0, 320, 240, `COLOR_TYPE_RGB332);
 
