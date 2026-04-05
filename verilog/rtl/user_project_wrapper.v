@@ -89,10 +89,8 @@ module user_project_wrapper #(
     wire spi1_clk;
     wire spi1_cs;
     wire [3:0] spi1_mosi;
-    // wire [3:0] spi1_miso;
-    reg [3:0] spi1_miso;
-    // wire spi1_dqsmi;
-    reg spi1_dqsmi;
+    wire [3:0] spi1_miso;
+    wire spi1_dqsmi;
     wire spi1_dqsmo;
     wire [3:0] spi1_sio_en;
     wire spi1_dqsm_en;
@@ -100,10 +98,8 @@ module user_project_wrapper #(
     wire spi2_clk;
     wire spi2_cs;
     wire [3:0] spi2_mosi;
-    // wire [3:0] spi2_miso;
-    reg [3:0] spi2_miso;
-    // wire spi2_dqsmi;
-    reg spi2_dqsmi;
+    wire [3:0] spi2_miso;
+    wire spi2_dqsmi;
     wire spi2_dqsmo;
     wire [3:0] spi2_sio_en;
     wire spi2_dqsm_en;
@@ -163,8 +159,8 @@ module user_project_wrapper #(
         io_out[12]   <= spi1_clk;
         io_out[13]   <= spi1_dqsmo;
 
-        spi1_miso  <= io_in[11:8];
-        spi1_dqsmi <= io_in[13];
+        // spi1_miso  <= io_in[11:8];
+        // spi1_dqsmi <= io_in[13];
 
         io_oeb[19:16] <= spi2_sio_en;
         io_oeb[21]    <= spi2_dqsm_en;
@@ -174,8 +170,8 @@ module user_project_wrapper #(
         io_out[20]   <= spi2_clk;
         io_out[21]   <= spi2_dqsmo;
 
-        spi2_miso  <= io_in[19:16];
-        spi2_dqsmi <= io_in[21];
+        // spi2_miso  <= io_in[19:16];
+        // spi2_dqsmi <= io_in[21];
 
         io_out[26:24] <= red;
         io_out[30:28] <= green;

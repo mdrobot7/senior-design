@@ -199,8 +199,8 @@ module top_level_tb;
         .clk_i(uut.chip_core.mprj.spi1_clk),
         .cs_i(uut.chip_core.mprj.spi1_cs),
         .mosi_i(uut.chip_core.mprj.spi1_mosi),
-        .miso_o(mprj_io[11:8]),
-        .dqsm_o(mprj_io[13]),
+        .miso_o(uut.chip_core.mprj.spi1_miso),
+        .dqsm_o(uut.chip_core.mprj.spi1_dqsmi),
         .dqsm_i(uut.chip_core.mprj.spi1_dqsmo)
     );
 
@@ -208,8 +208,8 @@ module top_level_tb;
         .clk_i(uut.chip_core.mprj.spi2_clk),
         .cs_i(uut.chip_core.mprj.spi2_cs),
         .mosi_i(uut.chip_core.mprj.spi2_mosi),
-        .miso_o(mprj_io[19:16]),
-        .dqsm_o(mprj_io[21]),
+        .miso_o(uut.chip_core.mprj.spi2_miso),
+        .dqsm_o(uut.chip_core.mprj.spi2_dqsmi),
         .dqsm_i(uut.chip_core.mprj.spi2_dqsmo)
     );
 
