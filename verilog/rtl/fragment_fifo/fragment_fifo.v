@@ -5,14 +5,13 @@ module fragment_fifo_m #(
     input  wire clk_i,
     input  wire nrst_i,
     input  wire clear_i,
-    input  wire force_mail_i,
 
     input  wire [`STREAM_SIPORT(SIZE)] sstream_i,
     output wire [`STREAM_SOPORT(SIZE)] sstream_o,
     input  wire [`STREAM_MIPORT_SIZE(SIZE) * `NUM_CORES - 1:0] mstream_i,
     output reg  [`STREAM_MOPORT_SIZE(SIZE) * `NUM_CORES - 1:0] mstream_o,
 
-    output reg[$clog2(`NUM_CORES)-1 : 0]  cores_mailed_o,
+    output reg[`NUM_CORES-1:0]  selind_o,
     output reg  empty_o,
     output reg  full_o,
     output reg  done_mailing_o
@@ -66,14 +65,6 @@ module fragment_fifo_m #(
                     mstream_o[j * MO_Size + `STREAM_MO_VALID(SIZE)] <= 1'b0;
                 end
             end
-            if(fifo_has_data && cur_core_ready)begin
-                if(force_mail_i) begin
-                    cores_mailed_o <= cores_mailed_o + 1'b1;
-                end
-                else begin
-                    cores_mailed_o <= 0;
-                end
-            end
             if (fifo_has_data && !cur_core_ready) begin
                 sel_i <= (sel_i << 1) | (sel_i >> (`NUM_CORES - 1));
             end
@@ -87,6 +78,7 @@ module fragment_fifo_m #(
     always @(*) begin
         full_o = ~sstream_o[`STREAM_SO_READY(SIZE)];
         empty_o = ~fifo_has_data;
-        done_mailing_o = sel_i[0];
+        selind_o = sel_i;
+        done_mailing_o = ~core_ready;
     end
 endmodule
