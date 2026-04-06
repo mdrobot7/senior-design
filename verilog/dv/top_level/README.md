@@ -9,7 +9,6 @@ To flash the FPGA or taped out chip during bringup: `make verify-top_level-flash
 - `../../../library/firmware_vexriscv/verilog/dv/firmware`: Caravel common defs
   - `defs.h`: Definitions for Caravel registers
   - `stub.h, stub.c`: Provided utility functions
-- `../firmware/`: uGPU common defs
 - `assets/`: Test models to render with
   - `bunny.obj`: Stanford bunny, converted to OBJ using `ply_to_obj.py`. 69451 triangles. [Source](http://graphics.stanford.edu/pub/3Dscanrep/bunny.tar.gz)
   - `cheburashka.obj`: Cheburashka. 13334 triangles. Created by Ilya Baran and Jovan Popovic for their paper [here](https://dblp.org/rec/journals/tog/BaranP07.html?view=bibtex). [Source](https://github.com/alecjacobson/common-3d-test-models/blob/master/data/cheburashka.obj)

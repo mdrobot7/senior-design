@@ -110,7 +110,7 @@ module pre_rasterizer_tb();
         .nrst_i(nrst),
 
         .clear_i(svc_clear),
-        
+
         .test_index_i(svc_test_index),
         .test_valid_i(svc_test_valid),
         .test_found_o(svc_test_found),
@@ -136,7 +136,7 @@ module pre_rasterizer_tb();
 
     stream_master_m #(2) order_master(
         .clk_i(clk),
-        
+
         .mstream_i(vob_sstreamo),
         .mstream_o(vob_sstreami)
     );
@@ -147,9 +147,11 @@ module pre_rasterizer_tb();
 
         .sstream_i(vob_sstreami),
         .sstream_o(vob_sstreamo),
-        
+
         .mstream_i(vob_mstreami),
         .mstream_o(vob_mstreamo)
+
+        .clear_i(1'b0),
     );
 
     initial begin : MAIN

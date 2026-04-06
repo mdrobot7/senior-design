@@ -23,11 +23,13 @@ module index_fetch_m #(
   input wire [`BUS_MIPORT] mport_i,
   output reg [`BUS_MOPORT] mport_o,
 
-  input wire         enable_i,            // 1: enable index fetching
-  input wire [`WORD] index_buffer_addr_i,
-  input wire [`WORD] num_dispatches_i,
-  input wire         model_done_clr_i,    // 1: Clear model done flag
-  output reg         model_done_o,        // 1: Fetched all indices in this model
+  input  wire         enable_i,            // 1: enable index fetching
+  input  wire [`WORD] index_buffer_addr_i,
+  input  wire [`WORD] num_dispatches_i,
+  input  wire         model_done_clr_i,    // 1: Clear model done flag
+  output  reg         model_done_o,        // 1: Fetched all indices in this model
+  input  wire         clear_i,             // 1: Clear index cache. enable_i must be 0 and output stream must be inactive.
+  output wire         clear_done_o,        // 1: Index cache cleared.
 
   // Index output stream
   input  wire [`STREAM_MIPORT(`WORD_WIDTH)] mstream_i,
@@ -42,8 +44,10 @@ module index_fetch_m #(
 
   reg  [`STREAM_SIPORT(`WORD_WIDTH)] sstreami;
   wire [`STREAM_SOPORT(`WORD_WIDTH)] sstreamo;
+  wire [`STREAM_MIPORT(`WORD_WIDTH)] fifo_mstreami;
+  wire [`STREAM_MOPORT(`WORD_WIDTH)] fifo_mstreamo;
   wire                               fifo_full  = !sstreamo[`STREAM_SO_READY(`WORD_WIDTH)];
-  wire                               fifo_empty = !mstream_o[`STREAM_MO_VALID(`WORD_WIDTH)];
+  wire                               fifo_empty = !fifo_mstreamo[`STREAM_MO_VALID(`WORD_WIDTH)];
   stream_fifo_m #(
       `WORD_WIDTH,
       CACHE_LEN_WORDS
@@ -54,9 +58,14 @@ module index_fetch_m #(
       .sstream_i(sstreami),
       .sstream_o(sstreamo),
 
-      .mstream_i(mstream_i),
-      .mstream_o(mstream_o)
+      .mstream_i(fifo_mstreami),
+      .mstream_o(fifo_mstreamo)
   );
+
+  reg [`STREAM_MIPORT(`WORD_WIDTH)] mstreami;
+  assign fifo_mstreami = clear_i ? mstreami : mstream_i;
+  assign mstream_o     = clear_i ? 0        : fifo_mstreamo;
+  assign clear_done_o  = fifo_empty;
 
   reg [`WORD] index_buffer_offset;
   reg [2:0]   state;
@@ -67,13 +76,14 @@ module index_fetch_m #(
       model_done_o <= 0;
 
       sstreami <= 0;
+      mstreami <= 0;
       index_buffer_offset <= 0;
       state <= STATE_READY;
     end
     else if (clk_i) begin
       case (state)
         STATE_READY: begin
-          if (enable_i && !fifo_full && !model_done_o)
+          if (enable_i && !fifo_full && !model_done_o && !clear_i)
             state <= STATE_PREP;
         end
         STATE_PREP: begin
@@ -85,7 +95,7 @@ module index_fetch_m #(
             state <= STATE_READ;
         end
         STATE_READ: begin
-          if (fifo_full || index_buffer_offset >= num_dispatches_i) begin
+          if (fifo_full || index_buffer_offset >= num_dispatches_i || clear_i) begin
             // Stop on fifo overrun, or index buffer overrun
             sstreami[`STREAM_SI_VALID(`WORD_WIDTH)] <= 0;
             mport_o[`BUS_MO_SEQMST] <= 1;
@@ -110,16 +120,20 @@ module index_fetch_m #(
         STATE_DONE: begin
           state <= STATE_READY;
 
-          if (index_buffer_offset >= num_dispatches_i)
-            model_done_o <= 1;
-
           mport_o[`BUS_MO_REQ] <= 0;
           mport_o[`BUS_MO_SEQMST] <= 0;
         end
       endcase
 
+      if (index_buffer_offset >= num_dispatches_i)
+        model_done_o <= 1;
       if (model_done_clr_i)
         model_done_o <= 0;
+
+      if (clear_i && state == STATE_READY) begin
+        if (!fifo_empty)
+          mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 1;
+      end
     end
   end
 endmodule

@@ -369,7 +369,7 @@ class Instruction:
         pred = f"{self.pred:03b}"
         if self.opcode in (self.Opcode.JRET, self.Opcode.HALT): # 0 operands, no predicate
             return f"{self.Opcode.to_string(self.opcode)}"
-        if self.opcode in (self.Opcode.OUT, self.Opcode.MACCL, self.Opcode.JRET, self.Opcode.HALT): # 0 operands
+        if self.opcode in (self.Opcode.OUT, self.Opcode.IN, self.Opcode.MACCL, self.Opcode.JRET, self.Opcode.HALT): # 0 operands
             return f"({pred}) {self.Opcode.to_string(self.opcode)}"
         if self.opcode == self.Opcode.SPR: # 1 operand, no predicate
             return f"{self.Opcode.to_string(self.opcode)} {rd}"

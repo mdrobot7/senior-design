@@ -13,6 +13,8 @@
       "dir::../../verilog/rtl/core/alu.v",
       "dir::../../verilog/rtl/core/decoder.v",
       "dir::../../verilog/rtl/core/forward.v",
+      "dir::../../verilog/rtl/core/inbox.v",
+      "dir::../../verilog/rtl/core/outbox.v",
       "dir::../../verilog/rtl/core/predicate.v",
       "dir::../../verilog/rtl/core/regfile.v",
       "dir::../../verilog/rtl/core/signext.v",
@@ -20,7 +22,6 @@
       "dir::../../verilog/rtl/math/full_adder.v",
       "dir::../../verilog/rtl/math/add.v",
       "dir::../../verilog/rtl/core/mem_bus.v",
-      "dir::../../verilog/rtl/core/inbox.v",
 
       "dir::../../verilog/rtl/core/core.v"
   ],
@@ -46,6 +47,7 @@
   "MAGIC_DEF_LABELS": 0,
   "SYNTH_BUFFERING": 0,
   "SYNTH_STRATEGY": "AREA 0",
+  "SYNTH_PARAMETERS": "SP=00008000",
   "RUN_HEURISTIC_DIODE_INSERTION": 1,
   "HEURISTIC_ANTENNA_THRESHOLD": 110,
   "GRT_REPAIR_ANTENNAS": 1,

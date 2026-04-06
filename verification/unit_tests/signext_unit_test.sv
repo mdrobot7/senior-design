@@ -46,7 +46,7 @@ module signext_unit_test;
         `SVTEST(i_type_test_sign_ext)
             ext_size = `IMM_13_BIT;
             ext = 1;
-            for(i = 0; i < 100; i = i + 1) begin
+            for(i= 0; i < 100; i = i + 1) begin
                 in = {$random};
                 #1;
                 `FAIL_UNLESS_EQUAL(imm_ext_o, {{`PAD_19_BITS{in[`MSB_13_IMM]}}, in[`IMM_13_WIDTH-1:0]});
