@@ -54,10 +54,11 @@ module dispatch_m #(
 );
 
   localparam STATE_DISABLED            = 0;
-  localparam STATE_DISPATCHING_INDICES = 1;
-  localparam STATE_DISPATCHING_INTS    = 2;
-  localparam STATE_DISPATCH_DONE       = 3;
-  localparam STATE_MODEL_DONE          = 4;
+  localparam STATE_WAIT_FOR_INDICES    = 1;
+  localparam STATE_DISPATCHING_INDICES = 2;
+  localparam STATE_DISPATCHING_INTS    = 3;
+  localparam STATE_DISPATCH_DONE       = 4;
+  localparam STATE_MODEL_DONE          = 5;
 
   localparam THREAD_ID_REG       = `REG_DEST_WIDTH'd0;  // $tid, $r0
   localparam THREAD_ID_DUMMY_REG = `REG_SOURCE_WIDTH'd16; // $g0, $r16
@@ -74,7 +75,8 @@ module dispatch_m #(
   wire                               index_fetch_model_done;
   reg  [`STREAM_MIPORT(`WORD_WIDTH)] index_fetch_mstreami;
   wire [`STREAM_MOPORT(`WORD_WIDTH)] index_fetch_mstreamo;
-  wire                               index_fetch_empty = !index_fetch_mstreamo[`STREAM_MO_VALID(`WORD_WIDTH)];
+  wire                               index_fetch_full;
+  wire                               index_fetch_empty;
   index_fetch_m #(
     INDEX_FETCH_CACHE_LEN_WORDS
   ) index_fetch (
@@ -91,6 +93,9 @@ module dispatch_m #(
     .model_done_o(index_fetch_model_done),
     .clear_i(index_fetch_clear_i),
     .clear_done_o(index_fetch_clear_done_o),
+
+    .full_o(index_fetch_full),
+    .empty_o(index_fetch_empty),
 
     .mstream_i(index_fetch_mstreami),
     .mstream_o(index_fetch_mstreamo)
@@ -117,11 +122,6 @@ module dispatch_m #(
 
   always @(posedge clk_i, negedge nrst_i) begin
     if (!nrst_i) begin
-      vertorder_mstream_o <= 0;
-      thread_id_o <= 0;
-      core_stall_o <= {`NUM_CORES{1'b1}};
-      dispatch_done_o <= 0;
-
       index_fetch_mstreami <= 0;
       state <= STATE_DISABLED;
       thread_id <= 0;
@@ -135,107 +135,103 @@ module dispatch_m #(
 
           if (enable_i) begin
             core_idx <= 0;
-            core_stall_o <= {`NUM_CORES{1'b1}};
-            if (dispatch_indices_i) begin
-              state <= STATE_DISPATCHING_INDICES;
-              index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 1;
-            end
+            if (dispatch_indices_i)
+              state <= STATE_WAIT_FOR_INDICES;
             else
               state <= STATE_DISPATCHING_INTS;
           end
         end
+        STATE_WAIT_FOR_INDICES: begin
+          if (index_fetch_full || index_fetch_model_done)
+            state <= STATE_DISPATCHING_INDICES;
+        end
         STATE_DISPATCHING_INDICES: begin
-          core_stall_o <= {`NUM_CORES{1'b1}};
-          index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 1;
-          vertorder_mstream_o[`STREAM_MO_VALID(`VERTEX_ORDER_WIDTH)] <= 0;
-
           // Fetch index buffer, check cache, and assign to $tid accordingly.
-          if (!core_enable_i[core_idx]) begin
-            core_idx <= core_idx + 1; // Skip disabled cores
-            index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
-          end
-          else if (!index_fetch_empty) begin
-            // Check against shaded vertex cache. If present, the cache will
-            // automatically forward the index to the vertex order buffer.
-            // If missing, assign to a core.
-            if (!vertcache_test_found_i) begin
-              // Dispatch to core
-              thread_id_o <= index_fetch_mstreamo[`STREAM_MO_DATA(`WORD_WIDTH)];
-              vertorder_mstream_o[`STREAM_SI_DATA(`VERTEX_ORDER_WIDTH)] <= core_idx;
-              vertorder_mstream_o[`STREAM_MO_VALID(`VERTEX_ORDER_WIDTH)] <= 1;
-              core_stall_o <= core_stall;
-              core_idx <= core_idx + 1;
-            end
-            else begin
-              // Grab from cache
-              vertorder_mstream_o[`STREAM_SI_DATA(`VERTEX_ORDER_WIDTH)] <= `NUM_CORES;
-              vertorder_mstream_o[`STREAM_MO_VALID(`VERTEX_ORDER_WIDTH)] <= 1;
-            end
+
+          if (!core_enable_i[core_idx] || (!index_fetch_empty && !vertcache_test_found_i)) begin
+            // Skip disabled cores, and if we found a vertex that isn't in the
+            // cache then give it to a core.
+            core_idx <= core_idx + 1;
           end
 
-          // Dumb but whatever
-          if (core_idx == `NUM_CORES - 1 && !index_fetch_empty)
-            index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
-          if (core_idx == `NUM_CORES || vertorder_full_i) begin
-            index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
-            vertorder_mstream_o[`STREAM_MO_VALID(`VERTEX_ORDER_WIDTH)] <= 0;
-            core_stall_o <= {`NUM_CORES{1'b1}};
-            dispatch_done_o <= 1;
+          if ((core_idx == `NUM_CORES - 1 && !vertcache_test_found_i) || vertorder_full_i) begin
             state <= STATE_DISPATCH_DONE;
           end
           if (index_fetch_model_done && index_fetch_empty) begin
-            index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
-            core_stall_o <= {`NUM_CORES{1'b1}};
-            dispatch_done_o <= 1;
             state <= STATE_MODEL_DONE;
           end
         end
         STATE_DISPATCHING_INTS: begin
           // Fill in $tid with increasing numbers
           if (core_idx == `NUM_CORES) begin
-            core_stall_o <= {`NUM_CORES{1'b1}};
-            dispatch_done_o <= 1;
             state <= STATE_DISPATCH_DONE;
           end
           else if (thread_id == num_dispatches_i) begin
-            core_stall_o <= {`NUM_CORES{1'b1}};
-            dispatch_done_o <= 1;
             state <= STATE_MODEL_DONE;
           end
           else if (!core_enable_i[core_idx]) begin
-            core_stall_o <= {`NUM_CORES{1'b1}};
             core_idx <= core_idx + 1; // Skip disabled cores
           end
           else begin
-            core_stall_o <= core_stall;
-            thread_id_o <= thread_id;
             thread_id <= thread_id + 1;
             core_idx <= core_idx + 1;
           end
         end
         STATE_DISPATCH_DONE: begin
-          core_stall_o <= core_stall_undispatched;
-          vertorder_mstream_o[`STREAM_MO_VALID(`VERTEX_ORDER_WIDTH)] <= 0;
-          dispatch_done_o <= 1;
           if (!enable_i) begin
-            dispatch_done_o <= 0;
-            core_idx <= 0;
             state <= STATE_DISABLED;
           end
         end
         STATE_MODEL_DONE: begin
-          core_stall_o <= core_stall_undispatched;
-          vertorder_mstream_o[`STREAM_MO_VALID(`VERTEX_ORDER_WIDTH)] <= 0;
-          dispatch_done_o <= 1;
           if (reset_dispatch_i && !enable_i) begin
-            dispatch_done_o <= 0;
             thread_id <= 0;
-            core_idx <= 0;
             state <= STATE_DISABLED;
           end
         end
       endcase
     end
+  end
+
+  always @(*) begin
+    case (state)
+      STATE_DISABLED:            core_stall_o = core_stall_undispatched;
+      STATE_DISPATCHING_INDICES: begin
+        if (core_enable_i[core_idx] && !index_fetch_empty && !vertcache_test_found_i)
+          core_stall_o = core_stall;
+        else
+          core_stall_o = {`NUM_CORES{1'b1}};
+      end
+      STATE_DISPATCHING_INTS: begin
+        if (core_enable_i[core_idx])
+          core_stall_o = core_stall;
+      end
+      STATE_DISPATCH_DONE:       core_stall_o = core_stall_undispatched;
+      STATE_MODEL_DONE:          core_stall_o = core_stall_undispatched;
+    endcase
+
+    case (state)
+      STATE_DISPATCHING_INDICES: thread_id_o = index_fetch_mstreamo[`STREAM_MO_DATA(`WORD_WIDTH)];
+      STATE_DISPATCHING_INTS:    thread_id_o = thread_id;
+      default:                   thread_id_o = thread_id;
+    endcase
+
+    vertorder_mstream_o = 0;
+    index_fetch_mstreami = 0;
+
+    if (state == STATE_DISPATCHING_INDICES && core_enable_i[core_idx]) begin
+      if (!(index_fetch_model_done && index_fetch_empty))
+        vertorder_mstream_o[`STREAM_MO_VALID(`VERTEX_ORDER_WIDTH)] = 1;
+      index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] = 1;
+    end
+
+    if (vertcache_test_found_i)
+      // Grab from cache
+      vertorder_mstream_o[`STREAM_MO_DATA(`VERTEX_ORDER_WIDTH)] = `NUM_CORES;
+    else
+      // Grab from core
+      vertorder_mstream_o[`STREAM_MO_DATA(`VERTEX_ORDER_WIDTH)] = core_idx;
+
+    dispatch_done_o = (state == STATE_DISPATCH_DONE || state == STATE_MODEL_DONE);
   end
 
 endmodule
