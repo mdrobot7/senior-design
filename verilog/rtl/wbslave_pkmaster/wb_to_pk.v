@@ -220,7 +220,15 @@ module wb_to_pk_m
                 mport_o[`BUS_MO_SEQMST] <= 0;
                 mport_o[`BUS_MO_SIZE]   <= `BUS_SIZE_STREAM;
 
-                if(mport_i[`BUS_MI_ACK])
+                if (wcount_reg == 1) begin
+                    mport_o[`BUS_MO_SEQMST] <= 1; 
+                    
+                    if (mport_i[`BUS_MI_ACK])
+                        state <= PK_CLEANUP;      
+                    else
+                        state <= PK_WRITE_PREP;
+                end
+                else if(mport_i[`BUS_MI_ACK])
                     state <= PK_STREAM_WRITE;
                 else
                     state <= PK_WRITE_PREP;

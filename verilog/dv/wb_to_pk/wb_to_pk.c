@@ -46,6 +46,20 @@ void main() {
   if (WDATA != 0xFAFAFAFA)
     test_fail(); 
 
+  //pk stream write 1 word
+  ADDR    = 0x00000008;
+  WCOUNT    = 0x00000001;
+  WDATA    = 0xF18F20FF;
+
+  wait_bridge();
+
+  if (ADDR != 0x00000008)
+    test_fail(); 
+  if (WCOUNT != 0x00000001)
+    test_fail(); 
+  if (WDATA != 0xF18F20FF)
+    test_fail(); 
+
   // pk stream write 255 words
   ADDR = 0x00000080;
   WCOUNT = 0x000000E0;
@@ -73,8 +87,8 @@ void main() {
 
   if (ADDR != current_addr)
     test_fail(); 
-  // if (RDATA != 0xFAFAFAFA)
-  //   test_fail(); 
+  if (RDATA != 0xFAFAFAFA)
+    test_fail(); 
   if (readValue != 0xFAFAFAFA)
     test_fail(); 
 
@@ -100,19 +114,14 @@ void main() {
   current_addr += 4;
   }
 
-
-
   //wishbone read (pk read) of 255 addresses
-
   current_addr = 0x00000080;
-
 
   for (int i = 0; i < 224; i++) {
   
   ADDR = current_addr;
   wait_bridge();
   readValue = RDATA;
-
 
   if (ADDR != current_addr)
     test_fail(); 
