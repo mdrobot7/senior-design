@@ -53,6 +53,35 @@ module normal_pipe_m(
     wire signed [`WORD_WIDTH - 1:0] m1y;
     mul_m #(`WORD_WIDTH) mul1( .a_i(m1a), .b_i(m1b), .y_o(m1y) );
 
+    reg  [`WORD] sqrta;
+    reg          sqrt_in_valid, sqrt_out_ready;
+    wire         sqrt_out_valid, sqrt_in_ready;
+    wire [`WORD_WIDTH / 2 - 1:0] sqrty;
+
+    wire [`STREAM_SIPORT(`WORD_WIDTH)] sqrt_si;
+    wire [`STREAM_SOPORT(`WORD_WIDTH)] sqrt_so;
+    wire [`STREAM_MIPORT(`WORD_WIDTH / 2)] sqrt_mi;
+    wire [`STREAM_MOPORT(`WORD_WIDTH / 2)] sqrt_mo;
+    sqrt_m #(`WORD_WIDTH) sqrt(
+        .clk_i(clk_i),
+        .nrst_i(nrst_i),
+
+        .sstream_i(sqrt_si),
+        .sstream_o(sqrt_so),
+
+        .mstream_i(sqrt_mi),
+        .mstream_o(sqrt_mo)
+    );
+
+    assign sqrt_si[`STREAM_SI_DATA(`WORD_WIDTH)]  = sqrta;
+    assign sqrt_si[`STREAM_SI_VALID(`WORD_WIDTH)] = sqrt_in_valid;
+    assign sqrt_si[`STREAM_SI_LAST(`WORD_WIDTH)]  = 0;
+    assign sqrt_in_ready = sqrt_so[`STREAM_SO_READY(`WORD_WIDTH)];
+
+    assign sqrt_mi[`STREAM_MI_READY(`WORD_WIDTH / 2)] = sqrt_out_ready;
+    assign sqrty = sqrt_mo[`STREAM_MO_DATA(`WORD_WIDTH / 2)];
+    assign sqrt_out_valid = sqrt_mo[`STREAM_MO_VALID(`WORD_WIDTH / 2)];
+
     reg [3:0] state;
 
     reg signed [`WORD] temp;
@@ -60,12 +89,14 @@ module normal_pipe_m(
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin
             state <= 0;
+
+            d1in_valid <= 0;
         end
         else if (clk_i) begin
             case (state)
                 0: begin
                     if (run_i) begin
-                        state <= 1;
+                        state <= state + 1;
 
                         m1a <= v0y_i;
                         m1b <= v1z_i
@@ -73,6 +104,8 @@ module normal_pipe_m(
                 end
 
                 1: begin
+                    state <= state + 1;
+
                     temp <= m1y;
 
                     m1a <= v0z_i;
@@ -80,6 +113,8 @@ module normal_pipe_m(
                 end
 
                 2: begin
+                    state <= state + 1;
+
                     as1a <= temp;
                     as1b <= m1y;
 
@@ -88,6 +123,8 @@ module normal_pipe_m(
                 end
 
                 3: begin
+                    state <= state + 1;
+
                     nx_o <= as1y;
 
                     temp <= m1y;
@@ -97,6 +134,8 @@ module normal_pipe_m(
                 end
 
                 4: begin
+                    state <= state + 1;
+
                     as1a <= temp;
                     as1b <= m1y;
 
@@ -105,6 +144,8 @@ module normal_pipe_m(
                 end
 
                 5: begin
+                    state <= state + 1;
+
                     ny_o <= as1y;
 
                     temp <= m1y;
@@ -114,6 +155,8 @@ module normal_pipe_m(
                 end
 
                 6: begin
+                    state <= state + 1;
+
                     as1a <= temp;
                     as1b <= m1y;
 
@@ -122,6 +165,8 @@ module normal_pipe_m(
                 end
 
                 7: begin
+                    state <= state + 1;
+
                     nz_o <= as1y;
 
                     as1a <= m1y;
@@ -131,6 +176,8 @@ module normal_pipe_m(
                 end
 
                 8: begin
+                    state <= state + 1;
+
                     as1b <= m1y;
 
                     m1a <= nz_o;
@@ -138,12 +185,50 @@ module normal_pipe_m(
                 end
 
                 9: begin
+                    state <= state + 1;
+
                     as1a <= as1y;
                     as1b <= m1y;
                 end
 
                 10: begin
-                    
+                    if (sqrt_in_ready) begin
+                        state <= state + 1;
+                    end
+                end
+
+                11: begin
+                    if (sqrt_out_valid) begin
+                        state <= state + 1;
+
+                        d1in_valid <= 1;
+                        d1a <= nx_o;
+                        d1b <= sqrty;
+                    end
+                end
+
+                12: begin
+                    if (d1in_ready) begin
+                        state <= state + 1;
+
+                        d1a <= ny_o;
+                    end
+                end
+
+                13: begin
+                    if (d1in_ready) begin
+                        state <= state + 1;
+
+                        d1a <= nz_o;
+                    end
+                end
+
+                14: begin
+                    if (d1in_ready) begin
+                        state <= 0;
+
+                        d1in_valid <= 0;
+                    end
                 end
             endcase
         end
@@ -154,6 +239,68 @@ module normal_pipe_m(
             2, 4, 6: sub <= 1;
             default: sub <= 0;
         endcase
+
+        sqrta <= as1y;
+        case (state)
+            10:      sqrt_in_valid <= 1;
+            default: sqrt_in_valid <= 0;
+        endcase
+
+        case (state)
+            11:      sqrt_out_ready <= 1;
+            default: sqrt_out_ready <= 0;
+        endcase
+    end
+
+    reg [3:0] out_state;
+
+    always @(posedge clk_i, negedge nrst_i) begin
+        if (!nrst_i) begin
+            out_state <= 0;
+
+            valid_o <= 0;
+        end
+        else if (clk_i) begin
+            case (out_state)
+                0: begin
+                    if (run_i) begin
+                        state <= state + 1;
+
+                        valid_o <= 0;
+                    end
+                end
+                
+                1: begin
+                    if (d1out_valid) begin
+                        state <= state + 1;
+
+                        nx_o <= d1y;
+                    end
+                end
+
+                2: begin
+                    if (d1out_valid) begin
+                        state <= state + 1;
+
+                        ny_o <= d1y;
+                    end
+                end
+
+                3: begin
+                    if (d1out_valid) begin
+                        state <= 0;
+
+                        nz_o <= d1y;
+
+                        valid_o <= 1;
+                    end
+                end
+            endcase
+        end
+    end
+
+    always @(*) begin
+        d1in_ready <= 1;
     end
 
 endmodule
