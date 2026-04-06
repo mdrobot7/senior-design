@@ -57,19 +57,8 @@ module sram_1024x32_m (
     .ScanInDR(1'b0),
     .ScanOutCC()
   );
-`else
+`else // connects to CF_SRAM_1024x32_stub. Do not use this file for synthesis, we do not want to wrap the bb.
   CF_SRAM_1024x32 sram(
-    `ifdef USE_POWER_PINS
-      .vgnd(vssd1),
-      .vnb(vssd1), 
-      .vpb(vccd1), 
-      .vpwra(vccd1), 
-      .vpwrac(vccd1),
-      .vpwrm(vccd1),
-      .vpwrp(vccd1),
-      .vpwrpc(vccd1),
-    `endif
-
     .CLKin(clk_i),
     .DO(data_o),
     .DI(data_i),
