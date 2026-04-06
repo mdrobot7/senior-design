@@ -31,7 +31,7 @@ module wishbone_register_m #(
     output wire [`WORD_WIDTH-1:0] wbs_dat_o,
 
     // Register
-    input wire [(SIZE_WORDS * `WORD_WIDTH)-1:0] access_read_mask_i,
+    input wire [(SIZE_WORDS * `WORD_WIDTH)-1:0] access_read_mask_i, // 1, can read, 0 cant read
     input wire [(SIZE_WORDS * `WORD_WIDTH)-1:0] access_write_mask_i, // 1: Bit is writable. If a bit in periph_read_mask_i is set,
                                                                      // the corresponding bit in this field must be cleared.
     input wire [(SIZE_WORDS * `WORD_WIDTH)-1:0] periph_read_mask_i,  // 1: Read from reg_i, 0: read from reg_o.
