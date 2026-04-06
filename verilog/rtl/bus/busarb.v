@@ -1,7 +1,8 @@
 module busarb_m #(
-    parameter MASTER_COUNT = 1,
-    parameter SLAVE_COUNT  = 1,
-    parameter CROSSBARS    = 1
+    parameter MASTER_COUNT      = 1,
+    parameter SLAVE_COUNT       = 1,
+    parameter CROSSBARS         = 1,
+    parameter TIMER_TICK_CLOCKS = 1024
 ) (
     input  wire clk_i,
     input  wire nrst_i,
@@ -12,6 +13,9 @@ module busarb_m #(
     input  wire [(`BUS_SOPORT_SIZE * SLAVE_COUNT) - 1:0] sports_i,
     output reg  [(`BUS_SIPORT_SIZE * SLAVE_COUNT) - 1:0] sports_o
 );
+
+    `DL_DEFINE(logger, "busarb_m", `DL_MAGENTA, 1);
+    `DL_DEFINE(error,  "busarb_m ERROR", `DL_RED, 1);
 
     localparam STATE_READY = 2'b00;
     localparam STATE_REQ   = 2'b01;
@@ -28,6 +32,8 @@ module busarb_m #(
 
     reg [$clog2(CROSSBARS + 1) - 1:0] crossbar;
 
+    reg [$clog2(TIMER_TICK_CLOCKS + 1) - 1:0] timer;
+
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin : RESET
             integer i;
@@ -43,6 +49,8 @@ module busarb_m #(
             end
 
             crossbar <= 0;
+
+            timer <= 0;
         end
         else if (clk_i) begin : CLOCK
             integer cb;
@@ -61,7 +69,11 @@ module busarb_m #(
                                 end
                             end
 
-                            if (state[cb] == STATE_REQ) master_handled[master_sel[cb]] = 1;
+                            if (state[cb] == STATE_REQ) begin
+                                master_handled[master_sel[cb]] = 1;
+
+                                `DL(logger, ("Master handled: port = %0d, crossbar = %0d", master_sel[cb], cb));
+                            end
                         end
                     end
 
@@ -77,7 +89,21 @@ module busarb_m #(
                                 end
                             end
 
-                            if (state[cb] == STATE_ACK) slave_handled[slave_sel[cb]] = 1;
+                            if (state[cb] == STATE_ACK) begin
+                                slave_handled[slave_sel[cb]] = 1;
+
+                                timer <= 0;
+
+                                `DL(logger, ("Slave handled: port = %0d, crossbar = %0d", slave_sel[cb], cb));
+                            end
+                            else begin
+                                if (timer == TIMER_TICK_CLOCKS) begin
+                                    `DL(error, ("ACCESS TO UNASSIGNED ADDRESS! (0x%x)", mports_i[`BUS_MOPORT_SIZE * master_sel[cb] + `BUS_DATA_SIZE+:`BUS_ADDR_SIZE]));
+
+                                    $finish;
+                                end
+                                else timer <= timer + 1;
+                            end
                         end
                     end
 
@@ -140,3 +166,4 @@ module busarb_m #(
     end
 
 endmodule
+
