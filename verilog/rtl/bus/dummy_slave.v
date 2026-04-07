@@ -14,6 +14,9 @@ module dummy_slave_m #(
     localparam STATE_READ  = 2'd2;
     localparam STATE_DONE  = 2'd3;
 
+    wire [`BUS_ADDR_PORT] bus_addr;
+    assign bus_addr = sport_i[`BUS_SI_ADDR] - ADDRESS;
+
     reg [1:0] state;
 
     always @(posedge clk_i, negedge nrst_i) begin
@@ -25,7 +28,9 @@ module dummy_slave_m #(
         else if (clk_i) begin
             case (state)
                 STATE_READY: begin
-                    if (sport_i[`BUS_SI_REQ]) begin
+                    if (sport_i[`BUS_SI_REQ] &&
+                        bus_addr < SIZE
+                    ) begin
                         if (sport_i[`BUS_SI_RW] == `BUS_READ) state <= STATE_READ;
                         else state <= STATE_WRITE;
 
