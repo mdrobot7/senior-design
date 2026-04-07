@@ -91,6 +91,7 @@ module address_coalescer_m_unit_test;
   );
 
     reg[`NUM_CORES-1:0] data_o [7:0];
+    reg[`NUM_CORES-1:0] data_i [7:0];
   bus_master_m c0 (
     .clk_i(clk),
     .nrst_i(nrst),
@@ -145,10 +146,15 @@ module address_coalescer_m_unit_test;
   // Setup for running the Unit Tests
   //===================================
   task setup();
+    integer i;
     svunit_ut.setup();
     /* Place Setup Code Here */
+    for(i = 0; i < `NUM_CORES; i = i + 1) begin
+      data_i[i] = {$random};
+    end
     clk_rst.RESET();
     clk_rst.WAIT_CYCLES(3);
+    
   endtask
 
 
@@ -323,6 +329,51 @@ module address_coalescer_m_unit_test;
     `FAIL_UNLESS_EQUAL(spi_chip1.mem[addr], 8'h01);
 
     `FAIL_UNLESS_EQUAL(my_address_coalescer_m.coalesce, 'b111111);
+  `SVTEST_END
+
+  `SVTEST(full_write_read)
+    integer i, j;
+    clk_rst.RESET();
+    clk_rst.WAIT_CYCLES(3);
+    for(i = 0; i < 100; i = i + 1) begin
+      addr = {$random % (MEM_SIZE-400)};
+      for(j = 0; j < `NUM_CORES; j = j + 1) begin
+      data_i[j] = {$random};
+    end
+      fork
+          c0.WRITE_BYTE(addr+data_i[0], data_i[0]);
+        begin
+          c1.WRITE_BYTE(addr+data_i[1], data_i[1]);
+        end begin
+          c2.WRITE_BYTE(addr+data_i[2], data_i[2]);
+        end begin
+          c3.WRITE_BYTE(addr+data_i[3], data_i[3]);
+        end begin
+          c4.WRITE_BYTE(addr+data_i[4], data_i[4]);
+        end begin
+          c5.WRITE_BYTE(addr+data_i[5], data_i[5]);
+        end
+      join
+      fork
+          c0.READ_BYTE(addr+data_i[0], data_o[0]);
+        begin
+          c1.READ_BYTE(addr+data_i[1], data_o[1]);
+        end begin
+          c2.READ_BYTE(addr+data_i[2], data_o[2]);
+        end begin
+          c3.READ_BYTE(addr+data_i[3], data_o[3]);
+        end begin
+          c4.READ_BYTE(addr+data_i[4], data_o[4]);
+        end begin
+          c5.READ_BYTE(addr+data_i[5], data_o[5]);
+        end
+      join
+      clk_rst.WAIT_CYCLES(1);
+      //only first core should write
+      for(j = 0; j < 6; j = j + 1) begin
+        `FAIL_UNLESS_EQUAL(data_i[j], data_o[j]);
+      end
+    end
   `SVTEST_END
 
    `SVTEST(one_write)

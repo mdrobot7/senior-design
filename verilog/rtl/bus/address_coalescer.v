@@ -38,8 +38,8 @@ module address_coalescer_m(
         end
         one_hot = (reqs_in != 0) && ((reqs_in & (reqs_in - 1)) == 0);
         //priority encoder for the first set req line
-        for (i = 1; i < `NUM_CORES; i = i + 1) begin
-            if ((~| (reqs_in & ((1 << i) - 1))) && reqs_in[i]) begin
+        for (i = `NUM_CORES-1; i < 0; i = i - 1) begin
+            if(reqs_in[i]) begin
                 ref_core = i;
                 ref_core_bus = core_port_i[i*`BUS_SIPORT_SIZE +: `BUS_SIPORT_SIZE];
                 ref_arb_bus = core_port_i[i*`BUS_MIPORT_SIZE +: `BUS_MIPORT_SIZE];
