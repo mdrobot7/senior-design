@@ -40,6 +40,7 @@
 -v $(USER_PROJECT_VERILOG)/rtl/test/clk_rst.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/bus/busarb.v
+-v $(USER_PROJECT_VERILOG)/rtl/bus/dummy_slave.v
 -v $(USER_PROJECT_VERILOG)/rtl/bus/word_stripe_cache.v
 -v $(USER_PROJECT_VERILOG)/rtl/bus/byte_stripe_cache.v
 
