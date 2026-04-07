@@ -641,7 +641,7 @@ module core_controller_m #(
   wire         dispatch_index_fetch_clear      = (state == STATE_STOPPING);
   wire         dispatch_index_fetch_clear_done;
   wire         dispatch_reset                  = (state == STATE_STOPPED);
-  reg          dispatch_enable;
+  wire         dispatch_enable                 = (state == STATE_DISPATCHING);
   wire         dispatch_indices                = (dispatch_ctrl_i == `CORE_CTRL_DISPATCH_INDEX);
   wire [`WORD] dispatch_thread_id;
   wire [`WORD] dispatch_inst;
@@ -749,8 +749,6 @@ module core_controller_m #(
       job_done_o <= 0;
       batch_done_o <= 0;
 
-      dispatch_enable <= 0;
-
       instfetch_enable <= 0;
 
       cur_prog      <= STATE_STOPPED;
@@ -775,7 +773,6 @@ module core_controller_m #(
               cur_prog <= STATE_GPGPU_COMPUTE;
 
             if (dispatch_ctrl_i != `CORE_CTRL_DISPATCH_DISABLE) begin
-              dispatch_enable <= 1;
               dispatched <= 1;
               state <= STATE_DISPATCHING;
             end
@@ -791,11 +788,9 @@ module core_controller_m #(
         end
         STATE_DISPATCHING: begin
           if (cmd_i == `CORE_CTRL_CMD_STOP) begin
-            dispatch_enable <= 0;
             state <= STATE_STOPPING;
           end
           else if (dispatch_done) begin
-            dispatch_enable <= 0;
             instfetch_enable <= 1;
             state <= cur_prog;
           end
@@ -844,7 +839,6 @@ module core_controller_m #(
           if (pause_at_halt_i || next_prog == STATE_STOPPING)
             state <= STATE_STOPPING;
           else if (should_dispatch) begin
-            dispatch_enable <= 1;
             dispatched <= 1;
             state <= STATE_DISPATCHING;
           end

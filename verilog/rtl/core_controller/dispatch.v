@@ -154,20 +154,15 @@ module dispatch_m #(
             core_idx <= core_idx + 1;
           end
 
-          if ((core_idx == `NUM_CORES - 1 && !vertcache_test_found_i) || vertorder_full_i) begin
+          if (((core_idx == `NUM_CORES - 1 && !vertcache_test_found_i) || vertorder_full_i) ||
+              (index_fetch_model_done && index_fetch_empty)) begin
             state <= STATE_DISPATCH_DONE;
-          end
-          if (index_fetch_model_done && index_fetch_empty) begin
-            state <= STATE_MODEL_DONE;
           end
         end
         STATE_DISPATCHING_INTS: begin
           // Fill in $tid with increasing numbers
-          if (core_idx == `NUM_CORES) begin
+          if (core_idx == `NUM_CORES || thread_id == num_dispatches_i) begin
             state <= STATE_DISPATCH_DONE;
-          end
-          else if (thread_id == num_dispatches_i) begin
-            state <= STATE_MODEL_DONE;
           end
           else if (!core_enable_i[core_idx]) begin
             core_idx <= core_idx + 1; // Skip disabled cores
@@ -179,11 +174,14 @@ module dispatch_m #(
         end
         STATE_DISPATCH_DONE: begin
           if (!enable_i) begin
-            state <= STATE_DISABLED;
+            if (thread_id == num_dispatches_i || (index_fetch_model_done && index_fetch_empty))
+              state <= STATE_MODEL_DONE;
+            else
+              state <= STATE_DISABLED;
           end
         end
         STATE_MODEL_DONE: begin
-          if (reset_dispatch_i && !enable_i) begin
+          if (reset_dispatch_i) begin
             thread_id <= 0;
             state <= STATE_DISABLED;
           end
@@ -205,7 +203,7 @@ module dispatch_m #(
         if (core_enable_i[core_idx])
           core_stall_o = core_stall;
       end
-      STATE_DISPATCH_DONE:       core_stall_o = core_stall_undispatched;
+      STATE_DISPATCH_DONE:       core_stall_o = enable_i ? {`NUM_CORES{1'b1}} : core_stall_undispatched;
       STATE_MODEL_DONE:          core_stall_o = core_stall_undispatched;
     endcase
 
