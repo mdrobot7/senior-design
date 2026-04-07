@@ -41,7 +41,7 @@ module top_level_m(
     assign clk = wb_clk_i;
     assign nrst = !wb_rst_i;
 
-    localparam integer NUM_ADDRS = 4;
+    localparam integer NUM_ADDRS = 5;
     wire [31:0] wbs_datN_o [NUM_ADDRS:0];
     wire wbs_ackN_o [NUM_ADDRS-1:0];
     reg wbs_stbN_i [NUM_ADDRS-1:0];
@@ -62,6 +62,7 @@ module top_level_m(
         `address_map(1, 32'h31000000, 32'hFF000000); // Rasterizer
         `address_map(2, 32'h32000000, 32'hFF000000); // Core Control
         `address_map(3, 32'h33000000, 32'hFF000000); // Core IMem
+        `address_map(4, 32'h34000000, 32'hFF000000); // QSPI Mem Data (bridge)
     end
 
     wire [`BUS_MIPORT] vga_mporti;
@@ -81,6 +82,9 @@ module top_level_m(
 
     wire [`BUS_MIPORT] mw_mporti;
     wire [`BUS_MOPORT] mw_mporto;
+
+    wire [`BUS_MIPORT] bridge_mporti;
+    wire [`BUS_MOPORT] bridge_mporto;
 
     wire [`BUS_SIPORT] spi1_sporti;
     wire [`BUS_SOPORT] spi1_sporto;
@@ -148,12 +152,12 @@ module top_level_m(
     wire fragfifo_done_mailing;
     wire fragfifo_clear;
 
-    busarb_m #(5 + `NUM_CORES, 2, 2) arbiter(
+    busarb_m #(6 + `NUM_CORES, 2, 2) arbiter(
         .clk_i(clk),
         .nrst_i(nrst),
 
-        .mports_i({ mw_mporto, cc_mporto, core_mporto, rast2_mporto, rast1_mporto, vga_mporto }),
-        .mports_o({ mw_mporti, cc_mporti, core_mporti, rast2_mporti, rast1_mporti, vga_mporti }),
+        .mports_i({ mw_mporto, cc_mporto, core_mporto, rast2_mporto, rast1_mporto, vga_mporto, bridge_mporto }),
+        .mports_o({ mw_mporti, cc_mporti, core_mporti, rast2_mporti, rast1_mporti, vga_mporti, bridge_mporti }),
 
         .sports_i({ spi1_sporto, spi2_sporto }),
         .sports_o({ spi1_sporti, spi2_sporti })
@@ -254,6 +258,7 @@ module top_level_m(
         .global_regfile_rs2_data_o(global_r2)
     );
 
+    // TODO: Set SP
     core_m #(.SP(0)) core [`NUM_CORES-1:0] (
         .clk_i(clk),
         .nrst_i(nrst),
@@ -451,6 +456,24 @@ module top_level_m(
         .pixel_o({ blue_o, green_o, red_o }),
         .hsync_o(hsync_o),
         .vsync_o(vsync_o)
+    );
+
+    wb_to_pk_m bridge
+    (
+        .wb_clk_i(wb_clk_i),
+        .wb_rst_i(wb_rst_i),
+
+        .wbs_stb_i(wbs_stbN_i[4]),
+        .wbs_cyc_i(wbs_cyc_i),
+        .wbs_sel_i(wbs_sel_i),
+        .wbs_ack_o(wbs_ackN_o[4]),
+        .wbs_dat_i(wbs_dat_i),
+        .wbs_adr_i(wbs_adr_i),
+        .wbs_dat_o(wbs_datN_o[4]),
+        .wbs_we_i(wbs_we_i),
+
+        .mport_i(bridge_mporti),
+        .mport_o(bridge_mporto)
     );
 
 endmodule

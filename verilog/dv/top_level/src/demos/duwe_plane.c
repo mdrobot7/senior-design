@@ -7,17 +7,71 @@
 #define VERTEX_BUFFER_PK_ADDR (QSPI0_MEM_ADDR_DEFAULT + 0x90000)
 #define INDEX_BUFFER_PK_ADDR  (QSPI0_MEM_ADDR_DEFAULT + 0x80000)
 
-#define NUM_VERTICES (6)
-#define NUM_INDICES  (12)
-static const uint32_t vertices[NUM_VERTICES] = {}; // TODO
-static const uint32_t indices[NUM_INDICES]   = {}; // TODO
+#define NUM_VERTICES  (6)
+#define NUM_TRIANGLES (4)
+static const vertex_t vertices[NUM_VERTICES] = {
+  {
+    .x  = -UGPU_FIXED(1) / 4,
+    .y  = -UGPU_FIXED(1) / 4,
+    .z  = UGPU_FIXED(1) / 4,
+    .tx = UGPU_FIXED(0),
+    .ty = UGPU_FIXED(0),
+  },
+  {
+    .x  = UGPU_FIXED(1) / 4,
+    .y  = -UGPU_FIXED(1) / 4,
+    .z  = UGPU_FIXED(1) / 4,
+    .tx = UGPU_FIXED(60),
+    .ty = UGPU_FIXED(0),
+  },
+  {
+    .x  = -UGPU_FIXED(1) / 4,
+    .y  = UGPU_FIXED(1) / 4,
+    .z  = UGPU_FIXED(1) / 4,
+    .tx = UGPU_FIXED(0),
+    .ty = UGPU_FIXED(60),
+  },
+  {
+    .x  = UGPU_FIXED(1) / 4,
+    .y  = UGPU_FIXED(1) / 4,
+    .z  = UGPU_FIXED(1) / 4,
+    .tx = UGPU_FIXED(60),
+    .ty = UGPU_FIXED(60),
+  },
+  {
+    .x  = -UGPU_FIXED(1) / 4,
+    .y  = -UGPU_FIXED(1) / 4,
+    .z  = -UGPU_FIXED(1) / 4,
+    .tx = UGPU_FIXED(60),
+    .ty = UGPU_FIXED(0),
+  },
+  {
+    .x  = -UGPU_FIXED(1) / 4,
+    .y  = UGPU_FIXED(1) / 4,
+    .z  = -UGPU_FIXED(1) / 4,
+    .tx = UGPU_FIXED(60),
+    .ty = UGPU_FIXED(60),
+  },
+};
+
+static const triangle_t triangles[NUM_TRIANGLES] = {
+  { 0, 2, 1 },
+  { 1, 2, 3 },
+  { 0, 4, 5 },
+  { 0, 5, 2 },
+};
 
 void duwe_plane() {
   // memcpy(CC_IMEM, vertex_shader, vertex_shader_len);
   // memcpy(CC_IMEM + vertex_shader_len, fragment_shader, fragment_shader_len);
 
-  // ugpu_wb_pk_memcpy(VERTEX_BUFFER_PK_ADDR, vertices, NUM_VERTICES);
-  // ugpu_wb_pk_memcpy(INDEX_BUFFER_PK_ADDR, indices, NUM_INDICES);
+  // Texture buffer set in verilog because we need to load an image
+  // Commenting out because they're slow in RTL
+  // ugpu_pk_memset(DEPTH_PK_ADDR, 0xFFFFFFFF, 320 * 240);
+  // ugpu_pk_memset(FB0_PK_ADDR, 0, 320 * 240 / 4);
+
+  ugpu_wb_pk_memcpy(VERTEX_BUFFER_PK_ADDR, (uint32_t *) vertices, (NUM_VERTICES * sizeof(vertex_t)) / 4);
+  ugpu_wb_pk_memcpy(INDEX_BUFFER_PK_ADDR, (uint32_t *) triangles, (NUM_TRIANGLES * sizeof(triangle_t)) / 4);
 
   RAST->TEXADDR.reg   = 320 * 240;
   RAST->TEXWIDTH.reg  = 60;
@@ -26,7 +80,7 @@ void duwe_plane() {
   CC->VSHADEPC.reg  = 0;
   CC->FSHADEPC.reg  = 2048;
   CC->INDEXADDR.reg = INDEX_BUFFER_PK_ADDR;
-  CC->JOBS.reg      = NUM_INDICES;
+  CC->JOBS.reg      = NUM_TRIANGLES * 3;
 
 #define PI_180_FIXED 1144
 

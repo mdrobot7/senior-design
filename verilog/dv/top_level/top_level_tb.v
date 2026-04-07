@@ -81,65 +81,12 @@ module top_level_tb;
             WRITE_MEM(`ADDR_DEPTH_BUFFER + i, 8'hff);
         end
 
-        // Index buffer
-        WRITE_WORD(32'h80000 +  0 * 4, 0);
-        WRITE_WORD(32'h80000 +  1 * 4, 2);
-        WRITE_WORD(32'h80000 +  2 * 4, 1);
-        WRITE_WORD(32'h80000 +  3 * 4, 1);
-        WRITE_WORD(32'h80000 +  4 * 4, 2);
-        WRITE_WORD(32'h80000 +  5 * 4, 3);
-
-        WRITE_WORD(32'h80000 +  6 * 4, 0);
-        WRITE_WORD(32'h80000 +  7 * 4, 4);
-        WRITE_WORD(32'h80000 +  8 * 4, 5);
-        WRITE_WORD(32'h80000 +  9 * 4, 0);
-        WRITE_WORD(32'h80000 + 10 * 4, 5);
-        WRITE_WORD(32'h80000 + 11 * 4, 2);
-
-        // Vertex 0
-        WRITE_WORD(32'h90000 + 0 * 20 + 0, -(`FP(1) / 4));
-        WRITE_WORD(32'h90000 + 0 * 20 + 4, -(`FP(1) / 4));
-        WRITE_WORD(32'h90000 + 0 * 20 + 8, `FP(1) / 4);
-        WRITE_WORD(32'h90000 + 0 * 20 + 12, `FP(0));
-        WRITE_WORD(32'h90000 + 0 * 20 + 16, `FP(0));
-
-        // Vertex 1
-        WRITE_WORD(32'h90000 + 1 * 20 + 0, (`FP(1) / 4));
-        WRITE_WORD(32'h90000 + 1 * 20 + 4, -(`FP(1) / 4));
-        WRITE_WORD(32'h90000 + 1 * 20 + 8, (`FP(1) / 4));
-        WRITE_WORD(32'h90000 + 1 * 20 + 12, `FP(60));
-        WRITE_WORD(32'h90000 + 1 * 20 + 16, `FP(0));
-
-        // Vertex 2
-        WRITE_WORD(32'h90000 + 2 * 20 + 0, -(`FP(1) / 4));
-        WRITE_WORD(32'h90000 + 2 * 20 + 4, (`FP(1) / 4));
-        WRITE_WORD(32'h90000 + 2 * 20 + 8, (`FP(1) / 4));
-        WRITE_WORD(32'h90000 + 2 * 20 + 12, `FP(0));
-        WRITE_WORD(32'h90000 + 2 * 20 + 16, `FP(60));
-
-        // Vertex 3
-        WRITE_WORD(32'h90000 + 3 * 20 + 0, (`FP(1) / 4));
-        WRITE_WORD(32'h90000 + 3 * 20 + 4, (`FP(1) / 4));
-        WRITE_WORD(32'h90000 + 3 * 20 + 8, (`FP(1) / 4));
-        WRITE_WORD(32'h90000 + 3 * 20 + 12, `FP(60));
-        WRITE_WORD(32'h90000 + 3 * 20 + 16, `FP(60));
-
-        // Vertex 4
-        WRITE_WORD(32'h90000 + 4 * 20 + 0, -(`FP(1) / 4));
-        WRITE_WORD(32'h90000 + 4 * 20 + 4, -(`FP(1) / 4));
-        WRITE_WORD(32'h90000 + 4 * 20 + 8, -(`FP(1) / 4));
-        WRITE_WORD(32'h90000 + 4 * 20 + 12, `FP(60));
-        WRITE_WORD(32'h90000 + 4 * 20 + 16, `FP(0));
-
-        // Vertex 5
-        WRITE_WORD(32'h90000 + 5 * 20 + 0, -(`FP(1) / 4));
-        WRITE_WORD(32'h90000 + 5 * 20 + 4, (`FP(1) / 4));
-        WRITE_WORD(32'h90000 + 5 * 20 + 8, -(`FP(1) / 4));
-        WRITE_WORD(32'h90000 + 5 * 20 + 12, `FP(60));
-        WRITE_WORD(32'h90000 + 5 * 20 + 16, `FP(60));
+        for (i = 0; i < 320 * 240; i = i + 1) begin
+          WRITE_MEM(`ADDR_FB0 + i, 0);
+        end
 
 		wait(gpio);
-    
+
         $display("Elapsed %d clock cycles", current_cycle);
         $display("%d FPS at 10 MHz", 10000000.0 / current_cycle);
         $display("%d FPS at 20 MHz", 20000000.0 / current_cycle);

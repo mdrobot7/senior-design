@@ -20,6 +20,18 @@ extern uint32_t vertex_shader_len;
 extern uint32_t * fragment_shader;
 extern uint32_t fragment_shader_len;
 
+typedef struct {
+  uint32_t ind[3];
+} triangle_t;
+
+typedef struct __packed {
+  ugpu_fp_t x;
+  ugpu_fp_t y;
+  ugpu_fp_t z;
+  ugpu_fp_t tx;
+  ugpu_fp_t ty;
+} vertex_t;
+
 void demos_init();
 void demos_copy_mvp(mat4_t m); // Copy MVP to g0 - g15
 

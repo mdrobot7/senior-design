@@ -1,6 +1,10 @@
 #ifndef _UGPU_H_
 #define _UGPU_H_
 
+#ifndef __packed
+#define __packed __attribute__((packed))
+#endif
+
 #include "core_controller.h"
 #include "gpio.h"
 #include "math.h"
@@ -13,7 +17,7 @@
 #define QSPI0    ((volatile QSPI_t *)     0x30000000)
 #define QSPI1    ((volatile QSPI_t *)     0x30000000)
 #define QSPI2    ((volatile QSPI_t *)     0x30000000)
-#define QSPIDATA ((volatile QSPIDATA_t *) 0x30000000)
+#define QSPIDATA ((volatile QSPIDATA_t *) 0x34000000)
 #define VGA      ((volatile VGA_t *)      0x30000000)
 
 // Must be included after peripheral defines
