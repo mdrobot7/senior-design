@@ -25,6 +25,7 @@ module address_coalescer_m_unit_test;
   wire[`BUS_SOPORT_SIZE*`NUM_CORES-1:0] core_port_o;
   reg[`BUS_MIPORT_SIZE*`NUM_CORES-1:0]  arb_port_i;
   wire[`BUS_MOPORT_SIZE*`NUM_CORES-1:0] arb_port_o;
+  reg[5:0] captured_val;
 
   wire clk, nrst;
   clk_rst_m clk_rst(.clk_o(clk), .nrst_o(nrst));
@@ -73,7 +74,7 @@ module address_coalescer_m_unit_test;
     .spi_sio_en_o(spi_sio_en)
   );
 
-    spi_chip_m #(5, 1, MEM_SIZE) spi_chip1(
+  spi_chip_m #(5, 1, MEM_SIZE) spi_chip1(
     .clk_i(spi_clk1),
     .cs_i(spi_cs1),
     .mosi_i(spi_mosi1),
@@ -93,7 +94,7 @@ module address_coalescer_m_unit_test;
   bus_master_m c0 (
     .clk_i(clk),
     .nrst_i(nrst),
-    .mport_i(core_port_o[`BUS_SOPORT_SIZE*0 +: `BUS_SOPORT_SIZE]),
+    .mport_i(core_port_o[`BUS_MIPORT_SIZE*0 +: `BUS_MIPORT_SIZE]),
     .mport_o(core_port_i[`BUS_SIPORT_SIZE*0 +: `BUS_SIPORT_SIZE])
   );
 
@@ -194,6 +195,8 @@ module address_coalescer_m_unit_test;
         c4.READ_BYTE(addr, data_o[4]);
       end begin
         c5.READ_BYTE(addr, data_o[5]);
+      end begin
+        `FAIL_UNLESS_EQUAL(my_address_coalescer_m.coalesce, 'b111111);
       end
     join
     clk_rst.WAIT_CYCLES(1);
@@ -220,15 +223,7 @@ module address_coalescer_m_unit_test;
     fork
       c0.READ_BYTE(addr, data_o[0]);
       begin
-        // c1.READ_BYTE(addr+1, data_o[1]);
-      end begin
-        // c2.READ_BYTE(addr+2, data_o[2]);
-      end begin
-        // c3.READ_BYTE(addr+3, data_o[3]);
-      end begin
-        // c4.READ_BYTE(addr+4, data_o[4]);
-      end begin
-        // c5.READ_BYTE(addr+5, data_o[5]);
+        `FAIL_UNLESS_EQUAL(my_address_coalescer_m.coalesce, 'b111111);
       end
     join
     clk_rst.WAIT_CYCLES(1);
@@ -244,20 +239,42 @@ module address_coalescer_m_unit_test;
     fork
       c0.READ_BYTE(addr, data_o[0]);
       begin
-        // c1.READ_BYTE(addr+1, data_o[1]);
-      end begin
-        // c2.READ_BYTE(addr+2, data_o[2]);
-      end begin
         c3.READ_BYTE(addr, data_o[3]);
       end begin
-        // c4.READ_BYTE(addr+4, data_o[4]);
-      end begin
         c5.READ_BYTE(addr, data_o[5]);
+      end begin
+        clk_rst.WAIT_CYCLES(1);
+        captured_val = my_address_coalescer_m.coalesce;
       end
     join
     clk_rst.WAIT_CYCLES(1);
 
+    `FAIL_UNLESS_EQUAL(captured_val, 'b111111);
     `FAIL_UNLESS_EQUAL(my_address_coalescer_m.coalesce, 'b111111);
+  `SVTEST_END
+
+  `SVTEST(partial_read_2)
+    addr = {$random % (MEM_SIZE-100)};
+    clk_rst.RESET();
+    clk_rst.WAIT_CYCLES(3);
+    fork
+      begin
+        c2.READ_BYTE(addr+2, data_o[2]);
+      end begin
+        c3.READ_BYTE(addr, data_o[3]);
+      end begin
+        c5.READ_BYTE(addr, data_o[5]);
+      end begin
+        clk_rst.WAIT_CYCLES(1);
+        captured_val = my_address_coalescer_m.coalesce;
+      end begin
+        clk_rst.WAIT_CYCLES(1);
+        captured_val = my_address_coalescer_m.coalesce;
+      end
+    join
+    clk_rst.WAIT_CYCLES(1);
+
+    `FAIL_IF_EQUAL(captured_val, 'b111111);
   `SVTEST_END
 
   `SVTEST(different_read)
@@ -280,7 +297,92 @@ module address_coalescer_m_unit_test;
     join
     clk_rst.WAIT_CYCLES(1);
 
+    `FAIL_IF_EQUAL(captured_val, 'b111111);
+  `SVTEST_END
+
+  `SVTEST(full_write)
+    clk_rst.RESET();
+    clk_rst.WAIT_CYCLES(3);
+    addr = {$random % MEM_SIZE};
+    fork
+      c0.WRITE_BYTE(addr, 8'h01);
+      begin
+        c1.WRITE_BYTE(addr, 8'h02);
+      end begin
+        c2.WRITE_BYTE(addr, 8'h03);
+      end begin
+        c3.WRITE_BYTE(addr, 8'h04);
+      end begin
+        c4.WRITE_BYTE(addr, 8'h05);
+      end begin
+        c5.WRITE_BYTE(addr, 8'h06);
+      end
+    join
+    clk_rst.WAIT_CYCLES(1);
+    //only first core should write
+    `FAIL_UNLESS_EQUAL(spi_chip1.mem[addr], 8'h01);
+
     `FAIL_UNLESS_EQUAL(my_address_coalescer_m.coalesce, 'b111111);
+  `SVTEST_END
+
+   `SVTEST(one_write)
+    clk_rst.RESET();
+    clk_rst.WAIT_CYCLES(3);
+    addr = {$random % MEM_SIZE};
+    fork
+      c5.WRITE_BYTE(addr, 8'h06);
+    join
+    clk_rst.WAIT_CYCLES(1);
+
+    `FAIL_UNLESS_EQUAL(spi_chip1.mem[addr], 8'h06);
+  `SVTEST_END
+
+    `SVTEST(partial_write)
+    addr = {$random % (MEM_SIZE-100)};
+    clk_rst.RESET();
+    clk_rst.WAIT_CYCLES(3);
+    fork
+      c0.WRITE_BYTE(addr, 3);
+      begin
+        c3.WRITE_BYTE(addr, 1);
+      end begin
+        c5.WRITE_BYTE(addr, 2);
+      end begin
+        clk_rst.WAIT_CYCLES(1);
+        captured_val = my_address_coalescer_m.coalesce;
+      end
+    join
+    clk_rst.WAIT_CYCLES(1);
+
+    `FAIL_UNLESS_EQUAL(captured_val, 'b111111);
+    `FAIL_UNLESS_EQUAL(spi_chip1.mem[addr], 8'h03);
+  `SVTEST_END
+
+  `SVTEST(partial_write_2)
+    addr = {$random % (MEM_SIZE-100)};
+    clk_rst.RESET();
+    clk_rst.WAIT_CYCLES(3);
+    fork
+      begin
+        c2.WRITE_BYTE(addr+2, 1);
+      end begin
+        c3.WRITE_BYTE(addr, 0);
+      end begin
+        c5.WRITE_BYTE(addr, 2);
+      end begin
+        clk_rst.WAIT_CYCLES(1);
+        captured_val = my_address_coalescer_m.coalesce;
+      end begin
+        clk_rst.WAIT_CYCLES(1);
+        captured_val = my_address_coalescer_m.coalesce;
+      end
+    join
+    clk_rst.WAIT_CYCLES(1);
+
+    `FAIL_IF_EQUAL(captured_val, 'b111111);
+    `FAIL_UNLESS_EQUAL(spi_chip1.mem[addr+2], 1);
+    //c5 should write to addr
+    `FAIL_UNLESS_EQUAL(spi_chip1.mem[addr], 2);
   `SVTEST_END
 
   `SVUNIT_TESTS_END
