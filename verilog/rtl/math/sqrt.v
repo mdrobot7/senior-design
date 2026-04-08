@@ -42,19 +42,19 @@ module sqrt_m #(
                 state <= state + 1;
 
                 if (R >= 0) begin
-                    R = (R << 2) | ((D >> (i + i)) & ((ROOT_WIDTH + 1)'(2'b11)));
-                    R = R - ((Q << 2) | ((ROOT_WIDTH + 1)'(1'b1)));
+                    R = (R << 2) | ((D >> (i + i)) & 2'b11);
+                    R = R - ((Q << 2) | 1'b1);
                 end
                 else begin
-                    R = (R << 2) | ((D >> (i + i)) & ((ROOT_WIDTH + 1)'(2'b11)));
-                    R = R + ((Q << 2) | ((ROOT_WIDTH + 1)'(2'b11)));
+                    R = (R << 2) | ((D >> (i + i)) & 2'b11);
+                    R = R + ((Q << 2) | 2'b11);
                 end
 
                 if (R >= 0) begin
-                    Q = (Q << 1) | ((ROOT_WIDTH)'(1'b1));
+                    Q = (Q << 1) | 1'b1;
                 end
                 else begin
-                    Q = (Q << 1) | ((ROOT_WIDTH)'(1'b0));
+                    Q = (Q << 1) | 1'b0;
                 end
 
                 i = i - 1;
@@ -62,7 +62,7 @@ module sqrt_m #(
             else if (state == 17) begin
                 state <= state + 1;
 
-                if (R < 0) R = R + ((Q << 1) | ((ROOT_WIDTH)'(1'b1)));
+                if (R < 0) R = R + ((Q << 1) | 1'b1);
             end
             else if (state == 18) begin
                 if (mstream_i[`STREAM_MI_READY(ROOT_WIDTH)]) begin
