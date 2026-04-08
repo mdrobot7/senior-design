@@ -17,7 +17,7 @@ static inline int ugpu_wb_pk_memcpy(uint32_t pk_destaddr, uint32_t * wb_srcaddr,
 }
 
 static inline int ugpu_pk_wb_memcpy(uint32_t * wb_destaddr, uint32_t pk_srcaddr, uint32_t len_words) {
-  for (uint32_t byte = 0; byte < len_words; byte += 4) {
+  for (uint32_t byte = 0; byte < len_words << 2; byte += 4) {
     QSPIDATA->ADDR.reg                            = pk_srcaddr + byte;
     *(uint32_t *) ((uint32_t) wb_destaddr + byte) = QSPIDATA->RDATA.reg;
     if (QSPIDATA->STATUS.reg & QSPIDATA_STATUS_ADDRERR)

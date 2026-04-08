@@ -108,6 +108,7 @@ void duwe_plane() {
     }
   }
 
+  CC->GR[44].reg = FB0_PK_ADDR;
   CC->GR[46].reg = VERTEX_BUFFER_PK_ADDR;
 
   CC->CTRL.reg = CC_CTRL_DISPATCH_INDEX | CC_CTRL_CMD_RUN;
