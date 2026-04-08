@@ -1,6 +1,7 @@
 /*
   Direct-mapped SRAM cache.
   Designed for 64-byte BLOCKS.
+  Core Addresses are byte-addressable, word-aligned.
   Physical SRAM is 1024x32 bit array.
   Uses Write Back Policy with Dirty bit.
   Prioritizes low latency read hits. 
