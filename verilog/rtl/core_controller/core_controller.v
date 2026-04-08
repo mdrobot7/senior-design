@@ -57,7 +57,6 @@ module core_controller_wrapper_m #(
   // Rasterizer fragment output FIFO
   input  wire fragfifo_full_i,
   input  wire fragfifo_empty_i,
-  input  wire fragfifo_done_mailing_i,
   output wire fragfifo_clear_o,
 
   // Rasterizer
@@ -72,7 +71,9 @@ module core_controller_wrapper_m #(
   input  wire [`NUM_CORES-1:0]  core_jump_i,
   output wire                   core_jump_o,          // Flushes decode on all cores
   output wire [`WORD]           global_regfile_rs1_data_o,
-  output wire [`WORD]           global_regfile_rs2_data_o
+  output wire [`WORD]           global_regfile_rs2_data_o,
+
+  input  wire [`STREAM_MIPORT_SIZE(`MAILBOX_STREAM_SIZE) * `NUM_CORES - 1:0] core_inbox_mstream_i
 );
 
   localparam NUM_CONTROL_REGS = 10;
@@ -152,7 +153,6 @@ module core_controller_wrapper_m #(
 
     .fragfifo_full_i(fragfifo_full_i),
     .fragfifo_empty_i(fragfifo_empty_i),
-    .fragfifo_done_mailing_i(fragfifo_done_mailing_i),
     .fragfifo_clear_o(fragfifo_clear_o),
 
     .rast_busy_i(rast_busy_i),
@@ -178,7 +178,9 @@ module core_controller_wrapper_m #(
     .core_jump_i(core_jump_i),
     .core_jump_o(core_jump_o),
     .global_regfile_rs1_data_o(global_regfile_rs1_data_o),
-    .global_regfile_rs2_data_o(global_regfile_rs2_data_o)
+    .global_regfile_rs2_data_o(global_regfile_rs2_data_o),
+
+    .core_inbox_mstream_i(core_inbox_mstream_i)
   );
 
   wire core_controller_enabled = (cc_state ? 1 : 0);
@@ -584,7 +586,6 @@ module core_controller_m #(
   // Rasterizer fragment output FIFO
   input  wire fragfifo_full_i,
   input  wire fragfifo_empty_i,
-  input  wire fragfifo_done_mailing_i,
   output wire fragfifo_clear_o,
 
   // Rasterizer
@@ -613,7 +614,9 @@ module core_controller_m #(
   input  wire [`NUM_CORES-1:0]  core_jump_i,
   output reg                    core_jump_o,          // Flushes decode on all cores
   output reg  [`WORD]           global_regfile_rs1_data_o,
-  output reg  [`WORD]           global_regfile_rs2_data_o
+  output reg  [`WORD]           global_regfile_rs2_data_o,
+
+  input  wire [`STREAM_MIPORT_SIZE(`MAILBOX_STREAM_SIZE) * `NUM_CORES - 1:0] core_inbox_mstream_i
 );
 
   localparam INST_NOP        = 32'h04000000;
@@ -739,9 +742,13 @@ module core_controller_m #(
   wire should_dispatch  = (dispatch_ctrl_i != `CORE_CTRL_DISPATCH_DISABLE && next_prog != STATE_FRAGMENT_SHADING);
   reg  dispatched;
 
-  reg cores_mailed; // 1: Fragfifo was done mailing when this frag shade started, meaning this frag shade won't stall on inbox
+  reg [`NUM_CORES-1:0] cores_mailed_mask;
+  reg cores_not_mailed;
+  reg cores_partially_mailed;
+  reg cores_all_mailed;
+
   wire vertshade_deadlock = (state == STATE_VERTEX_SHADING && fragfifo_full_i);
-  wire fragshade_deadlock = (state == STATE_FRAGMENT_SHADING && dispatch_model_done && vertorder_empty_i && !vertcont_busy_i && !rast_busy_i && fragfifo_empty_i && !cores_mailed);
+  wire fragshade_deadlock = (state == STATE_FRAGMENT_SHADING && vertorder_empty_i && !vertcont_busy_i && !rast_busy_i && fragfifo_empty_i && !cores_all_mailed);
 
   always @(posedge clk_i, negedge nrst_i) begin
     if (!nrst_i) begin : RESET
@@ -848,8 +855,6 @@ module core_controller_m #(
             state <= next_prog;
           end
 
-          cores_mailed <= fragfifo_done_mailing_i;
-
           if (cmd_i == `CORE_CTRL_CMD_STOP)
             state <= STATE_STOPPING;
         end
@@ -861,7 +866,9 @@ module core_controller_m #(
     end
   end
 
-  always @(*) begin
+  always @(*) begin : COMB
+    integer i;
+
     // Instruction muxing
     if (state == STATE_STOPPED || state == STATE_DONE)
       inst_o = INST_NOP;
@@ -895,6 +902,15 @@ module core_controller_m #(
       core_stall_o = 0;
     core_jump_o  = (core_jump_i  ? 1 : 0);
 
+    cores_mailed_mask = {`NUM_CORES{1'b1}};
+    for (i = 0; i < `NUM_CORES; i += 1) begin
+      if (core_inbox_mstream_i[i * `STREAM_MIPORT_SIZE(`MAILBOX_STREAM_SIZE`) + `STREAM_MI_READY(`MAILBOX_STREAM_SIZE)])
+        cores_mailed_mask[i] = 0;
+    end
+    cores_not_mailed = !cores_mailed_mask;
+    cores_partially_mailed = cores_mailed_mask;
+    cores_all_mailed = (cores_mailed_mask == {`NUM_CORES{1'b1}});
+
     // Next program selection
     if (cur_prog == STATE_GPGPU_COMPUTE) begin
       if (dispatch_model_done)
@@ -903,9 +919,9 @@ module core_controller_m #(
         next_prog = STATE_GPGPU_COMPUTE;
     end
     else begin
-      if (dispatch_model_done && vertorder_empty_i && !vertcont_busy_i && !rast_busy_i && fragfifo_empty_i)
+      if (dispatch_model_done && vertorder_empty_i && !vertcont_busy_i && !rast_busy_i && fragfifo_empty_i && cores_not_mailed)
         next_prog = STATE_STOPPING;
-      else if (fragfifo_done_mailing_i || dispatch_model_done)
+      else if ((cores_all_mailed || dispatch_model_done) && state != STATE_STOPPED)
         next_prog = STATE_FRAGMENT_SHADING;
       else
         next_prog = STATE_VERTEX_SHADING;

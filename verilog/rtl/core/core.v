@@ -296,8 +296,8 @@ module core_m #(
     assign wb_ctl_sigs = piped_ctl_sigs[`STAGE_SLICE(WB_STAGE, `CTL_SIGS_WIDTH)];
     assign wb_inst = piped_inst[`STAGE_SLICE(WB_STAGE, `WORD_WIDTH)];
     assign wb_addr = wb_inst[`REG_DEST_IDX];
-    assign inbox_read = wb_ctl_sigs[`WB_IS_IN_IDX];
-    assign outbox_write = wb_ctl_sigs[`OUT_IDX];
+    assign inbox_read = wb_ctl_sigs[`WB_IS_IN_IDX] && !stall_i; // TODO: Causes sim lockup
+    assign outbox_write = wb_ctl_sigs[`OUT_IDX] && !stall_i;    // TODO: Causes sim lockup
     assign halt_stall = (wb_ctl_sigs[`OPCODE_IDX] == `HALT_OPCODE);
 
     //fwd assignments
@@ -425,11 +425,17 @@ module core_m #(
         end
     end
 
-    wire [`WORD] r0, r1, r2, r9;
+    wire [`WORD] r0, r1, r2, r3, r4, r5, r6, r7, r8, r9;
 
     assign r0 = regfile.mem[0];
     assign r1 = regfile.mem[1];
     assign r2 = regfile.mem[2];
+    assign r3 = regfile.mem[3];
+    assign r4 = regfile.mem[4];
+    assign r5 = regfile.mem[5];
+    assign r6 = regfile.mem[6];
+    assign r7 = regfile.mem[7];
+    assign r8 = regfile.mem[8];
     assign r9 = regfile.mem[9];
 
 endmodule

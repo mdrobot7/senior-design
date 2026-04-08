@@ -149,7 +149,6 @@ module top_level_m(
     // Core Controller - Fragment FIFO
     wire fragfifo_full;
     wire fragfifo_empty;
-    wire fragfifo_done_mailing;
     wire fragfifo_clear;
 
     busarb_m #(6 + `NUM_CORES, 2, 2) arbiter(
@@ -243,7 +242,6 @@ module top_level_m(
 
         .fragfifo_full_i(fragfifo_full),
         .fragfifo_empty_i(fragfifo_empty),
-        .fragfifo_done_mailing_i(fragfifo_done_mailing),
         .fragfifo_clear_o(fragfifo_clear),
 
         .rast_busy_i(rast_busy),
@@ -255,7 +253,9 @@ module top_level_m(
         .core_jump_i(jump_request),
         .core_jump_o(fds),  // Flushes decode on all cores
         .global_regfile_rs1_data_o(global_r1),
-        .global_regfile_rs2_data_o(global_r2)
+        .global_regfile_rs2_data_o(global_r2),
+
+        .core_inbox_mstream_i(inbox_mstreami)
     );
 
     // TODO: Set SP
@@ -373,43 +373,40 @@ module top_level_m(
     assign buf_index_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] = svc_store_valid;
     assign svc_store_index = buf_index_mstreamo[`STREAM_MO_DATA(`WORD_WIDTH)];
 
-    mem_write_m mem_write(
+    // mem_write_m mem_write(
+    //     .clk_i(clk),
+    //     .nrst_i(nrst),
+    //
+    //     .busy_o(mem_busy),
+    //
+    //     .sstream_i(frag_mstreamo),
+    //     .sstream_o(frag_mstreami),
+    //
+    //     .mport_i(mw_mporti),
+    //     .mport_o(mw_mporto),
+    //
+    //     .fb_i(1'b0)
+    // );
+    assign mw_mporto = 0;
+
+    serializing_mailman_m #(
+        .DEPTH(32)
+    ) mailman (
         .clk_i(clk),
         .nrst_i(nrst),
 
-        .busy_o(mem_busy),
-
         .sstream_i(frag_mstreamo),
         .sstream_o(frag_mstreami),
+        .mstream_i(inbox_mstreami),
+        .mstream_o(inbox_mstreamo),
 
-        .mport_i(mw_mporti),
-        .mport_o(mw_mporto),
+        .empty_o(fragfifo_empty),
+        .full_o(fragfifo_full),
+        .done_mailing_o(),
+        .selind_o(),
 
-        .fb_i(1'b0)
+        .clear_i(fragfifo_clear)
     );
-
-    // TODO: Fix output stream sizes (josh problem)
-    // fragment_fifo_m #(
-    //     .SIZE(`FRAGMENT_WIDTH),
-    //     .DEPTH(10)
-    // ) frag_fifo (
-    //     .clk_i(clk),
-    //     .nrst_i(nrst),
-
-    //     .sstream_i(0),
-    //     .sstream_o(),
-    //     .mstream_i(inbox_mstreami),
-    //     .mstream_o(inbox_mstreamo),
-
-    //     .empty_o(),
-    //     .full_o(),
-    //     .done_mailing_o(),
-    //     .clear_i(fragfifo_clear)
-    // );
-
-    assign fragfifo_empty = 1;
-    assign fragfifo_full = 0;
-    assign fragfifo_done_mailing = 0;
 
     rasterizer_wrapper_m rasterizer(
         .wb_clk_i(wb_clk_i),
