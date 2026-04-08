@@ -55,6 +55,7 @@ module core_m #(
     localparam MAILBOX_WAIT_STATE = 1;
     localparam MAILBOX_TRANSACTION_STATE = 2;
     localparam MAILBOX_WRITE_STATE = 3;
+    wire inbox_read_stall;
     wire inbox_read;
     wire outbox_write;
 
@@ -291,13 +292,14 @@ module core_m #(
     assign mem_ctl_sigs = piped_ctl_sigs[`STAGE_SLICE(MEM_STAGE, `CTL_SIGS_WIDTH)];
     assign mem_inst = piped_inst[`STAGE_SLICE(MEM_STAGE, `WORD_WIDTH)];
     assign mem_alu_result = piped_alu_result[`STAGE_SLICE(MEM_STAGE, `WORD_WIDTH)];
+    assign inbox_read_stall = mem_ctl_sigs[`WB_IS_IN_IDX] && inbox_stall; // Make sure inbox is filled before writeback
 
     //wb assignments
     assign wb_ctl_sigs = piped_ctl_sigs[`STAGE_SLICE(WB_STAGE, `CTL_SIGS_WIDTH)];
     assign wb_inst = piped_inst[`STAGE_SLICE(WB_STAGE, `WORD_WIDTH)];
     assign wb_addr = wb_inst[`REG_DEST_IDX];
-    assign inbox_read = wb_ctl_sigs[`WB_IS_IN_IDX] && !stall_i; // TODO: Causes sim lockup
-    assign outbox_write = wb_ctl_sigs[`OUT_IDX] && !stall_i;    // TODO: Causes sim lockup
+    assign inbox_read = wb_ctl_sigs[`WB_IS_IN_IDX];
+    assign outbox_write = wb_ctl_sigs[`OUT_IDX];
     assign halt_stall = (wb_ctl_sigs[`OPCODE_IDX] == `HALT_OPCODE);
 
     //fwd assignments
@@ -358,7 +360,7 @@ module core_m #(
         else
             fwd_r2_addr = ex_inst[`R2_IDX];
 
-        stall_o = mem_stall | (inbox_read && inbox_stall) | (outbox_write && outbox_stall) | halt_stall;
+        stall_o = mem_stall | inbox_read_stall | (outbox_write && outbox_stall) | halt_stall;
     end
 
     always @ (posedge clk_i, negedge nrst_i) begin : BLOCK2
@@ -425,7 +427,7 @@ module core_m #(
         end
     end
 
-    wire [`WORD] r0, r1, r2, r3, r4, r5, r6, r7, r8, r9;
+    wire [`WORD] r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15;
 
     assign r0 = regfile.mem[0];
     assign r1 = regfile.mem[1];
@@ -437,5 +439,11 @@ module core_m #(
     assign r7 = regfile.mem[7];
     assign r8 = regfile.mem[8];
     assign r9 = regfile.mem[9];
+    assign r10 = regfile.mem[10];
+    assign r11 = regfile.mem[11];
+    assign r12 = regfile.mem[12];
+    assign r13 = regfile.mem[13];
+    assign r14 = regfile.mem[14];
+    assign r15 = regfile.mem[15];
 
 endmodule
