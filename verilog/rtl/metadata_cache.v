@@ -94,29 +94,48 @@ reg sram_rw;              // 0 for write, 1 for read
 reg sram_en;            
 reg [31:0] sram_out_data; // data output from sram
   
-// CF_SRAM_1024x32_macro for rtl sim
-CF_SRAM_1024x32 i_sram (
-  .DO(sram_out_data), 
-  .ScanOutCC(),
+`ifdef SVUNIT
+  sram_1024x32_m sram(
+    .clk_i(clk_i),
+    .addr_i(sram_addr),
+    .read_en_i(sram_rw),
+    .en_i(sram_en),
+    .data_i(sram_in_data),
+    .data_o(sram_out_data)
+  );
+`elsif FPGA
+  sram_1024x32_m sram(
+    .clk_i(clk_i),
+    .addr_i(sram_addr),
+    .read_en_i(sram_rw),
+    .en_i(sram_en),
+    .data_i(sram_in_data),
+    .data_o(sram_out_data)
+  );
+`else // hardening bb (no need for power pins)
+  CF_SRAM_1024x32 i_sram (
+    .DO(sram_out_data), 
+    .ScanOutCC(),
 
-  .CLKin(clk_i), 
-  .AD(sram_addr), 
-  .BEN(32'hFFFFFFFF), 
-  .DI(sram_in_data), 
-  .EN(sram_en), 
-  .R_WB(sram_rw),
+    .CLKin(clk_i), 
+    .AD(sram_addr), 
+    .BEN(32'hFFFFFFFF), 
+    .DI(sram_in_data), 
+    .EN(sram_en), 
+    .R_WB(sram_rw),
 
-  .ScanInCC(1'b0), 
-  .ScanInDL(1'b0), 
-  .ScanInDR(1'b0), 
-  .SM(1'b0), 
-  .TM(1'b0), 
-  .WLBI(1'b0), 
-  .WLOFF(1'b0)
-);
+    .ScanInCC(1'b0), 
+    .ScanInDL(1'b0), 
+    .ScanInDR(1'b0), 
+    .SM(1'b0), 
+    .TM(1'b0), 
+    .WLBI(1'b0), 
+    .WLOFF(1'b0)
+  );
+`endif
 
 integer i;
-always @ (posedge clk_i) begin
+always @ (posedge clk_i, negedge nrst_i) begin
   if (!nrst_i) begin
     for (i = 0; i < BLOCKS; i = i+1) begin
       valid[i] <= 1'b0;

@@ -98,23 +98,8 @@ if { $::env(FP_PDN_CORE_RING) == 1 } {
             -core_offset "$::env(FP_PDN_CORE_RING_VOFFSET) $::env(FP_PDN_CORE_RING_HOFFSET)"
     } else {
         throw APPLICATION "FP_PDN_CORE_RING cannot be used when FP_PDN_MULTILAYER is set to false."
-        # add_pdn_ring \
-        #     -grid stdcell_grid \
-        #     -layers "$::env(FP_PDN_VERTICAL_LAYER)" \
-        #     -widths "$::env(FP_PDN_CORE_RING_VWIDTH)" \
-        #     -spacings "$::env(FP_PDN_CORE_RING_VSPACING)" \
-        #     -core_offset "$::env(FP_PDN_CORE_RING_VOFFSET)"
     }
 }
-
-# add_pdn_stripe \
-#         -grid stdcell_grid \
-#         -layer met4 \
-#         -width 3.1 \
-#         -pitch 30 \
-#         -offset 5 \
-#         -spacing 11.9 \
-#         -starts_with POWER -extend_to_boundary
 
 add_pdn_connect \
         -grid stdcell_grid \

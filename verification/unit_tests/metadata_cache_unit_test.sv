@@ -6,6 +6,7 @@
 `include "spi_mem.v"
 `include "test/clk_rst.v"
 `include "test/spi_chip.v"
+`include "sram_1024x32.v"
 
 module bus_unit_test;
   import svunit_pkg::svunit_testcase;
@@ -450,6 +451,78 @@ module bus_unit_test;
 
       $display("!!!!! Write on Dirty: Actual: 0x%h, Expected: 0x%h", actual_data, write_data);
       `FAIL_UNLESS_EQUAL(actual_data, write_data);
+    `SVTEST_END
+
+    `SVTEST(random)
+      reg [31:0] addr;
+      reg [31:0] write_data;
+      reg [31:0] read_data;
+      reg [31:0] expected_data;
+      reg [31:0] test_word [0:(MEM_SIZE/4)-1];
+      integer i, op;
+
+      $display("\n----- random test start -------");
+
+      // test word memory from spi_chip
+      for (i = 0; i < MEM_SIZE/4; i = i + 1) begin
+        test_word[i] = {
+          spi_chip.mem[(i*4)+3],
+          spi_chip.mem[(i*4)+2],
+          spi_chip.mem[(i*4)+1],
+          spi_chip.mem[(i*4)+0]
+        };
+      end
+
+      for (i = 0; i < 200; i = i + 1) begin
+        addr = ({$random} % (MEM_SIZE/4)) << 2;
+
+        op = {$random} % 2;
+
+        if (op == 0) begin
+          // READ:
+          core_read(addr, read_data);
+
+          // wait till ack low
+          while(s_core_o[`BUS_SO_ACK]) begin
+            @(posedge clk);
+          end
+
+          expected_data = test_word[addr/4];
+          $display("!!!!! RANDOM[%0d] READ addr=0x%h actual=0x%h expected=0x%h",
+                  i, addr, read_data, expected_data);
+          `FAIL_UNLESS_EQUAL(read_data, expected_data);
+        end
+        else begin
+          // WRITE:
+          write_data = {$random};
+          core_write(addr, write_data);
+          test_word[addr/4] = write_data;
+
+          // wait till ack low
+          while(s_core_o[`BUS_SO_ACK]) begin
+            @(posedge clk);
+          end
+
+          // read back
+          core_read(addr, read_data);
+
+          // wait till ack low
+          while(s_core_o[`BUS_SO_ACK]) begin
+            @(posedge clk);
+          end
+
+          $display("!!!!! RANDOM[%0d] WRITE+READ addr=0x%h written=0x%h readback=0x%h",
+                  i, addr, write_data, read_data);
+          `FAIL_UNLESS_EQUAL(read_data, write_data);
+
+          expected_data = {
+            spi_chip.mem[{addr[31:2], 2'b11}],
+            spi_chip.mem[{addr[31:2], 2'b10}],
+            spi_chip.mem[{addr[31:2], 2'b01}],
+            spi_chip.mem[{addr[31:2], 2'b00}]
+          };
+        end
+      end
     `SVTEST_END
 
   `SVUNIT_TESTS_END

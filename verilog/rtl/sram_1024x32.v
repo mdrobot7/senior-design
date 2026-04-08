@@ -22,6 +22,8 @@ module sram_1024x32_m (
     output wire [`WORD] data_o
 );
 
+// Do not use this file for synthesis, we do not want to wrap the bb.
+
 `ifdef FPGA
   rams_sp_wf sram (
     .clk(clk_i),
@@ -32,7 +34,7 @@ module sram_1024x32_m (
     .dout(data_o)
   );
 `elsif SVUNIT
-  `define functional // Use this for RTL tests (we think), disables the $setuphold tests that can't be checked with RTL
+  `define functional // Use this for RTL tests, disables the $setuphold tests that can't be checked with RTL
   CF_SRAM_1024x32_macro sram (
   `ifdef USE_POWER_PINS
     .vpwrac(vpwrac),
@@ -48,25 +50,6 @@ module sram_1024x32_m (
     .R_WB(read_en_i),
 
     // Test signals
-    .WLBI(1'b0),
-    .WLOFF(1'b0),
-    .TM(1'b0),
-    .SM(1'b0),
-    .ScanInCC(1'b0),
-    .ScanInDL(1'b0),
-    .ScanInDR(1'b0),
-    .ScanOutCC()
-  );
-`else // connects to CF_SRAM_1024x32_stub. Do not use this file for synthesis, we do not want to wrap the bb.
-  CF_SRAM_1024x32 sram(
-    .CLKin(clk_i),
-    .DO(data_o),
-    .DI(data_i),
-    .BEN(32'hFFFFFFFF), // Write mask
-    .AD(addr_i),
-    .EN(en_i),
-    .R_WB(read_en_i),
-
     .WLBI(1'b0),
     .WLOFF(1'b0),
     .TM(1'b0),
