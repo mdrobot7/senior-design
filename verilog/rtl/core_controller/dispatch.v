@@ -122,7 +122,6 @@ module dispatch_m #(
 
   always @(posedge clk_i, negedge nrst_i) begin
     if (!nrst_i) begin
-      index_fetch_mstreami <= 0;
       state <= STATE_DISABLED;
       thread_id <= 0;
       core_idx <= 0;

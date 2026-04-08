@@ -913,8 +913,8 @@ module core_controller_m #(
     core_jump_o  = (core_jump_i  ? 1 : 0);
 
     cores_mailed_mask = {`NUM_CORES{1'b1}};
-    for (i = 0; i < `NUM_CORES; i += 1) begin
-      if (core_inbox_mstream_i[i * `STREAM_MIPORT_SIZE(`MAILBOX_STREAM_SIZE`) + `STREAM_MI_READY(`MAILBOX_STREAM_SIZE)])
+    for (i = 0; i < `NUM_CORES; i = i + 1) begin
+      if (core_inbox_mstream_i[i * `STREAM_MIPORT_SIZE(`MAILBOX_STREAM_SIZE) + `STREAM_MI_READY(`MAILBOX_STREAM_SIZE)])
         cores_mailed_mask[i] = 0;
     end
     cores_not_mailed = !cores_mailed_mask;
