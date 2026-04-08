@@ -147,6 +147,12 @@ module user_project_wrapper #(
         .vsync_o(vsync)
     );
 
+    // assign spi1_miso  = io_in[11:8];
+    // assign spi1_dqsmi = io_in[13];
+
+    // assign spi2_miso  = io_in[19:16];
+    // assign spi2_dqsmi = io_in[21];
+
     always @(*) begin
         io_oeb <= 0;
         io_out <= 0;
@@ -159,9 +165,6 @@ module user_project_wrapper #(
         io_out[12]   <= spi1_clk;
         io_out[13]   <= spi1_dqsmo;
 
-        // spi1_miso  <= io_in[11:8];
-        // spi1_dqsmi <= io_in[13];
-
         io_oeb[19:16] <= spi2_sio_en;
         io_oeb[21]    <= spi2_dqsm_en;
 
@@ -169,9 +172,6 @@ module user_project_wrapper #(
         io_out[15]    <= spi2_cs;
         io_out[20]   <= spi2_clk;
         io_out[21]   <= spi2_dqsmo;
-
-        // spi2_miso  <= io_in[19:16];
-        // spi2_dqsmi <= io_in[21];
 
         io_out[26:24] <= red;
         io_out[30:28] <= green;
