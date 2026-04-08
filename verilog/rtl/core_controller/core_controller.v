@@ -621,15 +621,16 @@ module core_controller_m #(
 
   localparam INST_NOP        = 32'h04000000;
 
-  localparam STATE_STOPPED          = 0; // Waiting for program to start from beginning
-  localparam STATE_DISPATCHING      = 1; // Dispatching jobs
-  localparam STATE_DISPATCH_DELAY   = 2;
-  localparam STATE_VERTEX_SHADING   = 3;
-  localparam STATE_FRAGMENT_SHADING = 4;
-  localparam STATE_GPGPU_COMPUTE    = 5;
-  localparam STATE_PAUSED           = 6; // Manual pause by management core or step-through
-  localparam STATE_DONE             = 7;
-  localparam STATE_STOPPING         = 8;
+  localparam STATE_STOPPED               = 0; // Waiting for program to start from beginning
+  localparam STATE_DISPATCHING           = 1; // Dispatching jobs
+  localparam STATE_DISPATCH_DELAY        = 2;
+  localparam STATE_VERTEX_SHADING        = 3;
+  localparam STATE_FRAGMENT_SHADING      = 4;
+  localparam STATE_FRAGMENT_SHADING_LAST = 5;
+  localparam STATE_GPGPU_COMPUTE         = 6;
+  localparam STATE_PAUSED                = 7; // Manual pause by management core or step-through
+  localparam STATE_DONE                  = 8;
+  localparam STATE_STOPPING              = 9;
 
   reg [3:0] state;
 
@@ -739,16 +740,17 @@ module core_controller_m #(
   assign state_o  = state;
 
   wire is_rasterization = (dispatch_ctrl_i == `CORE_CTRL_DISPATCH_INDEX);
-  wire should_dispatch  = (dispatch_ctrl_i != `CORE_CTRL_DISPATCH_DISABLE && next_prog != STATE_FRAGMENT_SHADING);
+  wire should_dispatch  = (dispatch_ctrl_i != `CORE_CTRL_DISPATCH_DISABLE && next_prog != STATE_FRAGMENT_SHADING && next_prog != STATE_FRAGMENT_SHADING_LAST);
   reg  dispatched;
 
   reg [`NUM_CORES-1:0] cores_mailed_mask;
   reg cores_not_mailed;
   reg cores_partially_mailed;
   reg cores_all_mailed;
+  reg [`NUM_CORES-1:0] cores_mailed_mask_latch;
 
-  wire vertshade_deadlock = (state == STATE_VERTEX_SHADING && fragfifo_full_i);
-  wire fragshade_deadlock = (state == STATE_FRAGMENT_SHADING && vertorder_empty_i && !vertcont_busy_i && !rast_busy_i && fragfifo_empty_i && !cores_all_mailed);
+  wire vertshade_deadlock = (fragfifo_full_i);
+  wire fragshade_deadlock = (vertorder_empty_i && !vertcont_busy_i && !rast_busy_i && fragfifo_empty_i && !cores_all_mailed);
 
   always @(posedge clk_i, negedge nrst_i) begin
     if (!nrst_i) begin : RESET
@@ -762,6 +764,7 @@ module core_controller_m #(
       state         <= STATE_STOPPED;
       step_handled  <= 0;
       dispatched    <= 0;
+      cores_mailed_mask_latch <= 0;
     end
     else if (clk_i) begin
       if (job_done_clr_i)
@@ -802,7 +805,7 @@ module core_controller_m #(
             state <= cur_prog;
           end
         end
-        STATE_VERTEX_SHADING, STATE_FRAGMENT_SHADING, STATE_GPGPU_COMPUTE: begin
+        STATE_VERTEX_SHADING, STATE_FRAGMENT_SHADING, STATE_FRAGMENT_SHADING_LAST, STATE_GPGPU_COMPUTE: begin
           instfetch_enable <= 0;
           case (cmd_i)
             `CORE_CTRL_CMD_STOP:
@@ -810,7 +813,9 @@ module core_controller_m #(
             `CORE_CTRL_CMD_PAUSE:
               state <= STATE_PAUSED;
             `CORE_CTRL_CMD_RUN: begin
-              if (instfetch_prog_done || vertshade_deadlock || fragshade_deadlock)
+              if (instfetch_prog_done ||
+                  (state == STATE_VERTEX_SHADING && vertshade_deadlock) ||
+                  (state == STATE_FRAGMENT_SHADING && fragshade_deadlock))
                 state <= STATE_DONE;
               else
                 instfetch_enable <= 1;
@@ -841,6 +846,8 @@ module core_controller_m #(
           job_done_o <= 1;
           if (dispatch_model_done && next_prog == STATE_STOPPING)
             batch_done_o <= 1;
+
+          cores_mailed_mask_latch <= cores_mailed_mask;
 
           cur_prog <= next_prog;
           if (pause_at_halt_i || next_prog == STATE_STOPPING)
@@ -882,6 +889,8 @@ module core_controller_m #(
       core_reset_o = 0;
     else if (state == STATE_DISPATCHING)
       core_reset_o = core_enable_i;
+    else if (state == STATE_FRAGMENT_SHADING_LAST)
+      core_reset_o = core_enable_i & cores_mailed_mask_latch;
     else if (!dispatched)
       // If the dispatcher isn't used, ignore it
       core_reset_o = core_enable_i;
@@ -900,6 +909,7 @@ module core_controller_m #(
       core_stall_o = {`NUM_CORES{1'b1}};
     else
       core_stall_o = 0;
+
     core_jump_o  = (core_jump_i  ? 1 : 0);
 
     cores_mailed_mask = {`NUM_CORES{1'b1}};
@@ -921,6 +931,8 @@ module core_controller_m #(
     else begin
       if (dispatch_model_done && vertorder_empty_i && !vertcont_busy_i && !rast_busy_i && fragfifo_empty_i && cores_not_mailed)
         next_prog = STATE_STOPPING;
+      else if (fragshade_deadlock && dispatch_model_done)
+        next_prog = STATE_FRAGMENT_SHADING_LAST;
       else if ((cores_all_mailed || dispatch_model_done) && state != STATE_STOPPED)
         next_prog = STATE_FRAGMENT_SHADING;
       else
@@ -933,7 +945,7 @@ module core_controller_m #(
         instfetch_prog_entry = pc_gpgpu_compute_i;
       STATE_VERTEX_SHADING:
         instfetch_prog_entry = pc_vertex_shading_i;
-      STATE_FRAGMENT_SHADING:
+      STATE_FRAGMENT_SHADING, STATE_FRAGMENT_SHADING_LAST:
         instfetch_prog_entry = pc_fragment_shading_i;
       default:
         instfetch_prog_entry = 0;
