@@ -160,6 +160,10 @@ module rasterizer_m(
 
     wire bary_check_busy;
 
+    wire normal_busy;
+    wire normal_valid;
+    wire signed [`WORD] nx, ny, nz;
+
     reg [15:0] frags_in_flight; // TODO: perhaps smaller
 
     reg [`SC_WIDTH - 1:0] posx;
@@ -189,6 +193,11 @@ module rasterizer_m(
 
     wire [`STREAM_MIPORT(`RAST_DT_OUT_WIDTH)] filt_depth_streami;
     wire [`STREAM_MOPORT(`RAST_DT_OUT_WIDTH)] filt_depth_streamo;
+
+    wire [`STREAM_SIPORT(2 * `DIVIDER_WIDTH)] normal_div_si;
+    wire [`STREAM_SOPORT(2 * `DIVIDER_WIDTH)] normal_div_so;
+    wire [`STREAM_MIPORT(`DIVIDER_WIDTH)] normal_div_mi;
+    wire [`STREAM_MOPORT(`DIVIDER_WIDTH)] normal_div_mo;
 
     wire [`STREAM_SIPORT(2 * `DIVIDER_WIDTH)] bary_div_si;
     wire [`STREAM_SOPORT(2 * `DIVIDER_WIDTH)] bary_div_so;
@@ -316,7 +325,38 @@ module rasterizer_m(
         bary_busy ||
         bary_check_busy ||
         depth_busy ||
+        normal_busy ||
         (frags_in_flight != 0); // TODO: make an busy and flushed different
+
+    normal_pipe_m normal_pipe(
+        .clk_i(clk_i),
+        .nrst_i(nrst_i),
+
+        .run_i(run_i),
+        .discard_i(bary_discard),
+        .busy_o(normal_busy),
+
+        .v0x_i(v0x_i),
+        .v0y_i(v0y_i),
+        .v0z_i(v0z_i),
+        .v1x_i(v1x_i),
+        .v1y_i(v1y_i),
+        .v1z_i(v1z_i),
+        .v2x_i(v2x_i),
+        .v2y_i(v2y_i),
+        .v2z_i(v2z_i),
+
+        .div_mstream_i(normal_div_so),
+        .div_mstream_o(normal_div_si),
+
+        .div_sstream_i(normal_div_mo),
+        .div_sstream_o(normal_div_mi),
+
+        .valid_o(normal_valid),
+        .nx_o(nx),
+        .ny_o(ny),
+        .nz_o(nz)
+    );
 
     bary_pipe_m bary_pipe(
         .clk_i(clk_i),
@@ -442,18 +482,23 @@ module rasterizer_m(
 
         .tex_addr_i(tex_addr_i),
         .tex_width_i(tex_width_i),
-        .tex_height_i(tex_height_i)
+        .tex_height_i(tex_height_i),
+        
+        .normal_valid_i(normal_valid),
+        .nx_i(nx),
+        .ny_i(ny),
+        .nz_i(nz)
     );
 
     shared_div_rasterizer_m divider(
         .clk_i(clk_i),
         .nrst_i(nrst_i),
 
-        .sstreams_i({ wdiv_div_si, bary_div_si, wavg0_div_si, wavg1_div_si }),
-        .sstreams_o({ wdiv_div_so, bary_div_so, wavg0_div_so, wavg1_div_so }),
+        .sstreams_i({ wdiv_div_si, normal_div_si, bary_div_si, wavg0_div_si, wavg1_div_si }),
+        .sstreams_o({ wdiv_div_so, normal_div_so, bary_div_so, wavg0_div_so, wavg1_div_so }),
         
-        .mstreams_i({ wdiv_div_mi, bary_div_mi, wavg0_div_mi, wavg1_div_mi }),
-        .mstreams_o({ wdiv_div_mo, bary_div_mo, wavg0_div_mo, wavg1_div_mo })
+        .mstreams_i({ wdiv_div_mi, normal_div_mi, bary_div_mi, wavg0_div_mi, wavg1_div_mi }),
+        .mstreams_o({ wdiv_div_mo, normal_div_mo, bary_div_mo, wavg0_div_mo, wavg1_div_mo })
     );
 
 endmodule

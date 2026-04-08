@@ -16,7 +16,12 @@ module tex_sample_m(
 
     input  wire [`BUS_ADDR_PORT] tex_addr_i,
     input  wire [`TEX_DIM] tex_width_i,
-    input  wire [`TEX_DIM] tex_height_i
+    input  wire [`TEX_DIM] tex_height_i,
+
+    input  wire           normal_valid_i,
+    input  signed [`WORD] nx_i,
+    input  signed [`WORD] ny_i,
+    input  signed [`WORD] nz_i
 );
 
     `DL_DEFINE(logger, "tex_sample_m", `DL_MAGENTA, 1);
@@ -40,7 +45,7 @@ module tex_sample_m(
     assign mstream_o[`STREAM_MO_VALID(`FRAGMENT_WIDTH)] = out_ready;
     assign mstream_o[`STREAM_MO_DATA(`FRAGMENT_WIDTH)]  = {
         u1_i, u0_i,
-        32'h00000000, 32'h00000000, 32'h00000000,
+        nz_i, ny_i, nx_i,
         posx_ext, posy_ext,
         color_ext
     };
@@ -62,7 +67,7 @@ module tex_sample_m(
         else if (clk_i) begin
             case (state)
                 0: begin
-                    if (sstream_i[`STREAM_SI_VALID(`RAST_DT_OUT_WIDTH)]) begin
+                    if (sstream_i[`STREAM_SI_VALID(`RAST_DT_OUT_WIDTH)] && normal_valid_i) begin
                         state <= 1;
 
                         { posx, posy, tx, ty, depth } = sstream_i[`STREAM_SI_DATA(`RAST_DT_OUT_WIDTH)];

@@ -73,6 +73,8 @@
 -v $(USER_PROJECT_VERILOG)/rtl/math/shared_div.v
 -v $(USER_PROJECT_VERILOG)/rtl/math/shared_div_rasterizer.v
 -v $(USER_PROJECT_VERILOG)/rtl/math/full_adder.v
+-v $(USER_PROJECT_VERILOG)/rtl/math/addsub.v
+-v $(USER_PROJECT_VERILOG)/rtl/math/sqrt.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/rasterizer.v
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/rasterizer_wrapper.v
@@ -85,6 +87,7 @@
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/wavg_pipe2.v
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/depth_test.v
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/tex_sample.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/normal_pipe.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/spi_mem.v
 -v $(USER_PROJECT_VERILOG)/rtl/vertex_order_buffer.v
