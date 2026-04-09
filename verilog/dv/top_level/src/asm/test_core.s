@@ -33,14 +33,14 @@ clrp (111)
 () sub $r10, $r9, $r0
 () sub $r10, $r0, $r9
 () mul $r11, $r9, $r4
-() lli $r9, 4.
+() lui $r9, 4
 () lli $r11, 1234
 () mul $r11, $r9, $r0
 () lui $r10, 0xFFFF
-() lli $r10, -3.140000
+() lli $r10, -0.1400000
 () mul $r11, $r9, $r10
-() muli $r11, $r11, -3.
-() muli $r11, $r11, -1.513000
+() muli $r11, $r11, 0
+() muli $r11, $r11, -0.5130000
 () muli $r11, $r11, 1/2
 () and $r12, $r6, $r11
 () andi $r12, $r7, 0b101
@@ -79,9 +79,9 @@ clrp (111)
 
 
 ; MAC
-() li $r9, 4.123000
+() li $r9, 4.1230000
 () li $r10, 100.
-() li $r11, 20.195345
+() li $r11, 20.1953450
 () mac $r9, $r10
 () macrd $r12
 () maccl
@@ -174,7 +174,7 @@ skip3:
 () scalev3 $r12, $r7, $g8
 () li $r15, 0x12345678
 () li $r15, 25.
-() li $r15, 67.124000
+() li $r15, 67.1240000
 () li $r15, -15/2
 () trunc $r15, $r15
 () mov $r10, $r9
@@ -204,7 +204,7 @@ clrp (111)
 
 
 ; Conditional: if (r8 == r9 || r9 == r10) {}
-() addi $r8, $r0, 2.500000
+() addi $r8, $r0, 0.5000000
 () addi $r9, $r0, 7
 () addi $r10, $r10, 7
 
@@ -232,7 +232,7 @@ exit:
     (000) jump die
 
 procedure:
-    () addi $r8, $r8, 3.
+    () lui $r8, 3
     () mul $r8, $r8, $r8
     (110) jal nested_procedure ; Skipped
     () jal nested_procedure

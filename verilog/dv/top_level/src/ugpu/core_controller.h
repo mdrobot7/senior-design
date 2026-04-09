@@ -18,7 +18,7 @@
 #define CC_CTRL_DISPATCH_INDEX  CC_CTRL_DISPATCH(0x2)
 #define CC_CTRL_HALTPAUSE       (1UL << 4)
 typedef union {
-  struct {
+  struct __packed {
     uint32_t CMD       : 2;
     uint32_t DISPATCH  : 2;
     uint32_t HALTPAUSE : 1;
@@ -39,7 +39,7 @@ typedef union {
 #define CC_STATE_STATE_DONE             CC_STATE_STATE(0x7)
 #define CC_STATE_STATE_STOPPING         CC_STATE_STATE(0x8)
 typedef union {
-  struct {
+  struct __packed {
     uint32_t STATE : 4;
     uint32_t       : 28;
   } bit;
@@ -52,7 +52,7 @@ typedef union {
 #define CC_COREEN_EN_ENABLE (1UL)
 #define CC_COREEN_EN_DISALE (0UL)
 typedef union {
-  struct {
+  struct __packed {
     uint32_t ENABLE : 6;
     uint32_t        : 26;
   } bit;
@@ -62,7 +62,7 @@ typedef union {
 #define CC_INTMASK_JOBDONE   (1UL << 0)
 #define CC_INTMASK_BATCHDONE (1UL << 1)
 typedef union {
-  struct {
+  struct __packed {
     uint32_t JOBDONE   : 1;
     uint32_t BATCHDONE : 1;
     uint32_t           : 30;
@@ -73,7 +73,7 @@ typedef union {
 #define CC_INTFLAG_JOBDONE   (1UL << 0)
 #define CC_INTFLAG_BATCHDONE (1UL << 1)
 typedef union {
-  struct {
+  struct __packed {
     uint32_t JOBDONE   : 1;
     uint32_t BATCHDONE : 1;
     uint32_t           : 30;
@@ -85,7 +85,7 @@ typedef union {
 #define CC_COMPPC_ADDR_Msk    (0xFFFUL << CC_COMPPC_ADDR_Pos)
 #define CC_COMPPC_ADDR(value) (CC_COMPPC_ADDR_Msk & ((value) << CC_COMPPC_ADDR_Pos))
 typedef union {
-  struct {
+  struct __packed {
     uint32_t ADDR : 12;
     uint32_t      : 20;
   } bit;
@@ -96,7 +96,7 @@ typedef union {
 #define CC_VSHADEPC_ADDR_Msk    (0xFFFUL << CC_VSHADEPC_ADDR_Pos)
 #define CC_VSHADEPC_ADDR(value) (CC_VSHADEPC_ADDR_Msk & ((value) << CC_VSHADEPC_ADDR_Pos))
 typedef union {
-  struct {
+  struct __packed {
     uint32_t ADDR : 12;
     uint32_t      : 20;
   } bit;
@@ -107,7 +107,7 @@ typedef union {
 #define CC_FSHADEPC_ADDR_Msk    (0xFFFUL << CC_FSHADEPC_ADDR_Pos)
 #define CC_FSHADEPC_ADDR(value) (CC_FSHADEPC_ADDR_Msk & ((value) << CC_FSHADEPC_ADDR_Pos))
 typedef union {
-  struct {
+  struct __packed {
     uint32_t ADDR : 12;
     uint32_t      : 20;
   } bit;
@@ -118,7 +118,7 @@ typedef union {
 #define CC_INDEXADDR_ADDR_Msk    (0xFFFFFFFFUL << CC_INDEXADDR_ADDR_Pos)
 #define CC_INDEXADDR_ADDR(value) (CC_INDEXADDR_ADDR_Msk & ((value) << CC_INDEXADDR_ADDR_Pos))
 typedef union {
-  struct {
+  struct __packed {
     uint32_t ADDR : 32;
   } bit;
   uint32_t reg;
@@ -128,7 +128,7 @@ typedef union {
 #define CC_JOBS_JOBS_Msk    (0xFFFFFFFFUL << CC_JOBS_JOBS_Pos)
 #define CC_JOBS_JOBS(value) (CC_JOBS_JOBS_Msk & ((value) << CC_JOBS_JOBS_Pos))
 typedef union {
-  struct {
+  struct __packed {
     uint32_t JOBS : 32;
   } bit;
   uint32_t reg;
@@ -136,13 +136,13 @@ typedef union {
 
 #define CC_GLOBAL_REGFILE_SIZE (48UL)
 typedef union {
-  struct {
+  struct __packed {
     uint32_t VAL : 32;
   } bit;
   uint32_t reg;
 } CC_GR_t;
 
-typedef struct {
+typedef struct __packed {
   CC_CTRL_t CTRL;
   CC_STATE_t STATE;
   CC_COREEN_t COREEN;
@@ -156,7 +156,7 @@ typedef struct {
   CC_GR_t GR[CC_GLOBAL_REGFILE_SIZE];
 } CC_t;
 
-#define CC_IMEM_ADDR (0x00000000UL)
+#define CC_IMEM_ADDR (0x33000000UL)
 #define CC_IMEM_SIZE (0x00001000UL)
 #define CC_IMEM      ((void *) CC_IMEM_ADDR)
 

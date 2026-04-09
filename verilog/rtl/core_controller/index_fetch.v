@@ -31,6 +31,9 @@ module index_fetch_m #(
   input  wire         clear_i,             // 1: Clear index cache. enable_i must be 0 and output stream must be inactive.
   output wire         clear_done_o,        // 1: Index cache cleared.
 
+  output wire full_o,
+  output wire empty_o,
+
   // Index output stream
   input  wire [`STREAM_MIPORT(`WORD_WIDTH)] mstream_i,
   output wire [`STREAM_MOPORT(`WORD_WIDTH)] mstream_o
@@ -66,6 +69,9 @@ module index_fetch_m #(
   assign fifo_mstreami = clear_i ? mstreami : mstream_i;
   assign mstream_o     = clear_i ? 0        : fifo_mstreamo;
   assign clear_done_o  = fifo_empty;
+
+  assign full_o  = fifo_full;
+  assign empty_o = fifo_empty;
 
   reg [`WORD] index_buffer_offset;
   reg [2:0]   state;

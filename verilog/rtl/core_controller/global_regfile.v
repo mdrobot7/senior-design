@@ -19,7 +19,7 @@ module global_regfile_m (
     output reg [`WORD] r2_data_o
 );
     localparam HIGHEST_ADDR = `NUM_LOCAL_REGS + `NUM_GLOBAL_REGS;
-    reg [`WORD] mem [HIGHEST_ADDR-1:`NUM_GLOBAL_REGS];
+    reg [`WORD] mem [HIGHEST_ADDR-1:`NUM_LOCAL_REGS];
 
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin : RESET
@@ -36,11 +36,11 @@ module global_regfile_m (
     end
 
     always @(*) begin : READ
-        if (r1_addr_i >= `NUM_LOCAL_REGS)
+        if (r1_addr_i >= `NUM_LOCAL_REGS && r1_addr_i != `NUM_GLOBAL_REGS)
           r1_data_o = mem[r1_addr_i];
         else
           r1_data_o = 0;
-        if (r2_addr_i >= `NUM_LOCAL_REGS)
+        if (r2_addr_i >= `NUM_LOCAL_REGS && r2_addr_i != `NUM_GLOBAL_REGS)
           r2_data_o = mem[r2_addr_i];
         else
           r2_data_o = 0;

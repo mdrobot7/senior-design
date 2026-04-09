@@ -6,6 +6,8 @@ module vertex_reorder_controller_m #(
     input  wire clk_i,
     input  wire nrst_i,
 
+    output reg  busy_o,
+
     input  wire [`STREAM_SIPORT(INPUT_INDEX_WIDTH)] order_sstream_i,
     output wire [`STREAM_SOPORT(INPUT_INDEX_WIDTH)] order_sstream_o,
 
@@ -13,7 +15,10 @@ module vertex_reorder_controller_m #(
     output wire [(`STREAM_SOPORT_SIZE(`SHADED_VERTEX_WIDTH) * INPUT_COUNT) - 1:0] sstreams_o,
 
     output wire [`STREAM_MIPORT(`SHADED_VERTEX_WIDTH * 3)] mstream_i,
-    output wire [`STREAM_MOPORT(`SHADED_VERTEX_WIDTH * 3)] mstream_o
+    output wire [`STREAM_MOPORT(`SHADED_VERTEX_WIDTH * 3)] mstream_o,
+
+    output reg [`SHADED_VERTEX] svc_store_vertex_o,
+    output reg svc_store_valid_o
 );
 
     wire [`STREAM_SIPORT(`SHADED_VERTEX_WIDTH)] sstreamsi [INPUT_COUNT - 1:0];
@@ -111,6 +116,19 @@ module vertex_reorder_controller_m #(
                 end
             endcase
         end
+    end
+
+    always @(*) begin
+        svc_store_vertex_o <= in_vert;
+
+        if (in_valid && current_vertex != VERT_DONE) begin
+            svc_store_valid_o <= 1;
+        end
+        else begin
+            svc_store_valid_o <= 0;
+        end
+
+        busy_o <= current_vertex != VERT_V0;
     end
 
 endmodule

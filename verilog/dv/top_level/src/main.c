@@ -9,13 +9,9 @@
 void main() {
   init();
   demos_init();
-  duwe_cube();
+  duwe_plane();
 
-  while (1) {
-    reg_gpio_out = 1; // LED on
-    delay_ms(1000);
+  // delay_ms(50);
 
-    reg_gpio_out = 0; // LED off
-    delay_ms(1000);
-  }
+  reg_gpio_out = 1; // LED on
 }

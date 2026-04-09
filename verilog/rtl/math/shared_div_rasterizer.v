@@ -11,13 +11,13 @@ module shared_div_rasterizer_m(
 
 `define FPGA
 
-localparam FIFO_SIZE = 10;
+localparam FIFO_SIZE = 2;
 
 wire [`STREAM_MIPORT_SIZE(`DIVIDER_WIDTH) * `DIVIDER_USERS - 1:0] mstreamsi;
 wire [`STREAM_MOPORT_SIZE(`DIVIDER_WIDTH) * `DIVIDER_USERS - 1:0] mstreamso;
 
 `ifdef FPGA
-    shared_div_m #(`DIVIDER_WIDTH, 42'b00_00001000_10010010_01010010_10010101_01010101, `DIVIDER_USERS) shared_div(
+    shared_div_m #(`DIVIDER_WIDTH, 42'b10_00100100_10010101_01010101_01010111_11111111, `DIVIDER_USERS) shared_div(
         .clk_i(clk_i),
         .nrst_i(nrst_i),
 
@@ -40,21 +40,27 @@ wire [`STREAM_MOPORT_SIZE(`DIVIDER_WIDTH) * `DIVIDER_USERS - 1:0] mstreamso;
     );
 `endif
 
-generate if (FIFO_SIZE > 0) begin
-    genvar i;
+generate
+    if (FIFO_SIZE > 0) begin
+        genvar i;
 
-    for (i = 0; i < `DIVIDER_USERS; i = i + 1) begin
-        stream_fifo_m #(`DIVIDER_WIDTH, FIFO_SIZE) fifo(
-            .clk_i(clk_i),
-            .nrst_i(nrst_i),
+        for (i = 0; i < `DIVIDER_USERS; i = i + 1) begin
+            stream_fifo_m #(`DIVIDER_WIDTH, FIFO_SIZE) fifo(
+                .clk_i(clk_i),
+                .nrst_i(nrst_i),
 
-            .sstream_i(mstreamso[`STREAM_MOPORT_SIZE(`DIVIDER_WIDTH) * i+:`STREAM_MOPORT_SIZE(`DIVIDER_WIDTH)]),
-            .sstream_o(mstreamsi[`STREAM_MIPORT_SIZE(`DIVIDER_WIDTH) * i+:`STREAM_MIPORT_SIZE(`DIVIDER_WIDTH)]),
+                .sstream_i(mstreamso[`STREAM_MOPORT_SIZE(`DIVIDER_WIDTH) * i+:`STREAM_MOPORT_SIZE(`DIVIDER_WIDTH)]),
+                .sstream_o(mstreamsi[`STREAM_MIPORT_SIZE(`DIVIDER_WIDTH) * i+:`STREAM_MIPORT_SIZE(`DIVIDER_WIDTH)]),
 
-            .mstream_i(mstreams_i[`STREAM_MIPORT_SIZE(`DIVIDER_WIDTH) * i+:`STREAM_MIPORT_SIZE(`DIVIDER_WIDTH)]),
-            .mstream_o(mstreams_o[`STREAM_MOPORT_SIZE(`DIVIDER_WIDTH) * i+:`STREAM_MOPORT_SIZE(`DIVIDER_WIDTH)])
-        );
+                .mstream_i(mstreams_i[`STREAM_MIPORT_SIZE(`DIVIDER_WIDTH) * i+:`STREAM_MIPORT_SIZE(`DIVIDER_WIDTH)]),
+                .mstream_o(mstreams_o[`STREAM_MOPORT_SIZE(`DIVIDER_WIDTH) * i+:`STREAM_MOPORT_SIZE(`DIVIDER_WIDTH)])
+            );
+        end
     end
-end endgenerate
+    else begin
+        assign mstreamsi = mstreams_i;
+        assign mstreams_o = mstreamso;
+    end
+endgenerate
 
 endmodule

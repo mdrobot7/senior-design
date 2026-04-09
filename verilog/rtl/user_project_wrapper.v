@@ -78,22 +78,19 @@ module user_project_wrapper #(
     output wire [2:0] user_irq
 );
 
-    assign wbs_ack_o = 0;
-    assign wbs_dat_o = 0;
-
     assign la_data_out = 0;
 
     assign user_irq = 0;
 
     wire clk, nrst;
     assign clk = wb_clk_i;
-    assign nrst = la_data_in[0];
+    assign nrst = !wb_rst_i;
 
     wire spi1_clk;
     wire spi1_cs;
     wire [3:0] spi1_mosi;
-    reg  [3:0] spi1_miso;
-    reg  spi1_dqsmi;
+    wire [3:0] spi1_miso;
+    wire spi1_dqsmi;
     wire spi1_dqsmo;
     wire [3:0] spi1_sio_en;
     wire spi1_dqsm_en;
@@ -101,11 +98,11 @@ module user_project_wrapper #(
     wire spi2_clk;
     wire spi2_cs;
     wire [3:0] spi2_mosi;
-    reg  [3:0] spi2_miso;
-    reg  spi2_dqsmi;
+    wire [3:0] spi2_miso;
+    wire spi2_dqsmi;
     wire spi2_dqsmo;
     wire [3:0] spi2_sio_en;
-wire spi2_dqsm_en;
+    wire spi2_dqsm_en;
 
     wire [2:0] red;
     wire [2:0] green;
@@ -150,6 +147,12 @@ wire spi2_dqsm_en;
         .vsync_o(vsync)
     );
 
+    // assign spi1_miso  = io_in[11:8];
+    // assign spi1_dqsmi = io_in[13];
+
+    // assign spi2_miso  = io_in[19:16];
+    // assign spi2_dqsmi = io_in[21];
+
     always @(*) begin
         io_oeb <= 0;
         io_out <= 0;
@@ -162,19 +165,13 @@ wire spi2_dqsm_en;
         io_out[12]   <= spi1_clk;
         io_out[13]   <= spi1_dqsmo;
 
-        spi1_miso  <= io_in[11:8];
-        spi1_dqsmi <= io_in[13];
-
         io_oeb[19:16] <= spi2_sio_en;
-        io_oeb[13]    <= spi2_dqsm_en;
+        io_oeb[21]    <= spi2_dqsm_en;
 
         io_out[19:16] <= spi2_mosi;
         io_out[15]    <= spi2_cs;
         io_out[20]   <= spi2_clk;
         io_out[21]   <= spi2_dqsmo;
-
-        spi2_miso  <= io_in[19:16];
-        spi2_dqsmi <= io_in[21];
 
         io_out[26:24] <= red;
         io_out[30:28] <= green;

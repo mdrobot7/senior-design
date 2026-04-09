@@ -1,3 +1,5 @@
+`default_nettype none
+
 module top_level_m(
     input  wire wb_clk_i,
     input  wire wb_rst_i,
@@ -39,7 +41,7 @@ module top_level_m(
     assign clk = wb_clk_i;
     assign nrst = !wb_rst_i;
 
-    localparam integer NUM_ADDRS = 2;
+    localparam integer NUM_ADDRS = 5;
     wire [31:0] wbs_datN_o [NUM_ADDRS:0];
     wire wbs_ackN_o [NUM_ADDRS-1:0];
     reg wbs_stbN_i [NUM_ADDRS-1:0];
@@ -56,8 +58,11 @@ module top_level_m(
         wbs_dat_o = 0;
         wbs_ack_o = 0;
 
-        `address_map(0, 32'h38000000, 32'hF8000000);
-        `address_map(1, 32'h30000000, 32'hF8000000);
+        `address_map(0, 32'h30000000, 32'hFF000000); // VGA
+        `address_map(1, 32'h31000000, 32'hFF000000); // Rasterizer
+        `address_map(2, 32'h32000000, 32'hFF000000); // Core Control
+        `address_map(3, 32'h33000000, 32'hFF000000); // Core IMem
+        `address_map(4, 32'h34000000, 32'hFF000000); // QSPI Mem Data (bridge)
     end
 
     wire [`BUS_MIPORT] vga_mporti;
@@ -69,8 +74,17 @@ module top_level_m(
     wire [`BUS_MIPORT] rast2_mporti;
     wire [`BUS_MOPORT] rast2_mporto;
 
-    wire [`BUS_MIPORT] rast3_mporti;
-    wire [`BUS_MOPORT] rast3_mporto;
+    wire [(`BUS_MIPORT_SIZE * `NUM_CORES)-1:0] core_mporti;
+    wire [(`BUS_MOPORT_SIZE * `NUM_CORES)-1:0] core_mporto;
+
+    wire [`BUS_MIPORT] cc_mporti;
+    wire [`BUS_MOPORT] cc_mporto;
+
+    wire [`BUS_MIPORT] mw_mporti;
+    wire [`BUS_MOPORT] mw_mporto;
+
+    wire [`BUS_MIPORT] bridge_mporti;
+    wire [`BUS_MOPORT] bridge_mporto;
 
     wire [`BUS_SIPORT] spi1_sporti;
     wire [`BUS_SOPORT] spi1_sporto;
@@ -78,52 +92,71 @@ module top_level_m(
     wire [`BUS_SIPORT] spi2_sporti;
     wire [`BUS_SOPORT] spi2_sporto;
 
-    reg  [`WORD] inst;
+    // Core Controller - Cores
+    wire [`WORD]          inst;
+    wire [`WORD]          global_r1, global_r2;
+    wire [`NUM_CORES-1:0] jump_request;
+    wire                  fds;
+    wire [`NUM_CORES-1:0] stalli;
+    wire [`NUM_CORES-1:0] stallo;
+    wire [`NUM_CORES-1:0] nsync_rst;
 
-    reg  [`WORD] global_r1, global_r2;
+    wire [(`STREAM_MIPORT_SIZE(`MAILBOX_STREAM_SIZE) * `NUM_CORES)-1:0] inbox_mstreami;
+    wire [(`STREAM_MOPORT_SIZE(`MAILBOX_STREAM_SIZE) * `NUM_CORES)-1:0] inbox_mstreamo;
 
-    wire jump_request;
-    reg  fds;
+    wire [(`STREAM_MIPORT_SIZE(`MAILBOX_STREAM_SIZE) * `NUM_CORES)-1:0] outbox_mstreami;
+    wire [(`STREAM_MOPORT_SIZE(`MAILBOX_STREAM_SIZE) * `NUM_CORES)-1:0] outbox_mstreamo;
 
-    reg  stalli;
-    wire stallo;
+    wire [(`STREAM_MIPORT_SIZE(`SHADED_VERTEX_WIDTH) * `NUM_CORES)-1:0] core_deser_mstreami;
+    wire [(`STREAM_MOPORT_SIZE(`SHADED_VERTEX_WIDTH) * `NUM_CORES)-1:0] core_deser_mstreamo;
 
-    reg nsync_rst;
+    wire         svc_clear;
+    wire [`WORD] svc_test_index;
+    wire         svc_test_valid;
+    wire         svc_test_found;
 
-    wire [`STREAM_MIPORT(`MAILBOX_STREAM_SIZE)] cc_mstreami;
-    reg  [`STREAM_MOPORT(`MAILBOX_STREAM_SIZE)] cc_mstreamo;
+    wire [`SHADED_VERTEX] svc_store_vertex;
+    wire [`WORD]          svc_store_index;
+    wire                  svc_store_valid;
 
-    wire [`STREAM_MIPORT(`MAILBOX_STREAM_SIZE)] core_mstreami;
-    wire [`STREAM_MOPORT(`MAILBOX_STREAM_SIZE)] core_mstreamo;
+    wire vob_full;
+    wire vob_empty;
+    wire vob_clear;
 
-    wire [`STREAM_MIPORT(`SHADED_VERTEX_WIDTH)] core_deser_mstreami;
-    wire [`STREAM_MOPORT(`SHADED_VERTEX_WIDTH)] core_deser_mstreamo;
-
-    reg svc_clear;
-
-    reg  [`WORD] test_index;
-    reg  test_valid;
-    wire test_found;
-
-    reg  [`SHADED_VERTEX] store_vertex;
-    reg  [`WORD] store_index;
-    reg  store_valid;
+    wire rast_busy;
+    wire mem_busy;
+    wire vrc_busy;
 
     wire [`STREAM_MIPORT(`SHADED_VERTEX_WIDTH)] svc_mstreami;
     wire [`STREAM_MOPORT(`SHADED_VERTEX_WIDTH)] svc_mstreamo;
+    wire [`STREAM_MIPORT(`SHADED_VERTEX_WIDTH)] svb_mstreami;
+    wire [`STREAM_MOPORT(`SHADED_VERTEX_WIDTH)] svb_mstreamo;
 
-    wire [`STREAM_MIPORT(1)] order_mstreami;
-    wire [`STREAM_MOPORT(1)] order_mstreamo;
+    wire [`STREAM_MIPORT(`VERTEX_ORDER_WIDTH)] order_mstreami;
+    wire [`STREAM_MOPORT(`VERTEX_ORDER_WIDTH)] order_mstreamo;
+    wire [`STREAM_MIPORT(`VERTEX_ORDER_WIDTH)] vob_mstreami;
+    wire [`STREAM_MOPORT(`VERTEX_ORDER_WIDTH)] vob_mstreamo;
 
     wire [`STREAM_MIPORT(3 * `SHADED_VERTEX_WIDTH)] vrc_mstreami;
     wire [`STREAM_MOPORT(3 * `SHADED_VERTEX_WIDTH)] vrc_mstreamo;
 
-    busarb_m #(4, 2, 2) arbiter(
+    wire [`STREAM_MIPORT(`FRAGMENT_WIDTH)] frag_mstreami;
+    wire [`STREAM_MOPORT(`FRAGMENT_WIDTH)] frag_mstreamo;
+
+    wire [`STREAM_MIPORT(`WORD_WIDTH)] index_mstreami, buf_index_mstreami;
+    wire [`STREAM_MOPORT(`WORD_WIDTH)] index_mstreamo, buf_index_mstreamo;
+
+    // Core Controller - Fragment FIFO
+    wire fragfifo_full;
+    wire fragfifo_empty;
+    wire fragfifo_clear;
+
+    busarb_m #(6 + `NUM_CORES, 2, 2) arbiter(
         .clk_i(clk),
         .nrst_i(nrst),
 
-        .mports_i({ rast3_mporto, rast2_mporto, rast1_mporto, vga_mporto }),
-        .mports_o({ rast3_mporti, rast2_mporti, rast1_mporti, vga_mporti }),
+        .mports_i({ mw_mporto, cc_mporto, core_mporto, rast2_mporto, rast1_mporto, vga_mporto, bridge_mporto }),
+        .mports_o({ mw_mporti, cc_mporti, core_mporti, rast2_mporti, rast1_mporti, vga_mporti, bridge_mporti }),
 
         .sports_i({ spi1_sporto, spi2_sporto }),
         .sports_o({ spi1_sporti, spi2_sporti })
@@ -165,7 +198,68 @@ module top_level_m(
         .spi_dqsm_en_o(spi2_dqsm_en_o)
     );
 
-    core_m #(.SP(0)) core(
+    core_controller_wrapper_m #(
+        .INDEX_FETCH_CACHE_LEN_WORDS(64),
+        .CALL_STACK_LEN(8)
+    ) core_cont (
+        .wb_clk_i(wb_clk_i),
+        .wb_rst_i(wb_rst_i),
+        .wbs_cyc_i(wbs_cyc_i),
+        .wbs_we_i(wbs_we_i),
+        .wbs_sel_i(wbs_sel_i),
+        .wbs_dat_i(wbs_dat_i),
+        .wbs_adr_i(wbs_adr_i),
+
+        .wbs_stb_control_i(wbs_stbN_i[2]),
+        .wbs_ack_control_o(wbs_ackN_o[2]),
+        .wbs_dat_control_o(wbs_datN_o[2]),
+
+        .wbs_stb_imem_i(wbs_stbN_i[3]),
+        .wbs_ack_imem_o(wbs_ackN_o[3]),
+        .wbs_dat_imem_o(wbs_datN_o[3]),
+
+        .irq_jobdone_o(),
+        .irq_batchdone_o(),
+
+        .mport_i(cc_mporti),
+        .mport_o(cc_mporto),
+
+        .vertcache_test_index_o(svc_test_index),
+        .vertcache_test_valid_o(svc_test_valid),
+        .vertcache_test_found_i(svc_test_found),
+        .vertcache_clear_o(svc_clear),
+
+        .index_mstream_i(index_mstreami),
+        .index_mstream_o(index_mstreamo),
+
+        .vertorder_mstream_i(order_mstreami),
+        .vertorder_mstream_o(order_mstreamo),
+        .vertorder_full_i(vob_full),
+        .vertorder_empty_i(vob_empty),
+        .vertorder_clear_o(vob_clear),
+
+        .vertcont_busy_i(vrc_busy),
+
+        .fragfifo_full_i(fragfifo_full),
+        .fragfifo_empty_i(fragfifo_empty),
+        .fragfifo_clear_o(fragfifo_clear),
+
+        .rast_busy_i(rast_busy),
+
+        .inst_o(inst),
+        .core_reset_o(nsync_rst), // Core soft reset
+        .core_stall_i(stallo),
+        .core_stall_o(stalli), // Per-core stall control
+        .core_jump_i(jump_request),
+        .core_jump_o(fds),  // Flushes decode on all cores
+        .global_regfile_rs1_data_o(global_r1),
+        .global_regfile_rs2_data_o(global_r2),
+
+        .core_inbox_mstream_i(inbox_mstreami)
+    );
+
+    // TODO: Set SP
+    core_m #(.SP(0)) core [`NUM_CORES-1:0] (
         .clk_i(clk),
         .nrst_i(nrst),
 
@@ -181,54 +275,137 @@ module top_level_m(
 
         .nsync_rst_i(nsync_rst),
 
-        .inbox_sstream_i(cc_mstreamo),
-        .inbox_sstream_o(cc_mstreami),
+        .inbox_sstream_i(inbox_mstreamo),
+        .inbox_sstream_o(inbox_mstreami),
 
-        .outbox_mstream_i(core_mstreami),
-        .outbox_mstream_o(core_mstreamo)
+        .outbox_mstream_i(outbox_mstreami),
+        .outbox_mstream_o(outbox_mstreamo),
+
+        .mport_i(core_mporti),
+        .mport_o(core_mporto)
     );
 
-    vertex_deserializer_m core_deserializer(
+    vertex_deserializer_m core_deserializer [`NUM_CORES-1:0] (
         .clk_i(clk),
         .nrst_i(nrst),
 
-        .sstream_i(core_mstreamo),
-        .sstream_o(core_mstreami),
+        .sstream_i(outbox_mstreamo),
+        .sstream_o(outbox_mstreami),
 
         .mstream_i(core_deser_mstreami),
         .mstream_o(core_deser_mstreamo)
     );
 
-    shaded_vertex_cache_m #(6) svc(
+    shaded_vertex_cache_m #(`SVC_SIZE) svc(
         .clk_i(clk),
         .nrst_i(nrst),
 
         .clear_i(svc_clear),
 
-        .test_index_i(test_index),
-        .test_valid_i(test_valid),
-        .test_found_o(test_found),
+        .test_index_i(svc_test_index),
+        .test_valid_i(svc_test_valid),
+        .test_found_o(svc_test_found),
 
-        .store_vertex_i(store_vertex),
-        .store_index_i(store_index),
-        .store_valid_i(store_valid),
+        .store_vertex_i(svc_store_vertex),
+        .store_index_i(svc_store_index),
+        .store_valid_i(svc_store_valid),
 
         .mstream_i(svc_mstreami),
         .mstream_o(svc_mstreamo)
     );
 
-    vertex_reorder_controller_m #(2) vrc(
+    stream_fifo_m #(`SHADED_VERTEX_WIDTH, `SVC_BUFFER_SIZE) svb(
         .clk_i(clk),
         .nrst_i(nrst),
 
-        .order_sstream_i(order_mstreamo),
-        .order_sstream_o(order_mstreami),
+        .sstream_i(svc_mstreamo),
+        .sstream_o(svc_mstreami),
 
-        .sstreams_i({ svc_mstreamo, core_deser_mstreamo }),
-        .sstreams_o({ svc_mstreami, core_deser_mstreami }),
+        .mstream_i(svb_mstreami),
+        .mstream_o(svb_mstreamo)
+    );
+
+    vertex_order_buffer_m #(`VOB_SIZE, `VERTEX_ORDER_WIDTH) vob(
+        .clk_i(clk),
+        .nrst_i(nrst),
+
+        .sstream_i(order_mstreamo),
+        .sstream_o(order_mstreami),
+
+        .mstream_i(vob_mstreami),
+        .mstream_o(vob_mstreamo),
+
+        .full_o(vob_full),
+        .empty_o(vob_empty),
+        .clear_i(vob_clear)
+    );
+
+    stream_fifo_m #(`WORD_WIDTH, `VOB_SIZE) index_buffer(
+        .clk_i(clk),
+        .nrst_i(nrst),
+
+        .sstream_i(index_mstreamo),
+        .sstream_o(index_mstreami),
+
+        .mstream_i(buf_index_mstreami),
+        .mstream_o(buf_index_mstreamo)
+    );
+
+    vertex_reorder_controller_m #(`NUM_CORES + 1) vrc(
+        .clk_i(clk),
+        .nrst_i(nrst),
+
+        .busy_o(vrc_busy),
+
+        .order_sstream_i(vob_mstreamo),
+        .order_sstream_o(vob_mstreami),
+
+        .sstreams_i({ svb_mstreamo, core_deser_mstreamo }),
+        .sstreams_o({ svb_mstreami, core_deser_mstreami }),
 
         .mstream_i(vrc_mstreami),
-        .mstream_o(vrc_mstreamo)
+        .mstream_o(vrc_mstreamo),
+
+        .svc_store_vertex_o(svc_store_vertex),
+        .svc_store_valid_o(svc_store_valid)
+    );
+
+    assign buf_index_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] = svc_store_valid;
+    assign svc_store_index = buf_index_mstreamo[`STREAM_MO_DATA(`WORD_WIDTH)];
+
+    // mem_write_m mem_write(
+    //     .clk_i(clk),
+    //     .nrst_i(nrst),
+    //
+    //     .busy_o(mem_busy),
+    //
+    //     .sstream_i(frag_mstreamo),
+    //     .sstream_o(frag_mstreami),
+    //
+    //     .mport_i(mw_mporti),
+    //     .mport_o(mw_mporto),
+    //
+    //     .fb_i(1'b0)
+    // );
+    assign mw_mporto = 0;
+
+    serializing_mailman_m #(
+        .DEPTH(32)
+    ) mailman (
+        .clk_i(clk),
+        .nrst_i(nrst),
+
+        .sstream_i(frag_mstreamo),
+        .sstream_o(frag_mstreami),
+        .mstream_i(inbox_mstreami),
+        .mstream_o(inbox_mstreamo),
+
+        .empty_o(fragfifo_empty),
+        .full_o(fragfifo_full),
+        .done_mailing_o(),
+        .selind_o(),
+
+        .clear_i(fragfifo_clear)
     );
 
     rasterizer_wrapper_m rasterizer(
@@ -243,17 +420,19 @@ module top_level_m(
         .wbs_ack_o(wbs_ackN_o[1]),
         .wbs_dat_o(wbs_datN_o[1]),
 
+        .rast_busy_o(rast_busy),
+
         .sstream_i(vrc_mstreamo),
         .sstream_o(vrc_mstreami),
+
+        .mstream_i(frag_mstreami),
+        .mstream_o(frag_mstreamo),
 
         .depth_mport_i(rast1_mporti),
         .depth_mport_o(rast1_mporto),
 
-        .pix_mport_i(rast2_mporti),
-        .pix_mport_o(rast2_mporto),
-
-        .tex_mport_i(rast3_mporti),
-        .tex_mport_o(rast3_mporto)
+        .tex_mport_i(rast2_mporti),
+        .tex_mport_o(rast2_mporto)
     );
 
     vga_wrapper_m vga (
@@ -276,31 +455,22 @@ module top_level_m(
         .vsync_o(vsync_o)
     );
 
-    initial begin
-        inst = 0;
+    wb_to_pk_m bridge
+    (
+        .wb_clk_i(wb_clk_i),
+        .wb_rst_i(wb_rst_i),
 
-        global_r2 = 0;
+        .wbs_stb_i(wbs_stbN_i[4]),
+        .wbs_cyc_i(wbs_cyc_i),
+        .wbs_sel_i(wbs_sel_i),
+        .wbs_ack_o(wbs_ackN_o[4]),
+        .wbs_dat_i(wbs_dat_i),
+        .wbs_adr_i(wbs_adr_i),
+        .wbs_dat_o(wbs_datN_o[4]),
+        .wbs_we_i(wbs_we_i),
 
-        jump_request = 0;
-        fds = 0;
-
-        stalli = 0;
-        stallo = 0;
-
-        nsync_rst = 0;
-
-        svc_clear = 0;
-
-        test_index = 0;
-        test_valid = 0;
-
-        store_vertex = 0;
-        store_index = 0;
-        store_valid = 0;
-
-        #1000;
-
-    end
-
+        .mport_i(bridge_mporti),
+        .mport_o(bridge_mporto)
+    );
 
 endmodule

@@ -5,14 +5,13 @@ module fragment_fifo_m #(
     input  wire clk_i,
     input  wire nrst_i,
     input  wire clear_i,
-    input  wire force_mail_i,
 
     input  wire [`STREAM_SIPORT(SIZE)] sstream_i,
     output wire [`STREAM_SOPORT(SIZE)] sstream_o,
     input  wire [`STREAM_MIPORT_SIZE(SIZE) * `NUM_CORES - 1:0] mstream_i,
     output reg  [`STREAM_MOPORT_SIZE(SIZE) * `NUM_CORES - 1:0] mstream_o,
 
-    output reg[$clog2(`NUM_CORES)-1 : 0]  cores_mailed_o,
+    output reg[`NUM_CORES-1:0]  selind_o,
     output reg  empty_o,
     output reg  full_o,
     output reg  done_mailing_o
@@ -37,7 +36,7 @@ module fragment_fifo_m #(
     ); 
 
     // Get READY bits per core from mstream_i
-    reg [`NUM_CORES-1:0] sel_i;
+    reg [`NUM_CORES-1:0] core_select;
     reg [`NUM_CORES-1:0] core_ready;
     integer i;
     always @(*) begin
@@ -47,35 +46,18 @@ module fragment_fifo_m #(
 
     //Internal valid and ready 
     wire fifo_has_data   = internal_mstream_o[`STREAM_MO_VALID(SIZE)];
-    wire cur_core_ready  = |(core_ready & sel_i);
+    wire cur_core_ready  = |(core_ready & core_select);
 
     // Select core, increment to next core if not ready
     always @(posedge clk_i or negedge nrst_i) begin
         if (!nrst_i) begin
             // 0th core selected
-            sel_i <= {{(`NUM_CORES-1){1'b0}}, 1'b1};
+            core_select <= {{(`NUM_CORES-1){1'b0}}, 1'b1};
         end
         else begin
         // Override only valid bit for selected core
-            for (j = 0; j < `NUM_CORES; j = j + 1) begin
-                mstream_o[j * MO_Size +: MO_Size] <= internal_mstream_o;
-                if (!clear_i && sel_i[j] && fifo_has_data) begin
-                    mstream_o[j * MO_Size + `STREAM_MO_VALID(SIZE)] <= 1'b1;
-                end
-                else begin
-                    mstream_o[j * MO_Size + `STREAM_MO_VALID(SIZE)] <= 1'b0;
-                end
-            end
-            if(fifo_has_data && cur_core_ready)begin
-                if(force_mail_i) begin
-                    cores_mailed_o <= cores_mailed_o + 1'b1;
-                end
-                else begin
-                    cores_mailed_o <= '0;
-                end
-            end
             if (fifo_has_data && !cur_core_ready) begin
-                sel_i <= (sel_i << 1) | (sel_i >> (`NUM_CORES - 1));
+                core_select <= (core_select << 1) | (core_select >> (`NUM_CORES - 1));
             end
         end 
     end
@@ -85,8 +67,19 @@ module fragment_fifo_m #(
 
     // Assign MC status bits
     always @(*) begin
+        for (j = 0; j < `NUM_CORES; j = j + 1) begin
+            mstream_o[j * MO_Size +: MO_Size] <= internal_mstream_o;
+            if (!clear_i && core_select[j] && fifo_has_data) begin
+                mstream_o[j * MO_Size + `STREAM_MO_VALID(SIZE)] <= 1'b1;
+            end
+            else begin
+                mstream_o[j * MO_Size + `STREAM_MO_VALID(SIZE)] <= 1'b0;
+            end
+        end
+
         full_o = ~sstream_o[`STREAM_SO_READY(SIZE)];
         empty_o = ~fifo_has_data;
-        done_mailing_o = sel_i[0];
+        selind_o = core_select;
+        done_mailing_o = ~core_ready;
     end
 endmodule
