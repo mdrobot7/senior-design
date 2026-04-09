@@ -40,7 +40,8 @@ void main() {
   if (WCOUNT != 0x00000004) test_fail();
   if (WDATA != 0xFAFAFAFA) test_fail();
 
-  // pk stream write 1 word
+
+// pk stream write 1 word
   ADDR   = 0x00000008;
   WCOUNT = 0x00000001;
   WDATA  = 0xF18F20FF;
@@ -97,6 +98,7 @@ void main() {
   for (int i = 0; i < 4; i++) {
     ADDR = current_addr;
     wait_bridge();
+
     readValue = RDATA;
 
     if (ADDR != current_addr) test_fail();
@@ -106,7 +108,7 @@ void main() {
     current_addr += 4;
   }
 
-  // pk read (ensure no overcounting to other memory addresses)
+  // // pk read (ensure no overcounting to other memory addresses)
   current_addr = 0x0000001C;
 
   for (int i = 0; i < 2; i++) {
