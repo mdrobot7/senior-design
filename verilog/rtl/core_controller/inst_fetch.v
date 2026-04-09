@@ -77,12 +77,35 @@ module inst_fetch_m #(
   // IMEM
   wire [`WORD]                        imem_do;
   wire [`SRAM_1024x32_ADDR_WIDTH-1:0] imem_addr = !enable_i ? imem_addr_i : (core_stall_i ? pc_prev : pc); // In *words*
-  wire                                imem_rw   = !enable_i ? imem_rw_i   : 1;
+  wire                               imem_rw   = !enable_i ? imem_rw_i   : 1;
+
+`ifdef HARDENING
+  // bb for sram. Power pins routed in config
+  CF_SRAM_1024x32 imem (
+    .DO(imem_do), 
+    .ScanOutCC(),
+
+    .CLKin(clk_i), 
+    .AD(imem_addr), 
+    .BEN(32'hFFFFFFFF), 
+    .DI(imem_di_i), 
+    .EN(1'b1), 
+    .R_WB(imem_rw),
+
+    .ScanInCC(1'b0), 
+    .ScanInDL(1'b0), 
+    .ScanInDR(1'b0), 
+    .SM(1'b0), 
+    .TM(1'b0), 
+    .WLBI(1'b0), 
+    .WLOFF(1'b0)
+  );
+`else
   sram_1024x32_m imem (
-`ifdef USE_POWER_PINS
-    .vpwrac(vpwrac),
-    .vpwrpc(vpwrpc),
-`endif
+    `ifdef USE_POWER_PINS
+      .vpwrac(vpwrac),
+      .vpwrpc(vpwrpc),
+    `endif
 
     .clk_i(clk_i),
     .addr_i(imem_addr),
@@ -91,6 +114,7 @@ module inst_fetch_m #(
     .data_i(imem_di_i),
     .data_o(imem_do)
   );
+`endif
 
   // Instruction decode
   wire [`OPCODE_WIDTH-1:0]     inst_opcode      = imem_do[`OPCODE_IDX];

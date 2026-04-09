@@ -10,6 +10,7 @@
       "dir::../../verilog/rtl/user_defines/rasterizer.v",
       "dir::../../verilog/rtl/user_defines/vga.v",
       "dir::../../verilog/rtl/user_defines.v",
+
       "dir::../../verilog/rtl/wishbone_register.v",
       "dir::../../verilog/rtl/wishbone_helper.v",
       "dir::../../verilog/rtl/sram_1024x32.v",
@@ -18,43 +19,64 @@
       "dir::../../verilog/rtl/core_controller/index_fetch.v",
       "dir::../../verilog/rtl/core_controller/inst_fetch.v",
       "dir::../../verilog/rtl/core_controller/dispatch.v",
+      "dir::../../verilog/rtl/core_controller/global_regfile.v",
 
       "dir::../../verilog/rtl/core_controller/core_controller.v"
   ],
+  "VERILOG_FILES_BLACKBOX": [
+      "dir::../../ip/CF_SRAM_1024x32/hdl/CF_SRAM_1024x32_stub.v"
+  ],
   "SYNTH_DEFINES" :[
-      "FPGA"
+      "HARDENING"
   ],
-  "ROUTING_CORES": 16,
-  "CLOCK_PERIOD": 20,
-  "RUN_LINTER": 0,
-  "CLOCK_PORT": "wb_clk_i",
-  "CLOCK_NET": "wb_clk_i",
-  "FP_SIZING": "absolute",
-  "DIE_AREA": "0 0 2000 2000",
-  "FP_PIN_ORDER_CFG": "dir::pin_order.cfg",
-  "MAX_TRANSITION_CONSTRAINT": 1.0,
-  "MAX_FANOUT_CONSTRAINT": 16,
-  "PL_TARGET_DENSITY": 0.50,
-  "PL_RESIZER_SETUP_SLACK_MARGIN": 0.4,
-  "GLB_RESIZER_SETUP_SLACK_MARGIN": 0.2,
-  "GLB_RESIZER_HOLD_SLACK_MARGIN": 0.2,
-  "PL_RESIZER_HOLD_SLACK_MARGIN": 0.4,
-  "PL_RESIZER_DESIGN_OPTIMIZATIONS": 1,
-  "PL_RESIZER_TIMING_OPTIMIZATIONS": 1,
-  "GLB_RESIZER_DESIGN_OPTIMIZATIONS": 1,
-  "GLB_RESIZER_TIMING_OPTIMIZATIONS": 1,
-  "MAGIC_DEF_LABELS": 0,
-  "SYNTH_BUFFERING": 0,
-  "SYNTH_STRATEGY": "AREA 3",
-  "RUN_HEURISTIC_DIODE_INSERTION": 1,
-  "HEURISTIC_ANTENNA_THRESHOLD": 110,
-  "GRT_REPAIR_ANTENNAS": 1,
-  "VDD_NETS": [
-      "vccd1"
-  ],
-  "GND_NETS": [
-      "vssd1"
-  ],
+    "SYNTH_USE_PG_PINS_DEFINES": "USE_POWER_PINS",
+    "ERROR_ON_LINTER_ERRORS": false,
+    "ROUTING_CORES": 6,
+    "CLOCK_PERIOD": 25,
+    "CLOCK_PORT": "CLKin",
+    "FP_SIZING": "absolute",
+    "DIE_AREA": "0.000 0.000 1000 1000",
+    "PL_TARGET_DENSITY": 0.60,
+    "SYNTH_STRATEGY": "AREA 0",
+    "FP_PIN_ORDER_CFG": "dir::pin_order.cfg",
+    "VDD_NETS": [
+        "vccd1"
+    ],
+    "GND_NETS": [
+        "vssd1"
+    ],
+    "SYNTH_READ_BLACKBOX_LIB": true,
+    "EXTRA_GDS_FILES": [
+        "dir::../../ip/CF_SRAM_1024x32/gds/CF_SRAM_1024x32.gds"
+    ],
+    "EXTRA_LEFS": [
+        "dir::../../ip/CF_SRAM_1024x32/lef/CF_SRAM_1024x32.lef"
+    ],
+    "EXTRA_LIBS": [
+        "dir::../../ip/CF_SRAM_1024x32/lib/CF_SRAM_1024x32_tt_180V_25C.lib"
+    ],
+    "MACRO_PLACEMENT_CFG": "dir::macro.cfg",
+    "FP_PDN_HORIZONTAL_LAYER": "met3",
+    "FP_PDN_VERTICAL_LAYER": "met2",
+    "RUN_IRDROP_REPORT": false,
+    "FP_PDN_CHECK_NODES": false,
+    "FP_PDN_CFG": "dir::pdn.tcl",
+    "FP_PDN_MACRO_HOOKS": "core_controller.inst_fetch.imem vccd1 vssd1 vpwra vgnd,core_controller.inst_fetch.imem vccd1 vssd1 vpb vnb,core_controller.inst_fetch.imem vccd1 vssd1 vpwrp vgnd,core_controller.inst_fetch.imem vccd1 vssd1 vpwrm vgnd",
+    "QUIT_ON_LINTER_ERRORS": false,
+    "QUIT_ON_SYNTH_CHECKS": false,
+    "QUIT_ON_YOSYS_WARNINGS": false,
+    "PL_TIME_DRIVEN": false,
+    "PL_ROUTABILITY_DRIVEN": true,
+    "GRT_ALLOW_CONGESTION": true,
+    "GRT_ADJUSTMENT": 0,
+    "PL_RESIZER_DESIGN_OPTIMIZATIONS": 1,
+    "PL_RESIZER_TIMING_OPTIMIZATIONS": 1,
+    "GLB_RESIZER_DESIGN_OPTIMIZATIONS": 1,
+    "GLB_RESIZER_TIMING_OPTIMIZATIONS": 1,
+    "QUIT_ON_MAGIC_DRC": false,
+    "MAGIC_EXT_USE_GDS": false,
+    "MAGIC_CAPTURE_ERRORS": false,
+    "QUIT_ON_ILLEGAL_OVERLAPS": false,
   "IO_SYNC": 0,
   "BASE_SDC_FILE": "dir::base_user_proj_example.sdc",
   "RUN_CVC": 1,
@@ -62,7 +84,7 @@
       "FP_CORE_UTIL": 45,
       "RT_MAX_LAYER": "met4",
       "scl::sky130_fd_sc_hd": {
-          "CLOCK_PERIOD": 20
+          "CLOCK_PERIOD": 25
       },
       "scl::sky130_fd_sc_hdll": {
           "CLOCK_PERIOD": 10
