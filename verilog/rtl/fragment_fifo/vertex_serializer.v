@@ -18,8 +18,7 @@ module vertex_serializer_m#(
     reg last;
     reg [PARALLEL_SIZE-1:0] tmp;
     reg valid;
-    reg ready;
-    // reg tmp_last;
+    reg busy;
 
     always @(posedge clk_i or negedge nrst_i) begin
         if(!nrst_i) begin
@@ -27,31 +26,30 @@ module vertex_serializer_m#(
             last <= 1'b0;
             tmp <= 0;
             valid <= 1'b0;
-            ready <= mstream_i[`STREAM_MI_READY(SERIAL_SIZE)];
+            busy <= 1'b0; 
         end else begin
-            if(valid)
+            if(valid) begin
                 count <= count + 3'd1;
-            else
-                ready <= mstream_i[`STREAM_MI_READY(SERIAL_SIZE)];
-            if ((count == 3'd0) && (sstream_i[`STREAM_SI_VALID(PARALLEL_SIZE)] == 1'b1) && ready) begin
+                tmp <= (tmp >> SERIAL_SIZE);
+            end
+            if (!busy && (sstream_i[`STREAM_SI_VALID(PARALLEL_SIZE)] == 1'b1) && mstream_i[`STREAM_MI_READY(SERIAL_SIZE)]) begin
                 tmp <= sstream_i[`STREAM_SI_DATA(PARALLEL_SIZE)];
                 last <= 1'b0;
                 valid <= 1'b1;
-                ready <= 1'b0;
+                busy <= 1'b1;
+                count <= 3'd0;
             end
-            else
-                tmp <= (tmp >> SERIAL_SIZE);
             if (count == 3'd6)
                 last <= 1;
             if (count == 3'd7) begin
-                ready <= mstream_i[`STREAM_MI_READY(SERIAL_SIZE)];
                 valid <= 1'b0;
                 last <= 1'b0;
+                busy <= 1'b0; // Done serializing, allow new data
             end 
         end
     end
 
-    assign sstream_o[`STREAM_SO_READY(PARALLEL_SIZE)] = ready;
+    assign sstream_o[`STREAM_SO_READY(PARALLEL_SIZE)] = !busy && mstream_i[`STREAM_MI_READY(SERIAL_SIZE)];
 
     assign mstream_o[`STREAM_MO_VALID(SERIAL_SIZE)] = valid;
     assign mstream_o[`STREAM_MO_DATA(SERIAL_SIZE)] = tmp[31:0];
