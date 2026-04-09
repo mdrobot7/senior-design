@@ -41,7 +41,7 @@ void main() {
   if (WDATA != 0xFAFAFAFA) test_fail();
 
 
-// pk stream write 1 word
+  // pk stream write 1 word
   ADDR   = 0x00000008;
   WCOUNT = 0x00000001;
   WDATA  = 0xF18F20FF;
@@ -138,8 +138,8 @@ void main() {
     current_addr += 4;
   }
 
-  //clear all memory
-  // pk stream write 256 words
+  // clear all memory
+  //  pk stream write 256 words
   ADDR   = 0x00000000;
   WCOUNT = 0x00000100;
   WDATA  = 0x00000000;
@@ -151,8 +151,7 @@ void main() {
   if (WDATA != 0x00000000) test_fail();
 
 
-
-  //check to see if all values are set to 0
+  // check to see if all values are set to 0
   current_addr = 0x00000000;
 
 
@@ -164,9 +163,6 @@ void main() {
     if (ADDR != current_addr) test_fail();
     if (RDATA != 0x00000000) test_fail();
     if (readValue != 0x00000000) test_fail();
-
-    current_addr += 4;
-  }
 
     current_addr += 4;
   }
