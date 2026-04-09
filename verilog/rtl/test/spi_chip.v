@@ -1,5 +1,6 @@
 `ifdef SVUNIT
   `include "test/debug_log.v"
+  `timescale 1 ns / 1 ps 
 `endif
 
 module spi_chip_m #(
