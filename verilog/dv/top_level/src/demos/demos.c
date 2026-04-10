@@ -11,3 +11,10 @@ void demos_init() {
   fragment_shader     = &_sfragment_shader;
   fragment_shader_len = (uint32_t) (&_efragment_shader - &_sfragment_shader);
 }
+
+void demos_copy_mvp(mat4_t m) {
+  ugpu_fp_t * mvp = (ugpu_fp_t *) m;
+  for (int i = 0; i < 16; i++) {
+    CC->GR[i].reg = mvp[i];
+  }
+}

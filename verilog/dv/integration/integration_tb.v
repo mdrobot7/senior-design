@@ -7,21 +7,16 @@ module integration_tb();
         .nrst_o(nrst)
     );
 
-    wire [`BUS_MIPORT] mportai;
-    wire [`BUS_MOPORT] mportao;
-    wire [`BUS_MIPORT] mportbi;
-    wire [`BUS_MOPORT] mportbo;
-    wire [`BUS_MIPORT] mportci;
-    wire [`BUS_MOPORT] mportco;
-    wire [`BUS_MIPORT] mportdi;
-    wire [`BUS_MOPORT] mportdo;
-    wire [`BUS_MIPORT] mportei;
-    wire [`BUS_MOPORT] mporteo;
-
-    wire [`BUS_SIPORT] sportai;
-    wire [`BUS_SOPORT] sportao;
-    wire [`BUS_SIPORT] sportbi;
-    wire [`BUS_SOPORT] sportbo;
+    wire wb_clk;
+    wire wb_rst;
+    wire wbs_stb;
+    wire wbs_cyc;
+    wire wbs_we;
+    wire [3:0] wbs_sel;
+    wire [`WORD_WIDTH-1:0] wbs_dato;
+    wire [`WORD_WIDTH-1:0] wbs_adr;
+    wire wbs_ack;
+    wire [`WORD_WIDTH-1:0] wbs_dati;
 
     wire spi1_clk;
     wire spi1_cs;
@@ -29,6 +24,8 @@ module integration_tb();
     wire [3:0] spi1_miso;
     wire spi1_dqsmi;
     wire spi1_dqsmo;
+    wire [3:0] spi1_sio_en;
+    wire spi1_dqsm_en;
 
     wire spi2_clk;
     wire spi2_cs;
@@ -36,8 +33,225 @@ module integration_tb();
     wire [3:0] spi2_miso;
     wire spi2_dqsmi;
     wire spi2_dqsmo;
+    wire [3:0] spi2_sio_en;
+    wire spi2_dqsm_en;
 
-    spi_chip_m #(5, 1, 500000) spi_chip1(
+    wishbone_master_m wbmst(
+        .clk_i(clk),
+        .nrst_i(nrst),
+
+        .wb_clk_o(wb_clk),
+        .wb_rst_o(wb_rst),
+        .wbs_stb_o(wbs_stb),
+        .wbs_cyc_o(wbs_cyc),
+        .wbs_we_o(wbs_we),
+        .wbs_sel_o(wbs_sel),
+        .wbs_dat_o(wbs_dati),
+        .wbs_adr_o(wbs_adr),
+        .wbs_ack_i(wbs_ack),
+        .wbs_dat_i(wbs_dato)
+    );
+
+    top_level_m top_level(
+        .wb_clk_i(wb_clk),
+        .wb_rst_i(wb_rst),
+        .wbs_stb_i(wbs_stb),
+        .wbs_cyc_i(wbs_cyc),
+        .wbs_we_i(wbs_we),
+        .wbs_sel_i(wbs_sel),
+        .wbs_dat_i(wbs_dati),
+        .wbs_adr_i(wbs_adr),
+        .wbs_ack_o(wbs_ack),
+        .wbs_dat_o(wbs_dato),
+
+        .spi1_clk_o(spi1_clk),
+        .spi1_cs_o(spi1_cs),
+        .spi1_mosi_o(spi1_mosi),
+        .spi1_miso_i(spi1_miso),
+        .spi1_dqsm_i(spi1_dqsmi),
+        .spi1_dqsm_o(spi1_dqsmo),
+        .spi1_sio_en_o(spi1_sio_en),
+        .spi1_dqsm_en_o(spi1_dqsm_en),
+
+        .spi2_clk_o(spi2_clk),
+        .spi2_cs_o(spi2_cs),
+        .spi2_mosi_o(spi2_mosi),
+        .spi2_miso_i(spi2_miso),
+        .spi2_dqsm_i(spi2_dqsmi),
+        .spi2_dqsm_o(spi2_dqsmo),
+        .spi2_sio_en_o(spi2_sio_en),
+        .spi2_dqsm_en_o(spi2_dqsm_en),
+
+        .blue_o(),
+        .green_o(),
+        .red_o(),
+        .hsync_o(),
+        .vsync_o()
+    );
+
+    image_m image();
+
+    initial begin : RUN
+        integer i;
+        reg [`WORD] temp [1023:0];
+
+        reg [31:0] triangles;
+
+        real angle;
+
+        triangles = 2;
+
+        angle = 3.14 * 0.666;
+
+        $dumpfile("integration.vcd");
+        $dumpvars(0, integration_tb);
+
+        clk_rst.RESET();
+
+        // If you get a cannot bind error here, add `define FPGA to the top of
+        // sram_1024x32.v.
+        $readmemh("../top_level/src/asm/vertex_shader_cached.txt", temp);
+        for (i = 0; i < 512; i = i + 1)
+            top_level.core_cont.core_controller.inst_fetch.imem.sram.RAM[i] = temp[i];
+        $readmemh("../top_level/src/asm/fragment_shader.txt", temp);
+        for (i = 0; i < 512; i = i + 1)
+            top_level.core_cont.core_controller.inst_fetch.imem.sram.RAM[512 + i] = temp[i];
+
+        // Index buffer
+        WRITE_WORD(32'h80000 + 0 * 4, 0);
+        WRITE_WORD(32'h80000 + 1 * 4, 2);
+        WRITE_WORD(32'h80000 + 2 * 4, 1);
+        WRITE_WORD(32'h80000 + 3 * 4, 1);
+        WRITE_WORD(32'h80000 + 4 * 4, 2);
+        WRITE_WORD(32'h80000 + 5 * 4, 3);
+
+        // Vertex 0
+        WRITE_WORD(32'h90000 + 0 * 20 + 0, `FP(61));
+        WRITE_WORD(32'h90000 + 0 * 20 + 4, `FP(61));
+        WRITE_WORD(32'h90000 + 0 * 20 + 8, `FP(1));
+        WRITE_WORD(32'h90000 + 0 * 20 + 12, `FP(0));
+        WRITE_WORD(32'h90000 + 0 * 20 + 16, `FP(0));
+
+        // Vertex 1
+        WRITE_WORD(32'h90000 + 1 * 20 + 0, `FP(121));
+        WRITE_WORD(32'h90000 + 1 * 20 + 4, `FP(61));
+        WRITE_WORD(32'h90000 + 1 * 20 + 8, `FP(1));
+        WRITE_WORD(32'h90000 + 1 * 20 + 12, `FP(60));
+        WRITE_WORD(32'h90000 + 1 * 20 + 16, `FP(0));
+
+        // Vertex 2
+        WRITE_WORD(32'h90000 + 2 * 20 + 0, `FP(61));
+        WRITE_WORD(32'h90000 + 2 * 20 + 4, `FP(121));
+        WRITE_WORD(32'h90000 + 2 * 20 + 8, `FP(1));
+        WRITE_WORD(32'h90000 + 2 * 20 + 12, `FP(0));
+        WRITE_WORD(32'h90000 + 2 * 20 + 16, `FP(60));
+
+        // Vertex 3
+        WRITE_WORD(32'h90000 + 3 * 20 + 0, `FP(121));
+        WRITE_WORD(32'h90000 + 3 * 20 + 4, `FP(121));
+        WRITE_WORD(32'h90000 + 3 * 20 + 8, `FP(1));
+        WRITE_WORD(32'h90000 + 3 * 20 + 12, `FP(60));
+        WRITE_WORD(32'h90000 + 3 * 20 + 16, `FP(60));
+
+        // Rasterizer config
+        wbmst.WRITE(32'h31000000 + 0 * 4, `ADDR_FB1); // Texture addr
+        wbmst.WRITE(32'h31000000 + 1 * 4, 60); // Texture height
+        wbmst.WRITE(32'h31000000 + 2 * 4, 60); // Texture width
+
+        for (i = 0; i < 60 * 60; i = i + 1) begin
+            WRITE_MEM(`ADDR_FB1 + i, image.tex_data[i]);
+        end
+
+        for (i = 0; i < 320 * 240 * 4; i = i + 1) begin
+            WRITE_MEM(`ADDR_DEPTH_BUFFER + i, 8'hff);
+        end
+
+        // Core controller config
+        wbmst.WRITE(32'h32000000 + 2 * 4, 6'b111111); // Enable all cores
+
+        wbmst.WRITE(32'h32000000 + 5 * 4, 32'h00000000); // GPGPU entry point
+        wbmst.WRITE(32'h32000000 + 6 * 4, 32'h00000000); // Vert shade entry point
+        wbmst.WRITE(32'h32000000 + 7 * 4, 32'h00000200); // Frag shade entry point (word 128 -> byte 512)
+
+        wbmst.WRITE(32'h32000000 + 8 * 4, 32'h00080000); // Index buffer addr
+
+        wbmst.WRITE(32'h32000000 + 9 * 4, triangles * 3); // Job/index count
+
+        $display(angle);
+        $display($cos(angle));
+        $display($sin(angle));
+        $display("%x", `REAL_TO_FP(angle));
+        $display("%x", `REAL_TO_FP($cos(angle)));
+        $display("%x", `REAL_TO_FP($sin(angle)));
+
+        wbmst.WRITE(32'h32000000 + (10 + 0) * 4, `REAL_TO_FP($cos(angle)));
+        wbmst.WRITE(32'h32000000 + (10 + 1) * 4, -`REAL_TO_FP($sin(angle)));
+        wbmst.WRITE(32'h32000000 + (10 + 2) * 4, 0);
+        wbmst.WRITE(32'h32000000 + (10 + 3) * 4, `FP(200));
+
+        wbmst.WRITE(32'h32000000 + (10 + 4) * 4, `REAL_TO_FP($sin(angle)));
+        wbmst.WRITE(32'h32000000 + (10 + 5) * 4, `REAL_TO_FP($cos(angle)));
+        wbmst.WRITE(32'h32000000 + (10 + 6) * 4, 0);
+        wbmst.WRITE(32'h32000000 + (10 + 7) * 4, `FP(100));
+
+        wbmst.WRITE(32'h32000000 + (10 + 8) * 4, 0);
+        wbmst.WRITE(32'h32000000 + (10 + 9) * 4, 0);
+        wbmst.WRITE(32'h32000000 + (10 + 10) * 4, `FP(1));
+        wbmst.WRITE(32'h32000000 + (10 + 11) * 4, 0);
+
+        wbmst.WRITE(32'h32000000 + (10 + 12) * 4, 0);
+        wbmst.WRITE(32'h32000000 + (10 + 13) * 4, 0);
+        wbmst.WRITE(32'h32000000 + (10 + 14) * 4, 0);
+        wbmst.WRITE(32'h32000000 + (10 + 15) * 4, `FP(1));
+
+        wbmst.WRITE(32'h32000000 + (10 + 46) * 4, 32'h00090000); // g46 = 0x00090000
+
+        wbmst.WRITE(32'h32000000 + 0 * 4, 5'b01010); // Dispatch indices, start
+
+        $display("Regs written");
+
+        // cores->core_en = 0b111111;
+        // cores->int_mask = 0b00;
+
+        // cores->compute_entry = 0;
+        // cores->vertex_entry = 0;
+        // cores->frag_entry = 0;
+
+        // cores->index_addr = 0x80000;
+
+        // cores->job_count = 6;
+
+        // cores->greg[46] = 0x90000;
+
+        // cores->control = 0b1010;
+
+        for (i = 0; i < triangles; i = i + 1) begin
+            wait(top_level.rasterizer.rasterizer.busy_o);
+            wait(!top_level.rasterizer.rasterizer.busy_o);
+        end
+    
+        $display("Elapsed %d clock cycles", clk_rst.current_cycle);
+        $display("%d FPS at 10 MHz", 10000000.0 / clk_rst.current_cycle);
+        $display("%d FPS at 20 MHz", 20000000.0 / clk_rst.current_cycle);
+        $display("%d FPS at 30 MHz", 30000000.0 / clk_rst.current_cycle);
+        $display("%d FPS at 40 MHz", 40000000.0 / clk_rst.current_cycle);
+        $display("%d FPS at 50 MHz", 50000000.0 / clk_rst.current_cycle);
+        $display("%d FPS at 100 MHz", 100000000.0 / clk_rst.current_cycle);
+
+        `VGA_WRITE("output.bmp", spi_chip1.mem, `ADDR_FB0, 320, 240, `COLOR_TYPE_RGB332);
+
+        // `VGA_WRITE("depth.bmp", spi_chip1.mem, `ADDR_DEPTH_BUFFER, 320, 240, `COLOR_TYPE_GSW);
+
+        $finish;
+    end
+
+    initial begin
+        #100000000;
+
+        $finish;
+    end
+
+    spi_chip_m #(5, 1, 600000) spi_chip1(
         .clk_i(spi1_clk),
         .cs_i(spi1_cs),
         .mosi_i(spi1_mosi),
@@ -54,381 +268,6 @@ module integration_tb();
         .dqsm_o(spi2_dqsmi),
         .dqsm_i(spi2_dqsmo)
     );
-
-    wire [`BUS_MIPORT] vga_mporti;
-    wire [`BUS_MOPORT] vga_mporto;
-
-    wire [`BUS_MIPORT] rast1_mporti;
-    wire [`BUS_MOPORT] rast1_mporto;
-
-    wire [`BUS_MIPORT] rast2_mporti;
-    wire [`BUS_MOPORT] rast2_mporto;
-
-    wire [`BUS_MIPORT] core_mporti;
-    wire [`BUS_MOPORT] core_mporto;
-
-    wire [`BUS_MIPORT] write_mporti;
-    wire [`BUS_MOPORT] write_mporto;
-
-    wire [`BUS_SIPORT] spi1_sporti;
-    wire [`BUS_SOPORT] spi1_sporto;
-
-    wire [`BUS_SIPORT] spi2_sporti;
-    wire [`BUS_SOPORT] spi2_sporto;
-
-    reg  [`WORD] inst;
-
-    reg  [`WORD] global_r1, global_r2;
-
-    wire jump_request;
-    reg  fds;
-
-    reg  stalli;
-    wire stallo;
-
-    reg nsync_rst;
-
-    wire [`STREAM_MIPORT(`MAILBOX_STREAM_SIZE)] cc_mstreami;
-    reg  [`STREAM_MOPORT(`MAILBOX_STREAM_SIZE)] cc_mstreamo;
-
-    wire [`STREAM_MIPORT(`MAILBOX_STREAM_SIZE)] core_mstreami;
-    wire [`STREAM_MOPORT(`MAILBOX_STREAM_SIZE)] core_mstreamo;
-
-    wire [`STREAM_MIPORT(`SHADED_VERTEX_WIDTH)] core_deser_mstreami;
-    wire [`STREAM_MOPORT(`SHADED_VERTEX_WIDTH)] core_deser_mstreamo;
-
-    reg svc_clear;
-
-    reg  [`WORD] test_index;
-    reg  test_valid;
-    wire test_found;
-
-    wire [`SHADED_VERTEX] store_vertex;
-    reg  [`WORD] store_index;
-    wire store_valid;
-
-    wire [`STREAM_MIPORT(`SHADED_VERTEX_WIDTH)] svc_mstreami;
-    wire [`STREAM_MOPORT(`SHADED_VERTEX_WIDTH)] svc_mstreamo;
-    wire [`STREAM_MIPORT(`SHADED_VERTEX_WIDTH)] svb_mstreami;
-    wire [`STREAM_MOPORT(`SHADED_VERTEX_WIDTH)] svb_mstreamo;
-
-    wire [`STREAM_MIPORT(1)] order_mstreami;
-    wire [`STREAM_MOPORT(1)] order_mstreamo;
-    wire [`STREAM_MIPORT(1)] vob_mstreami;
-    wire [`STREAM_MOPORT(1)] vob_mstreamo;
-
-    wire [`STREAM_MIPORT(3 * `SHADED_VERTEX_WIDTH)] vrc_mstreami;
-    wire [`STREAM_MOPORT(3 * `SHADED_VERTEX_WIDTH)] vrc_mstreamo;
-
-    wire [`STREAM_MIPORT(`FRAGMENT_WIDTH)] frag_mstreami;
-    wire [`STREAM_MOPORT(`FRAGMENT_WIDTH)] frag_mstreamo;
-
-    busarb_m #(5, 2, 2) arbiter(
-        .clk_i(clk),
-        .nrst_i(nrst),
-
-        .mports_i({ write_mporto, core_mporto, rast2_mporto, rast1_mporto, vga_mporto }),
-        .mports_o({ write_mporti, core_mporti, rast2_mporti, rast1_mporti, vga_mporti }),
-
-        .sports_i({ spi1_sporto, spi2_sporto }),
-        .sports_o({ spi1_sporti, spi2_sporti })
-    );
-
-    spi_mem_m #(0, `SPI_MEM_SIZE) spi_mem1(
-        .clk_i(clk),
-        .nrst_i(nrst),
-
-        .sport_i(spi1_sporti),
-        .sport_o(spi1_sporto),
-
-        .spi_clk_o(spi1_clk),
-        .spi_cs_o(spi1_cs),
-        .spi_mosi_o(spi1_mosi),
-        .spi_miso_i(spi1_miso),
-        .spi_dqsm_i(spi1_dqsmi),
-        .spi_dqsm_o(spi1_dqsmo)
-    );
-
-    spi_mem_m #(`SPI_MEM_SIZE, `SPI_MEM_SIZE) spi_mem2(
-        .clk_i(clk),
-        .nrst_i(nrst),
-
-        .sport_i(spi2_sporti),
-        .sport_o(spi2_sporto),
-
-        .spi_clk_o(spi2_clk),
-        .spi_cs_o(spi2_cs),
-        .spi_mosi_o(spi2_mosi),
-        .spi_miso_i(spi2_miso),
-        .spi_dqsm_i(spi2_dqsmi),
-        .spi_dqsm_o(spi2_dqsmo)
-    );
-
-    core_m core(
-        .clk_i(clk),
-        .nrst_i(nrst),
-
-        .inst_i(inst),
-        .global_r1_data_i(global_r1),
-        .global_r2_data_i(global_r2),
-
-        .jump_request_o(jump_request),
-        .flush_dec_stage_i(fds),
-
-        .stall_i(stalli),
-        .stall_o(stallo),
-
-        .nsync_rst_i(nsync_rst),
-
-        .inbox_sstream_i(cc_mstreamo),
-        .inbox_sstream_o(cc_mstreami),
-
-        .outbox_mstream_i(core_mstreami),
-        .outbox_mstream_o(core_mstreamo),
-
-        .mport_i(core_mporti),
-        .mport_o(core_mporto)
-    );
-
-    vertex_deserializer_m core_deserializer(
-        .clk_i(clk),
-        .nrst_i(nrst),
-
-        .sstream_i(core_mstreamo),
-        .sstream_o(core_mstreami),
-
-        .mstream_i(core_deser_mstreami),
-        .mstream_o(core_deser_mstreamo)
-    );
-
-    assign store_valid = core_deser_mstreamo[`STREAM_MO_VALID(`SHADED_VERTEX_WIDTH)];
-    assign store_vertex = core_deser_mstreamo[`STREAM_MO_DATA(`SHADED_VERTEX_WIDTH)];
-
-    shaded_vertex_cache_m #(6) svc(
-        .clk_i(clk),
-        .nrst_i(nrst),
-
-        .clear_i(svc_clear),
-
-        .test_index_i(test_index),
-        .test_valid_i(test_valid),
-        .test_found_o(test_found),
-
-        .store_vertex_i(store_vertex),
-        .store_index_i(store_index),
-        .store_valid_i(store_valid),
-
-        .mstream_i(svc_mstreami),
-        .mstream_o(svc_mstreamo)
-    );
-
-    stream_fifo_m #(`SHADED_VERTEX_WIDTH, 10) svb(
-        .clk_i(clk),
-        .nrst_i(nrst),
-
-        .sstream_i(svc_mstreamo),
-        .sstream_o(svc_mstreami),
-
-        .mstream_i(svb_mstreami),
-        .mstream_o(svb_mstreamo)
-    );
-
-    stream_master_m #(1) order_master(
-        .clk_i(clk),
-
-        .mstream_i(order_mstreami),
-        .mstream_o(order_mstreamo)
-    );
-
-    vertex_order_buffer_m #(6, 1) vob(
-        .clk_i(clk),
-        .nrst_i(nrst),
-
-        .sstream_i(order_mstreamo),
-        .sstream_o(order_mstreami),
-
-        .mstream_i(vob_mstreami),
-        .mstream_o(vob_mstreamo),
-
-        .clear_i(1'b0),
-        .full_o(),
-        .empty_o()
-    );
-
-    vertex_reorder_controller_m #(2) vrc(
-        .clk_i(clk),
-        .nrst_i(nrst),
-
-        .order_sstream_i(vob_mstreamo),
-        .order_sstream_o(vob_mstreami),
-
-        .sstreams_i({ svb_mstreamo, core_deser_mstreamo }),
-        .sstreams_o({ svb_mstreami, core_deser_mstreami }),
-
-        .mstream_i(vrc_mstreami),
-        .mstream_o(vrc_mstreamo)
-    );
-
-    rasterizer_wrapper_m rasterizer(
-        .wb_clk_i(clk),
-        .wb_rst_i(!nrst),
-        .wbs_stb_i(1'b0),
-        .wbs_cyc_i(1'b0),
-        .wbs_we_i(1'b0),
-        .wbs_sel_i(4'b0),
-        .wbs_dat_i(32'h0),
-        .wbs_adr_i(32'b0),
-        .wbs_ack_o(),
-        .wbs_dat_o(),
-
-        .sstream_i(vrc_mstreamo),
-        .sstream_o(vrc_mstreami),
-
-        .mstream_i(frag_mstreami),
-        .mstream_o(frag_mstreamo),
-
-        .depth_mport_i(rast1_mporti),
-        .depth_mport_o(rast1_mporto),
-
-        .tex_mport_i(rast2_mporti),
-        .tex_mport_o(rast2_mporto)
-    );
-
-    vga_wrapper_m vga(
-        .wb_clk_i(clk),
-        .wb_rst_i(!nrst),
-        .wbs_stb_i(1'b0),
-        .wbs_cyc_i(1'b0),
-        .wbs_we_i(1'b0),
-        .wbs_sel_i(4'b0),
-        .wbs_dat_i(32'h0),
-        .wbs_adr_i(32'b0),
-        .wbs_ack_o(),
-        .wbs_dat_o(),
-
-        .mport_i(vga_mporti),
-        .mport_o(vga_mporto),
-
-        .pixel_o(),
-        .hsync_o(),
-        .vsync_o()
-    );
-
-    mem_write_m mem_write(
-        .clk_i(clk),
-        .nrst_i(nrst),
-
-        .busy_o(),
-
-        .sstream_i(frag_mstreamo),
-        .sstream_o(frag_mstreami),
-
-        .mport_i(write_mporti),
-        .mport_o(write_mporto),
-
-        .fb_i(1'b0)
-    );
-
-    reg [`WORD] insts [1023:0];
-
-    image_m image();
-
-    initial begin : MAIN
-        integer i, j;
-        integer x, y;
-
-		$dumpfile("integration.vcd");
-		$dumpvars(0, integration_tb);
-
-        global_r1 = `SPI_MEM_SIZE;
-        global_r2 = `SPI_MEM_SIZE;
-
-        inst = 0;
-
-        fds = 0;
-
-        stalli = 0;
-
-        nsync_rst = 1;
-
-        svc_clear = 0;
-
-        test_index = 0;
-        test_valid = 0;
-
-        store_index = 0;
-
-        for (i = 0; i < 1024; i++) insts[i] = 0;
-        $readmemh("../top_level/src/asm/vertex_shader_cached.txt", insts);
-
-        clk_rst.RESET();
-
-        for (x = 0; x < 320; x = x + 1) begin
-            for (y = 0; y < 240; y = y + 1) begin : DB_FILL
-                reg [31:0] value;
-                value = 32'hFFFFFFFF;
-
-                WRITE_MEM(`ADDR_DEPTH_BUFFER + (y * 320 + x) * 4 + 0, value[7:0]);
-                WRITE_MEM(`ADDR_DEPTH_BUFFER + (y * 320 + x) * 4 + 1, value[15:8]);
-                WRITE_MEM(`ADDR_DEPTH_BUFFER + (y * 320 + x) * 4 + 2, value[23:16]);
-                WRITE_MEM(`ADDR_DEPTH_BUFFER + (y * 320 + x) * 4 + 3, value[31:24]);
-            end
-        end
-
-        for (x = 0; x < 60; x = x + 1) begin
-            for (y = 0; y < 60; y = y + 1) begin
-                WRITE_MEM(`ADDR_FB1 + (y * 60 + x), image.tex_data[y * 60 + x]);
-                // WRITE_MEM(`ADDR_FB1 + (y * 60 + x), 8'b11000000);
-            end
-        end
-
-        wait(!clk);
-
-        svc_clear = 1;
-        wait(clk);
-        wait(!clk);
-        svc_clear = 0;
-
-        WRITE_WORD(`SPI_MEM_SIZE + 0 * 20 + 0, `FP(1));
-        WRITE_WORD(`SPI_MEM_SIZE + 0 * 20 + 4, `FP(1));
-        WRITE_WORD(`SPI_MEM_SIZE + 0 * 20 + 8, `FP(1));
-        WRITE_WORD(`SPI_MEM_SIZE + 0 * 20 + 12, `FP(0));
-        WRITE_WORD(`SPI_MEM_SIZE + 0 * 20 + 16, `FP(0));
-
-        WRITE_WORD(`SPI_MEM_SIZE + 1 * 20 + 0, `FP(61));
-        WRITE_WORD(`SPI_MEM_SIZE + 1 * 20 + 4, `FP(1));
-        WRITE_WORD(`SPI_MEM_SIZE + 1 * 20 + 8, `FP(1));
-        WRITE_WORD(`SPI_MEM_SIZE + 1 * 20 + 12, `FP(60));
-        WRITE_WORD(`SPI_MEM_SIZE + 1 * 20 + 16, `FP(0));
-
-        WRITE_WORD(`SPI_MEM_SIZE + 2 * 20 + 0, `FP(1));
-        WRITE_WORD(`SPI_MEM_SIZE + 2 * 20 + 4, `FP(61));
-        WRITE_WORD(`SPI_MEM_SIZE + 2 * 20 + 8, `FP(1));
-        WRITE_WORD(`SPI_MEM_SIZE + 2 * 20 + 12, `FP(0));
-        WRITE_WORD(`SPI_MEM_SIZE + 2 * 20 + 16, `FP(60));
-
-        WRITE_WORD(`SPI_MEM_SIZE + 3 * 20 + 0, `FP(61));
-        WRITE_WORD(`SPI_MEM_SIZE + 3 * 20 + 4, `FP(61));
-        WRITE_WORD(`SPI_MEM_SIZE + 3 * 20 + 8, `FP(1));
-        WRITE_WORD(`SPI_MEM_SIZE + 3 * 20 + 12, `FP(60));
-        WRITE_WORD(`SPI_MEM_SIZE + 3 * 20 + 16, `FP(60));
-
-        EXECUTE_INDEX(0);
-        EXECUTE_INDEX(2);
-        EXECUTE_INDEX(1);
-
-        EXECUTE_INDEX(1);
-        EXECUTE_INDEX(2);
-        EXECUTE_INDEX(3);
-    end
-
-    initial begin
-        #10000000;
-
-        `VGA_WRITE("output.bmp", spi_chip1.mem, `ADDR_FB0, 320, 240, `COLOR_TYPE_RGB332);
-
-        $finish;
-    end
 
     task WRITE_MEM;
         input [31:0] addr;
@@ -451,64 +290,6 @@ module integration_tb();
         WRITE_MEM(addr + 1, data[15:8]);
         WRITE_MEM(addr + 2, data[23:16]);
         WRITE_MEM(addr + 3, data[31:24]);
-    end
-    endtask
-
-    task EXECUTE_INDEX;
-        input [15:0] index;
-
-        integer i;
-    begin
-        wait(!clk);
-
-        store_index = index;
-        test_index = index;
-        test_valid = 1;
-        #1;
-        if (test_found) begin
-            wait(clk);
-            wait(!clk);
-            test_valid = 0;
-
-            order_master.WRITE(1);
-        end
-        else begin
-            order_master.WRITE(0);
-
-            test_valid = 0;
-            // stalli = 0;
-
-            @(negedge clk);
-            if(stallo) begin
-                @(negedge stallo);
-                @(negedge clk);
-            end
-            inst = { 6'h12, 3'b000, 4'b0000, 3'b000, index };
-            @(negedge clk);
-            if(stallo) begin
-                @(negedge stallo);
-                @(negedge clk);
-            end
-            inst = { 6'h11, 3'b000, 4'b0000, 3'b000, 16'h0000 };
-
-            for (i = 0; i < 30; i = i + 1) begin
-                @(negedge clk);
-                if(stallo) begin
-                    @(negedge stallo);
-                    @(negedge clk);
-                end
-                inst = insts[i];
-            end
-            @(negedge clk);
-            if(stallo) begin
-                @(negedge stallo);
-                @(negedge clk);
-            end
-
-            // stalli = 1;
-
-            inst = 0;
-        end
     end
     endtask
 

@@ -47,10 +47,16 @@ module core_controller_wrapper_m #(
   input  wire                                       vertorder_empty_i,
   output wire                                       vertorder_clear_o,
 
+  // Vertex reorder controller
+  input wire vertcont_busy_i,
+
+  // index buffer
+  input  wire [`STREAM_MIPORT(`WORD_WIDTH)] index_mstream_i,
+  output wire [`STREAM_MOPORT(`WORD_WIDTH)] index_mstream_o,
+
   // Rasterizer fragment output FIFO
   input  wire fragfifo_full_i,
   input  wire fragfifo_empty_i,
-  input  wire fragfifo_done_mailing_i,
   output wire fragfifo_clear_o,
 
   // Rasterizer
@@ -65,7 +71,9 @@ module core_controller_wrapper_m #(
   input  wire [`NUM_CORES-1:0]  core_jump_i,
   output wire                   core_jump_o,          // Flushes decode on all cores
   output wire [`WORD]           global_regfile_rs1_data_o,
-  output wire [`WORD]           global_regfile_rs2_data_o
+  output wire [`WORD]           global_regfile_rs2_data_o,
+
+  input  wire [`STREAM_MIPORT_SIZE(`MAILBOX_STREAM_SIZE) * `NUM_CORES - 1:0] core_inbox_mstream_i
 );
 
   localparam NUM_CONTROL_REGS = 10;
@@ -138,9 +146,13 @@ module core_controller_wrapper_m #(
     .vertorder_empty_i(vertorder_empty_i),
     .vertorder_clear_o(vertorder_clear_o),
 
+    .vertcont_busy_i(vertcont_busy_i),
+
+    .index_mstream_i(index_mstream_i),
+    .index_mstream_o(index_mstream_o),
+
     .fragfifo_full_i(fragfifo_full_i),
     .fragfifo_empty_i(fragfifo_empty_i),
-    .fragfifo_done_mailing_i(fragfifo_done_mailing_i),
     .fragfifo_clear_o(fragfifo_clear_o),
 
     .rast_busy_i(rast_busy_i),
@@ -166,7 +178,9 @@ module core_controller_wrapper_m #(
     .core_jump_i(core_jump_i),
     .core_jump_o(core_jump_o),
     .global_regfile_rs1_data_o(global_regfile_rs1_data_o),
-    .global_regfile_rs2_data_o(global_regfile_rs2_data_o)
+    .global_regfile_rs2_data_o(global_regfile_rs2_data_o),
+
+    .core_inbox_mstream_i(core_inbox_mstream_i)
   );
 
   wire core_controller_enabled = (cc_state ? 1 : 0);
@@ -175,16 +189,19 @@ module core_controller_wrapper_m #(
   assign {pause_at_halt, dispatch_ctrl, cmd} = ctrl_reg[3:0];
   always @(posedge wb_clk_i, posedge wb_rst_i) begin : CTRL_REG
     reg prev_wbs_stbN0;
+    reg cmd_written_delay;
     if (wb_rst_i) begin
       cmd_written <= 0;
+      cmd_written_delay <= 0;
       prev_wbs_stbN0 <= 0;
     end
     else if (wb_clk_i) begin
       prev_wbs_stbN0 <= wbs_stbN[0];
+      cmd_written <= cmd_written_delay;
       if (!prev_wbs_stbN0 && wbs_stbN[0])
-        cmd_written <= 1;
+        cmd_written_delay <= 1;
       else
-        cmd_written <= 0;
+        cmd_written_delay <= 0;
     end
   end
   wishbone_register_m #(32'h00000000, 1, `WBREG_TYPE_REG) ctrl (
@@ -559,10 +576,16 @@ module core_controller_m #(
   input  wire                                       vertorder_empty_i,
   output wire                                       vertorder_clear_o,
 
+  // Vertex reorder controller
+  input wire vertcont_busy_i,
+
+  // index buffer
+  input  wire [`STREAM_MIPORT(`WORD_WIDTH)] index_mstream_i,
+  output wire [`STREAM_MOPORT(`WORD_WIDTH)] index_mstream_o,
+
   // Rasterizer fragment output FIFO
   input  wire fragfifo_full_i,
   input  wire fragfifo_empty_i,
-  input  wire fragfifo_done_mailing_i,
   output wire fragfifo_clear_o,
 
   // Rasterizer
@@ -591,20 +614,23 @@ module core_controller_m #(
   input  wire [`NUM_CORES-1:0]  core_jump_i,
   output reg                    core_jump_o,          // Flushes decode on all cores
   output reg  [`WORD]           global_regfile_rs1_data_o,
-  output wire [`WORD]           global_regfile_rs2_data_o
+  output reg  [`WORD]           global_regfile_rs2_data_o,
+
+  input  wire [`STREAM_MIPORT_SIZE(`MAILBOX_STREAM_SIZE) * `NUM_CORES - 1:0] core_inbox_mstream_i
 );
 
   localparam INST_NOP        = 32'h04000000;
 
-  localparam STATE_STOPPED          = 0; // Waiting for program to start from beginning
-  localparam STATE_DISPATCHING      = 1; // Dispatching jobs
-  localparam STATE_DISPATCH_DELAY   = 2;
-  localparam STATE_VERTEX_SHADING   = 3;
-  localparam STATE_FRAGMENT_SHADING = 4;
-  localparam STATE_GPGPU_COMPUTE    = 5;
-  localparam STATE_PAUSED           = 6; // Manual pause by management core or step-through
-  localparam STATE_DONE             = 7;
-  localparam STATE_STOPPING         = 8;
+  localparam STATE_STOPPED               = 0; // Waiting for program to start from beginning
+  localparam STATE_DISPATCHING           = 1; // Dispatching jobs
+  localparam STATE_DISPATCH_DELAY        = 2;
+  localparam STATE_VERTEX_SHADING        = 3;
+  localparam STATE_FRAGMENT_SHADING      = 4;
+  localparam STATE_FRAGMENT_SHADING_LAST = 5;
+  localparam STATE_GPGPU_COMPUTE         = 6;
+  localparam STATE_PAUSED                = 7; // Manual pause by management core or step-through
+  localparam STATE_DONE                  = 8;
+  localparam STATE_STOPPING              = 9;
 
   reg [3:0] state;
 
@@ -619,7 +645,7 @@ module core_controller_m #(
   wire         dispatch_index_fetch_clear      = (state == STATE_STOPPING);
   wire         dispatch_index_fetch_clear_done;
   wire         dispatch_reset                  = (state == STATE_STOPPED);
-  reg          dispatch_enable;
+  wire         dispatch_enable                 = (state == STATE_DISPATCHING);
   wire         dispatch_indices                = (dispatch_ctrl_i == `CORE_CTRL_DISPATCH_INDEX);
   wire [`WORD] dispatch_thread_id;
   wire [`WORD] dispatch_inst;
@@ -642,6 +668,9 @@ module core_controller_m #(
     .vertorder_mstream_i(vertorder_mstream_i),
     .vertorder_mstream_o(vertorder_mstream_o),
     .vertorder_full_i(vertorder_full_i),
+
+    .index_mstream_i(index_mstream_i),
+    .index_mstream_o(index_mstream_o),
 
     .index_buffer_addr_i(index_buffer_addr_i),
     .index_fetch_enable_i(dispatch_index_fetch_enable),
@@ -669,6 +698,7 @@ module core_controller_m #(
   wire                               instfetch_prog_done;
   wire [`WORD]                       instfetch_inst;
   wire [`WORD]                       instfetch_global_regfile_rs1_data;
+  wire [`WORD]                       instfetch_global_regfile_rs2_data;
   inst_fetch_m #(
     CALL_STACK_LEN
   ) inst_fetch (
@@ -701,7 +731,7 @@ module core_controller_m #(
     .core_stall_i(core_stall_i),
     .core_jump_i(core_jump_i),
     .global_regfile_rs1_data_o(instfetch_global_regfile_rs1_data),
-    .global_regfile_rs2_data_o(global_regfile_rs2_data_o)
+    .global_regfile_rs2_data_o(instfetch_global_regfile_rs2_data)
   );
 
   assign vertcache_clear_o = (state == STATE_STOPPED);
@@ -710,8 +740,17 @@ module core_controller_m #(
   assign state_o  = state;
 
   wire is_rasterization = (dispatch_ctrl_i == `CORE_CTRL_DISPATCH_INDEX);
-  wire should_dispatch  = (dispatch_ctrl_i != `CORE_CTRL_DISPATCH_DISABLE && next_prog != STATE_FRAGMENT_SHADING);
+  wire should_dispatch  = (dispatch_ctrl_i != `CORE_CTRL_DISPATCH_DISABLE && next_prog != STATE_FRAGMENT_SHADING && next_prog != STATE_FRAGMENT_SHADING_LAST);
   reg  dispatched;
+
+  reg [`NUM_CORES-1:0] cores_mailed_mask;
+  reg cores_not_mailed;
+  reg cores_partially_mailed;
+  reg cores_all_mailed;
+  reg [`NUM_CORES-1:0] cores_mailed_mask_latch;
+
+  wire vertshade_deadlock = (fragfifo_full_i);
+  wire fragshade_deadlock = (vertorder_empty_i && !vertcont_busy_i && !rast_busy_i && fragfifo_empty_i && !cores_all_mailed);
 
   always @(posedge clk_i, negedge nrst_i) begin
     if (!nrst_i) begin : RESET
@@ -719,14 +758,13 @@ module core_controller_m #(
       job_done_o <= 0;
       batch_done_o <= 0;
 
-      dispatch_enable <= 0;
-
       instfetch_enable <= 0;
 
       cur_prog      <= STATE_STOPPED;
       state         <= STATE_STOPPED;
       step_handled  <= 0;
       dispatched    <= 0;
+      cores_mailed_mask_latch <= 0;
     end
     else if (clk_i) begin
       if (job_done_clr_i)
@@ -738,14 +776,13 @@ module core_controller_m #(
 
       case (state)
         STATE_STOPPED: begin
-          if (cmd_i == `CORE_CTRL_CMD_RUN || cmd_i == `CORE_CTRL_CMD_STEP) begin
+          if ((cmd_i == `CORE_CTRL_CMD_RUN || cmd_i == `CORE_CTRL_CMD_STEP) && cmd_written_i) begin
             if (is_rasterization)
               cur_prog <= STATE_VERTEX_SHADING;
             else
               cur_prog <= STATE_GPGPU_COMPUTE;
 
-            if (should_dispatch) begin
-              dispatch_enable <= 1;
+            if (dispatch_ctrl_i != `CORE_CTRL_DISPATCH_DISABLE) begin
               dispatched <= 1;
               state <= STATE_DISPATCHING;
             end
@@ -761,16 +798,14 @@ module core_controller_m #(
         end
         STATE_DISPATCHING: begin
           if (cmd_i == `CORE_CTRL_CMD_STOP) begin
-            dispatch_enable <= 0;
             state <= STATE_STOPPING;
           end
           else if (dispatch_done) begin
-            dispatch_enable <= 0;
             instfetch_enable <= 1;
             state <= cur_prog;
           end
         end
-        STATE_VERTEX_SHADING, STATE_FRAGMENT_SHADING, STATE_GPGPU_COMPUTE: begin
+        STATE_VERTEX_SHADING, STATE_FRAGMENT_SHADING, STATE_FRAGMENT_SHADING_LAST, STATE_GPGPU_COMPUTE: begin
           instfetch_enable <= 0;
           case (cmd_i)
             `CORE_CTRL_CMD_STOP:
@@ -778,10 +813,10 @@ module core_controller_m #(
             `CORE_CTRL_CMD_PAUSE:
               state <= STATE_PAUSED;
             `CORE_CTRL_CMD_RUN: begin
-              if (instfetch_prog_done || (state == STATE_VERTEX_SHADING && fragfifo_full_i) || (state == STATE_FRAGMENT_SHADING && vertorder_empty_i && !dispatch_model_done)) begin
-                // Deadlock protection: if fragfifo fills up, immediately swap to frag shading. if vert order buf is empty, swap to vert shading
+              if (instfetch_prog_done ||
+                  (state == STATE_VERTEX_SHADING && vertshade_deadlock) ||
+                  (state == STATE_FRAGMENT_SHADING && fragshade_deadlock))
                 state <= STATE_DONE;
-              end
               else
                 instfetch_enable <= 1;
             end
@@ -809,18 +844,21 @@ module core_controller_m #(
         end
         STATE_DONE: begin
           job_done_o <= 1;
-          if (dispatch_model_done)
+          if (dispatch_model_done && next_prog == STATE_STOPPING)
             batch_done_o <= 1;
+
+          cores_mailed_mask_latch <= cores_mailed_mask;
 
           cur_prog <= next_prog;
           if (pause_at_halt_i || next_prog == STATE_STOPPING)
             state <= STATE_STOPPING;
           else if (should_dispatch) begin
-            dispatch_enable <= 1;
+            dispatched <= 1;
             state <= STATE_DISPATCHING;
           end
           else begin
             instfetch_enable <= 1;
+            dispatched <= 0;
             state <= next_prog;
           end
 
@@ -828,14 +866,16 @@ module core_controller_m #(
             state <= STATE_STOPPING;
         end
         STATE_STOPPING: begin
-          if (!rast_busy_i && dispatch_index_fetch_clear_done && vertorder_empty_i && fragfifo_empty_i)
+          if (!rast_busy_i && dispatch_index_fetch_clear_done && vertorder_empty_i && !vertcont_busy_i && fragfifo_empty_i)
             state <= STATE_STOPPED;
         end
       endcase
     end
   end
 
-  always @(*) begin
+  always @(*) begin : COMB
+    integer i;
+
     // Instruction muxing
     if (state == STATE_STOPPED || state == STATE_DONE)
       inst_o = INST_NOP;
@@ -849,6 +889,8 @@ module core_controller_m #(
       core_reset_o = 0;
     else if (state == STATE_DISPATCHING)
       core_reset_o = core_enable_i;
+    else if (state == STATE_FRAGMENT_SHADING_LAST)
+      core_reset_o = core_enable_i & cores_mailed_mask_latch;
     else if (!dispatched)
       // If the dispatcher isn't used, ignore it
       core_reset_o = core_enable_i;
@@ -867,7 +909,17 @@ module core_controller_m #(
       core_stall_o = {`NUM_CORES{1'b1}};
     else
       core_stall_o = 0;
+
     core_jump_o  = (core_jump_i  ? 1 : 0);
+
+    cores_mailed_mask = {`NUM_CORES{1'b1}};
+    for (i = 0; i < `NUM_CORES; i = i + 1) begin
+      if (core_inbox_mstream_i[i * `STREAM_MIPORT_SIZE(`MAILBOX_STREAM_SIZE) + `STREAM_MI_READY(`MAILBOX_STREAM_SIZE)])
+        cores_mailed_mask[i] = 0;
+    end
+    cores_not_mailed = !cores_mailed_mask;
+    cores_partially_mailed = cores_mailed_mask;
+    cores_all_mailed = (cores_mailed_mask == {`NUM_CORES{1'b1}});
 
     // Next program selection
     if (cur_prog == STATE_GPGPU_COMPUTE) begin
@@ -876,22 +928,16 @@ module core_controller_m #(
       else
         next_prog = STATE_GPGPU_COMPUTE;
     end
-    else if (cur_prog == STATE_VERTEX_SHADING) begin
-      if (fragfifo_done_mailing_i || fragfifo_full_i || dispatch_model_done)
-        next_prog = STATE_FRAGMENT_SHADING;
-      else
-        next_prog = STATE_VERTEX_SHADING;
-    end
-    else if (cur_prog == STATE_FRAGMENT_SHADING) begin
-      if ((!fragfifo_done_mailing_i || vertorder_empty_i) && !dispatch_model_done)
-        next_prog = STATE_VERTEX_SHADING;
-      else if (fragfifo_done_mailing_i)
-        next_prog = STATE_FRAGMENT_SHADING;
-      else
+    else begin
+      if (dispatch_model_done && vertorder_empty_i && !vertcont_busy_i && !rast_busy_i && fragfifo_empty_i && cores_not_mailed)
         next_prog = STATE_STOPPING;
+      else if (fragshade_deadlock && dispatch_model_done)
+        next_prog = STATE_FRAGMENT_SHADING_LAST;
+      else if ((cores_all_mailed || dispatch_model_done) && state != STATE_STOPPED)
+        next_prog = STATE_FRAGMENT_SHADING;
+      else
+        next_prog = STATE_VERTEX_SHADING;
     end
-    else
-      next_prog = STATE_STOPPING;
 
     // Entry point
     case (next_prog)
@@ -899,17 +945,21 @@ module core_controller_m #(
         instfetch_prog_entry = pc_gpgpu_compute_i;
       STATE_VERTEX_SHADING:
         instfetch_prog_entry = pc_vertex_shading_i;
-      STATE_FRAGMENT_SHADING:
+      STATE_FRAGMENT_SHADING, STATE_FRAGMENT_SHADING_LAST:
         instfetch_prog_entry = pc_fragment_shading_i;
       default:
         instfetch_prog_entry = 0;
     endcase
 
     // Global regfile/thread ID
-    if (state == STATE_DISPATCHING)
+    if (state == STATE_DISPATCHING) begin
       global_regfile_rs1_data_o = dispatch_thread_id;
-    else
+      global_regfile_rs2_data_o = 0;
+    end
+    else begin
       global_regfile_rs1_data_o = instfetch_global_regfile_rs1_data;
+      global_regfile_rs2_data_o = instfetch_global_regfile_rs2_data;
+    end
   end
 
 endmodule

@@ -23,6 +23,8 @@ module decoder_m (
 
         //IMM_SIZE
         case(opcode)
+            `SLL_OPCODE, `SRL_OPCODE, `SRA_OPCODE:
+                ctl_sigs_reg[`IMM_SIZE_IDX] = `IMM_5_BIT;
             `ADDI_OPCODE, `MULI_OPCODE, `ANDI_OPCODE, `ORI_OPCODE, `XORI_OPCODE, `LW_OPCODE,
             `LB_OPCODE, `SW_OPCODE, `SB_OPCODE:
                 ctl_sigs_reg[`IMM_SIZE_IDX] = `IMM_13_BIT;

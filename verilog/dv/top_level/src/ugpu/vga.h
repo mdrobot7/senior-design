@@ -14,7 +14,7 @@
 #define VGA_CTRL_RES_160x120      VGA_CTRL_RES(0x4)
 #define VGA_CTRL_RES_80x60        VGA_CTRL_RES(0x8)
 typedef union {
-  struct {
+  struct __packed {
     uint32_t ENABLE    : 1;
     uint32_t PRESCALER : 4;
     uint32_t RES       : 4;
@@ -36,7 +36,7 @@ typedef union {
 #define VGA_HTIMING_BPORCH_Msk    (0x7FUL << VGA_HTIMING_BPORCH_Pos)
 #define VGA_HTIMING_BPORCH(value) (VGA_HTIMING_BPORCH_Msk & ((value) << VGA_HTIMING_BPORCH_Pos))
 typedef union {
-  struct {
+  struct __packed {
     uint32_t ACTIVE : 10;
     uint32_t FPORCH : 5;
     uint32_t HSYNC  : 7;
@@ -59,7 +59,7 @@ typedef union {
 #define VGA_VTIMING_BPORCH_Msk    (0xFUL << VGA_VTIMING_BPORCH_Pos)
 #define VGA_VTIMING_BPORCH(value) (VGA_VTIMING_BPORCH_Msk & ((value) << VGA_VTIMING_BPORCH_Pos))
 typedef union {
-  struct {
+  struct __packed {
     uint32_t ACTIVE : 9;
     uint32_t FPORCH : 3;
     uint32_t HSYNC  : 3;
@@ -73,13 +73,13 @@ typedef union {
 #define VGA_FBADDR_Msk    (0xFFFFFFFFUL << VGA_FBADDR_Pos)
 #define VGA_FBADDR(value) (VGA_FBADDR_Msk & ((value) VGA_FBADDR_Pos))
 typedef union {
-  struct {
+  struct __packed {
     uint32_t ADDR : 32;
   } bit;
   uint32_t reg;
 } VGA_FBADDR_t;
 
-typedef struct {
+typedef struct __packed {
   VGA_CTRL_t CTRL;
   VGA_HTIMING_t HTIMING;
   VGA_VTIMING_t VTIMING;

@@ -21,15 +21,19 @@
 
 //SIGN EXT
 `define IMM_CTL_SIZE 2
-`define IMM_13_BIT 0
-`define IMM_16_BIT 1
-`define IMM_23_BIT 2
+`define IMM_5_BIT 0
+`define IMM_13_BIT 1
+`define IMM_16_BIT 2
+`define IMM_23_BIT 3
+`define IMM_5_WIDTH 5
 `define IMM_13_WIDTH 13
 `define IMM_16_WIDTH 16
 `define IMM_23_WIDTH 23
+`define PAD_27_BITS 27
 `define PAD_19_BITS 19
 `define PAD_16_BITS 16
 `define PAD_9_BITS 9
+`define MSB_5_IMM 4
 `define MSB_13_IMM 12
 `define MSB_16_IMM 15
 `define MSB_23_IMM 22
@@ -153,4 +157,3 @@
 `define MAILBOX_STREAM_CYCLES ((`WORD_WIDTH*`CORE_MAILBOX_HEIGHT) /  `MAILBOX_STREAM_SIZE)
 `define MAILBOX_COUNTER_WIDTH ($clog2(`MAILBOX_STREAM_CYCLES))
 `define STAGE_SLICE(stage, size) (((stage+1)*(size))-1):((stage)*(size))
-

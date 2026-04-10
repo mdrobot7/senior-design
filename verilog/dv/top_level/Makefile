@@ -49,8 +49,7 @@ CUSTOMASM_SOURCES = $(ASM_DIR)/edge_detect.s \
 					$(ASM_DIR)/test_core.s \
 					$(ASM_DIR)/test_procedures_data.s \
 					$(ASM_DIR)/test_procedures.s \
-					$(ASM_DIR)/vertex_shader_cached.s \
-					$(ASM_DIR)/vertex_shader.s
+					$(ASM_DIR)/vertex_shader_cached.s
 
 INCLUDE_DIRS += -I$(ASM_DIR) -I$(SRC_DIR) -I$(SRC_DIR)/ugpu
 SOURCE_FILES += $(ASM_DIR)/programs.s

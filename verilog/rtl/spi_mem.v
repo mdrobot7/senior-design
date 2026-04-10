@@ -136,7 +136,7 @@ module spi_mem_m #(
                 STATE_COMMAND_WAIT: begin
                     state <= STATE_ADDRESS;
 
-                    spi_mosi_o <= full_address[address_nibble * 4+:4];
+                    // spi_mosi_o <= full_address[address_nibble * 4+:4];
                 end
 
                 STATE_ADDRESS: begin

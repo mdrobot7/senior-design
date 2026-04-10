@@ -3,15 +3,20 @@
  */
 
 `define WIDTH (320)
-`define HEIGHT (200)
+`define HEIGHT (240)
 
 `define WORD_WIDTH (32)
 `define WORD `WORD_WIDTH - 1:0
 
 `define DECIMAL_POS (16)
 
-`define NUM_CORES (6)
+`define NUM_CORES (3)
 `define NUM_CORES_WIDTH ($clog2(`NUM_CORES))
+
+// `define VOB_SIZE (`NUM_CORES * 2)
+`define VOB_SIZE (12)
+`define SVC_SIZE (12)
+`define SVC_BUFFER_SIZE (12)
 
 `define SRAM_1024x32_ADDR_WIDTH (10)
 
@@ -22,6 +27,8 @@
 
 // fixed point
 `define FP(x) (($signed((x) * (64'b1 << `DECIMAL_POS))) & 32'hFFFFFFFF)
+
+`define REAL_TO_FP(x) ($signed($rtoi((x) * (64'b1 << `DECIMAL_POS))) & 32'hFFFFFFFF)
 
 `define FP_MUL(a, b) (($signed({ {`WORD_WIDTH{a[`WORD_WIDTH - 1]}}, (a) }) * $signed({ {`WORD_WIDTH{b[`WORD_WIDTH - 1]}}, (b) })) >>> `DECIMAL_POS)
 `define FP_DIV(a, b) ((($signed({ {`WORD_WIDTH{a[`WORD_WIDTH - 1]}}, (a) }) << `DECIMAL_POS) / $signed({ {`WORD_WIDTH{b[`WORD_WIDTH - 1]}}, (b) })))

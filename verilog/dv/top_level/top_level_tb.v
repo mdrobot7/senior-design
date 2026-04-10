@@ -32,9 +32,20 @@ module top_level_tb;
 	wire uart_tx;
 	wire [37:0] mprj_io;
 
+    integer current_cycle;
+
 	assign uart_tx = mprj_io[6];
 
-	always #12.5 clock <= (clock === 1'b0);
+	always #10 clock <= (clock === 1'b0);
+
+    always @(posedge clock) begin
+        if (!RSTB) begin
+            current_cycle = 0;
+        end
+        else begin
+            current_cycle = current_cycle + 1;
+        end
+    end
 
 	initial begin
 		clock = 0;
@@ -43,33 +54,49 @@ module top_level_tb;
 	initial begin
 		$dumpfile("top_level.vcd");
 		$dumpvars(0, top_level_tb);
-
-		// Repeat cycles of 1000 clock edges as needed to complete testbench
-		repeat (250) begin
-			repeat (1000) @(posedge clock);
-			// $display("+1000 cycles");
-		end
-		$display("%c[1;31m",27);
-		`ifdef GL
-			$display ("Monitor: Timeout, Test (GL) Failed");
-		`else
-			$display ("Monitor: Timeout, Test (RTL) Failed");
-		`endif
-		$display("%c[0m",27);
-		$finish;
 	end
 
-	initial begin
-		wait(gpio === 'b0 || gpio === 'b1);
-		if (gpio == 'b0) begin
-			$display("%c[1;31m",27);
-			$display("Test failed");
-			$display("%c[0m",27);
-		end else begin
-			$display("%c[1;32m",27);
-			$display("Test success");
-			$display("%c[0m",27);
-		end
+	image_m image();
+
+	initial begin : MAIN
+        integer i;
+        reg [`WORD] temp [1023:0];
+
+		wait(!RSTB);
+		wait(RSTB);
+
+        // sram_1024x32.v.
+        $readmemh("../top_level/src/asm/vertex_shader_cached.txt", temp);
+        for (i = 0; i < 512; i = i + 1)
+            uut.chip_core.mprj.top_level.core_cont.core_controller.inst_fetch.imem.sram.RAM[i] = temp[i];
+        $readmemh("../top_level/src/asm/fragment_shader.txt", temp);
+        for (i = 0; i < 512; i = i + 1)
+            uut.chip_core.mprj.top_level.core_cont.core_controller.inst_fetch.imem.sram.RAM[512 + i] = temp[i];
+
+        for (i = 0; i < 60 * 60; i = i + 1) begin
+            WRITE_MEM(`ADDR_FB1 + i, image.tex_data[i]);
+        end
+
+        for (i = 0; i < 320 * 240 * 4; i = i + 1) begin
+            WRITE_MEM(`ADDR_DEPTH_BUFFER + i, 8'hff);
+        end
+
+        for (i = 0; i < 320 * 240; i = i + 1) begin
+          WRITE_MEM(`ADDR_FB0 + i, 0);
+        end
+
+		wait(gpio);
+
+        $display("Elapsed %d clock cycles", current_cycle);
+        $display("%d FPS at 10 MHz", 10000000.0 / current_cycle);
+        $display("%d FPS at 20 MHz", 20000000.0 / current_cycle);
+        $display("%d FPS at 30 MHz", 30000000.0 / current_cycle);
+        $display("%d FPS at 40 MHz", 40000000.0 / current_cycle);
+        $display("%d FPS at 50 MHz", 50000000.0 / current_cycle);
+        $display("%d FPS at 100 MHz", 100000000.0 / current_cycle);
+
+        `VGA_WRITE("output.bmp", spi_chip1.mem, `ADDR_FB0, 320, 240, `COLOR_TYPE_RGB332);
+
 		#100;
 		$finish;
 	end
@@ -134,6 +161,24 @@ module top_level_tb;
 		.resetb	  (RSTB)
 	);
 
+    spi_chip_m #(`SPI_MEM_SIZE) spi_chip1(
+        .clk_i(uut.chip_core.mprj.spi1_clk),
+        .cs_i(uut.chip_core.mprj.spi1_cs),
+        .mosi_i(uut.chip_core.mprj.spi1_mosi),
+        .miso_o(uut.chip_core.mprj.spi1_miso),
+        .dqsm_o(uut.chip_core.mprj.spi1_dqsmi),
+        .dqsm_i(uut.chip_core.mprj.spi1_dqsmo)
+    );
+
+    spi_chip_m #(`SPI_MEM_SIZE) spi_chip2(
+        .clk_i(uut.chip_core.mprj.spi2_clk),
+        .cs_i(uut.chip_core.mprj.spi2_cs),
+        .mosi_i(uut.chip_core.mprj.spi2_mosi),
+        .miso_o(uut.chip_core.mprj.spi2_miso),
+        .dqsm_o(uut.chip_core.mprj.spi2_dqsmi),
+        .dqsm_i(uut.chip_core.mprj.spi2_dqsmo)
+    );
+
 	spiflash #(
 		.FILENAME("top_level.hex")
 	) spiflash (
@@ -149,6 +194,30 @@ module top_level_tb;
 	tbuart tbuart (
 		.ser_rx(uart_tx)
 	);
+
+    task WRITE_MEM;
+        input [31:0] addr;
+        input [7:0] data;
+    begin
+        if (addr < `SPI_MEM_SIZE) begin
+            spi_chip1.mem[addr] = data;
+        end
+        else begin
+            spi_chip2.mem[addr - `SPI_MEM_SIZE] = data;
+        end
+    end
+    endtask
+
+    task WRITE_WORD;
+        input [31:0] addr;
+        input [31:0] data;
+    begin
+        WRITE_MEM(addr + 0, data[7:0]);
+        WRITE_MEM(addr + 1, data[15:8]);
+        WRITE_MEM(addr + 2, data[23:16]);
+        WRITE_MEM(addr + 3, data[31:24]);
+    end
+    endtask
 
 endmodule
 `default_nettype wire
