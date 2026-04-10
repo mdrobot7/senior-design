@@ -15,6 +15,9 @@
   "VERILOG_FILES_BLACKBOX": [
       "dir::../../ip/CF_SRAM_1024x32/hdl/CF_SRAM_1024x32_stub.v"
   ],
+    "SYNTH_DEFINES" :[
+      "HARDENING"
+  ],
     "SYNTH_USE_PG_PINS_DEFINES": "USE_POWER_PINS",
     "ERROR_ON_LINTER_ERRORS": false,
     "ROUTING_CORES": 6,

@@ -33,7 +33,7 @@ module sram_1024x32_m (
     .di(data_i),
     .dout(data_o)
   );
-`elsif SVUNIT
+`else
   `define functional // Use this for RTL tests, disables the $setuphold tests that can't be checked with RTL
   CF_SRAM_1024x32_macro sram (
   `ifdef USE_POWER_PINS

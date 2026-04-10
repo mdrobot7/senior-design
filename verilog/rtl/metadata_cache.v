@@ -95,25 +95,8 @@ reg sram_rw;              // 0 for write, 1 for read
 reg sram_en;            
 reg [31:0] sram_out_data; // data output from sram
   
-`ifdef SVUNIT
-  sram_1024x32_m sram(
-    .clk_i(clk_i),
-    .addr_i(sram_addr),
-    .read_en_i(sram_rw),
-    .en_i(sram_en),
-    .data_i(sram_in_data),
-    .data_o(sram_out_data)
-  );
-`elsif FPGA
-  sram_1024x32_m sram(
-    .clk_i(clk_i),
-    .addr_i(sram_addr),
-    .read_en_i(sram_rw),
-    .en_i(sram_en),
-    .data_i(sram_in_data),
-    .data_o(sram_out_data)
-  );
-`else // hardening bb (no need for power pins)
+`ifdef HARDENING
+  // hardening bb (no need for power pins)
   CF_SRAM_1024x32 i_sram (
     .DO(sram_out_data), 
     .ScanOutCC(),
@@ -132,6 +115,15 @@ reg [31:0] sram_out_data; // data output from sram
     .TM(1'b0), 
     .WLBI(1'b0), 
     .WLOFF(1'b0)
+  );
+`else // FPGA or RTL-testing
+  sram_1024x32_m sram(
+    .clk_i(clk_i),
+    .addr_i(sram_addr),
+    .read_en_i(sram_rw),
+    .en_i(sram_en),
+    .data_i(sram_in_data),
+    .data_o(sram_out_data)
   );
 `endif
 
