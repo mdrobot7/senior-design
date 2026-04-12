@@ -57,55 +57,55 @@ library (CF_SRAM_1024x32_wrapper) {
   cell ("CF_SRAM_1024x32_wrapper") {
     pin("CLKin") {
       direction : input;
-      capacitance : 0.0503;
+      capacitance : 0.0501;
     }
     pin("EN") {
       direction : input;
-      capacitance : 0.0795;
+      capacitance : 0.0767;
     }
     pin("R_WB") {
       direction : input;
-      capacitance : 0.0809;
+      capacitance : 0.0693;
     }
     pin("SM") {
       direction : input;
-      capacitance : 0.0753;
+      capacitance : 0.0644;
     }
     pin("ScanInCC") {
       direction : input;
-      capacitance : 0.0576;
+      capacitance : 0.0618;
     }
     pin("ScanInDL") {
       direction : input;
-      capacitance : 0.0573;
+      capacitance : 0.0667;
     }
     pin("ScanInDR") {
       direction : input;
-      capacitance : 0.0628;
+      capacitance : 0.0608;
     }
     pin("ScanOutCC") {
       direction : output;
-      capacitance : 0.0424;
+      capacitance : 0.0428;
     }
     pin("TM") {
       direction : input;
-      capacitance : 0.0700;
+      capacitance : 0.0750;
     }
     pin("WLBI") {
       direction : input;
-      capacitance : 0.0604;
+      capacitance : 0.0625;
     }
     pin("WLOFF") {
       direction : input;
-      capacitance : 0.0627;
+      capacitance : 0.0590;
     }
     pin("vpwrac") {
       direction : input;
-      capacitance : 0.0635;
+      capacitance : 0.0599;
     }
     pin("vpwrpc") {
       direction : input;
-      capacitance : 0.0642;
+      capacitance : 0.0682;
     }
     bus("AD") {
       bus_type : AD;
@@ -113,7 +113,7 @@ library (CF_SRAM_1024x32_wrapper) {
       capacitance : 0.0000;
     pin("AD[9]") {
       direction : input;
-      capacitance : 0.0036;
+      capacitance : 0.0035;
     }
     pin("AD[8]") {
       direction : input;
@@ -125,11 +125,11 @@ library (CF_SRAM_1024x32_wrapper) {
     }
     pin("AD[6]") {
       direction : input;
-      capacitance : 0.0036;
+      capacitance : 0.0035;
     }
     pin("AD[5]") {
       direction : input;
-      capacitance : 0.0027;
+      capacitance : 0.0029;
     }
     pin("AD[4]") {
       direction : input;
@@ -137,11 +137,11 @@ library (CF_SRAM_1024x32_wrapper) {
     }
     pin("AD[3]") {
       direction : input;
-      capacitance : 0.0035;
+      capacitance : 0.0034;
     }
     pin("AD[2]") {
       direction : input;
-      capacitance : 0.0032;
+      capacitance : 0.0031;
     }
     pin("AD[1]") {
       direction : input;
@@ -158,31 +158,31 @@ library (CF_SRAM_1024x32_wrapper) {
       capacitance : 0.0000;
     pin("BEN[31]") {
       direction : input;
-      capacitance : 0.0026;
+      capacitance : 0.0025;
     }
     pin("BEN[30]") {
       direction : input;
-      capacitance : 0.0022;
+      capacitance : 0.0023;
     }
     pin("BEN[29]") {
       direction : input;
-      capacitance : 0.0033;
+      capacitance : 0.0029;
     }
     pin("BEN[28]") {
       direction : input;
-      capacitance : 0.0045;
+      capacitance : 0.0047;
     }
     pin("BEN[27]") {
       direction : input;
-      capacitance : 0.0062;
+      capacitance : 0.0053;
     }
     pin("BEN[26]") {
       direction : input;
-      capacitance : 0.0074;
+      capacitance : 0.0077;
     }
     pin("BEN[25]") {
       direction : input;
-      capacitance : 0.0070;
+      capacitance : 0.0065;
     }
     pin("BEN[24]") {
       direction : input;
@@ -190,99 +190,99 @@ library (CF_SRAM_1024x32_wrapper) {
     }
     pin("BEN[23]") {
       direction : input;
-      capacitance : 0.0098;
+      capacitance : 0.0107;
     }
     pin("BEN[22]") {
       direction : input;
-      capacitance : 0.0126;
+      capacitance : 0.0144;
     }
     pin("BEN[21]") {
       direction : input;
-      capacitance : 0.0177;
+      capacitance : 0.0199;
     }
     pin("BEN[20]") {
       direction : input;
-      capacitance : 0.0222;
+      capacitance : 0.0184;
     }
     pin("BEN[19]") {
       direction : input;
-      capacitance : 0.0290;
+      capacitance : 0.0210;
     }
     pin("BEN[18]") {
       direction : input;
-      capacitance : 0.0273;
+      capacitance : 0.0214;
     }
     pin("BEN[17]") {
       direction : input;
-      capacitance : 0.0255;
+      capacitance : 0.0282;
     }
     pin("BEN[16]") {
       direction : input;
-      capacitance : 0.0288;
+      capacitance : 0.0290;
     }
     pin("BEN[15]") {
       direction : input;
-      capacitance : 0.0300;
+      capacitance : 0.0312;
     }
     pin("BEN[14]") {
       direction : input;
-      capacitance : 0.0313;
+      capacitance : 0.0334;
     }
     pin("BEN[13]") {
       direction : input;
-      capacitance : 0.0398;
+      capacitance : 0.0351;
     }
     pin("BEN[12]") {
       direction : input;
-      capacitance : 0.0387;
+      capacitance : 0.0373;
     }
     pin("BEN[11]") {
       direction : input;
-      capacitance : 0.0353;
+      capacitance : 0.0394;
     }
     pin("BEN[10]") {
       direction : input;
-      capacitance : 0.0404;
+      capacitance : 0.0377;
     }
     pin("BEN[9]") {
       direction : input;
-      capacitance : 0.0464;
+      capacitance : 0.0409;
     }
     pin("BEN[8]") {
       direction : input;
-      capacitance : 0.0401;
+      capacitance : 0.0415;
     }
     pin("BEN[7]") {
       direction : input;
-      capacitance : 0.0442;
+      capacitance : 0.0433;
     }
     pin("BEN[6]") {
       direction : input;
-      capacitance : 0.0504;
+      capacitance : 0.0475;
     }
     pin("BEN[5]") {
       direction : input;
-      capacitance : 0.0471;
+      capacitance : 0.0583;
     }
     pin("BEN[4]") {
       direction : input;
-      capacitance : 0.0536;
+      capacitance : 0.0425;
     }
     pin("BEN[3]") {
       direction : input;
-      capacitance : 0.0594;
+      capacitance : 0.0521;
     }
     pin("BEN[2]") {
       direction : input;
-      capacitance : 0.0349;
+      capacitance : 0.0579;
     }
     pin("BEN[1]") {
       direction : input;
-      capacitance : 0.0572;
+      capacitance : 0.0509;
     }
     pin("BEN[0]") {
       direction : input;
-      capacitance : 0.0539;
+      capacitance : 0.0556;
     }
     }
     bus("DI") {
@@ -311,11 +311,11 @@ library (CF_SRAM_1024x32_wrapper) {
     }
     pin("DI[26]") {
       direction : input;
-      capacitance : 0.0032;
+      capacitance : 0.0033;
     }
     pin("DI[25]") {
       direction : input;
-      capacitance : 0.0035;
+      capacitance : 0.0033;
     }
     pin("DI[24]") {
       direction : input;
@@ -323,7 +323,7 @@ library (CF_SRAM_1024x32_wrapper) {
     }
     pin("DI[23]") {
       direction : input;
-      capacitance : 0.0031;
+      capacitance : 0.0030;
     }
     pin("DI[22]") {
       direction : input;
@@ -351,11 +351,11 @@ library (CF_SRAM_1024x32_wrapper) {
     }
     pin("DI[16]") {
       direction : input;
-      capacitance : 0.0037;
+      capacitance : 0.0034;
     }
     pin("DI[15]") {
       direction : input;
-      capacitance : 0.0030;
+      capacitance : 0.0029;
     }
     pin("DI[14]") {
       direction : input;
@@ -379,15 +379,15 @@ library (CF_SRAM_1024x32_wrapper) {
     }
     pin("DI[9]") {
       direction : input;
-      capacitance : 0.0030;
+      capacitance : 0.0029;
     }
     pin("DI[8]") {
       direction : input;
-      capacitance : 0.0030;
+      capacitance : 0.0029;
     }
     pin("DI[7]") {
       direction : input;
-      capacitance : 0.0030;
+      capacitance : 0.0029;
     }
     pin("DI[6]") {
       direction : input;
@@ -415,7 +415,7 @@ library (CF_SRAM_1024x32_wrapper) {
     }
     pin("DI[0]") {
       direction : input;
-      capacitance : 0.0047;
+      capacitance : 0.0045;
     }
     }
     bus("DO") {
@@ -424,99 +424,99 @@ library (CF_SRAM_1024x32_wrapper) {
       capacitance : 0.0000;
     pin("DO[31]") {
       direction : output;
-      capacitance : 0.0646;
+      capacitance : 0.0608;
     }
     pin("DO[30]") {
       direction : output;
-      capacitance : 0.0615;
+      capacitance : 0.0692;
     }
     pin("DO[29]") {
       direction : output;
-      capacitance : 0.0551;
+      capacitance : 0.0319;
     }
     pin("DO[28]") {
       direction : output;
-      capacitance : 0.0358;
+      capacitance : 0.0310;
     }
     pin("DO[27]") {
       direction : output;
-      capacitance : 0.0543;
+      capacitance : 0.0506;
     }
     pin("DO[26]") {
       direction : output;
-      capacitance : 0.0492;
+      capacitance : 0.0376;
     }
     pin("DO[25]") {
       direction : output;
-      capacitance : 0.0512;
+      capacitance : 0.0435;
     }
     pin("DO[24]") {
       direction : output;
-      capacitance : 0.0463;
+      capacitance : 0.0542;
     }
     pin("DO[23]") {
       direction : output;
-      capacitance : 0.0412;
+      capacitance : 0.0408;
     }
     pin("DO[22]") {
       direction : output;
-      capacitance : 0.0349;
+      capacitance : 0.0489;
     }
     pin("DO[21]") {
       direction : output;
-      capacitance : 0.0461;
+      capacitance : 0.0414;
     }
     pin("DO[20]") {
       direction : output;
-      capacitance : 0.0348;
+      capacitance : 0.0450;
     }
     pin("DO[19]") {
       direction : output;
-      capacitance : 0.0397;
+      capacitance : 0.0392;
     }
     pin("DO[18]") {
       direction : output;
-      capacitance : 0.0342;
+      capacitance : 0.0428;
     }
     pin("DO[17]") {
       direction : output;
-      capacitance : 0.0373;
+      capacitance : 0.0460;
     }
     pin("DO[16]") {
       direction : output;
-      capacitance : 0.0348;
+      capacitance : 0.0309;
     }
     pin("DO[15]") {
       direction : output;
-      capacitance : 0.0318;
+      capacitance : 0.0358;
     }
     pin("DO[14]") {
       direction : output;
-      capacitance : 0.0290;
+      capacitance : 0.0288;
     }
     pin("DO[13]") {
       direction : output;
-      capacitance : 0.0256;
+      capacitance : 0.0230;
     }
     pin("DO[12]") {
       direction : output;
-      capacitance : 0.0242;
+      capacitance : 0.0266;
     }
     pin("DO[11]") {
       direction : output;
-      capacitance : 0.0194;
+      capacitance : 0.0190;
     }
     pin("DO[10]") {
       direction : output;
-      capacitance : 0.0163;
+      capacitance : 0.0195;
     }
     pin("DO[9]") {
       direction : output;
-      capacitance : 0.0146;
+      capacitance : 0.0145;
     }
     pin("DO[8]") {
       direction : output;
-      capacitance : 0.0149;
+      capacitance : 0.0187;
     }
     pin("DO[7]") {
       direction : output;
@@ -528,23 +528,23 @@ library (CF_SRAM_1024x32_wrapper) {
     }
     pin("DO[5]") {
       direction : output;
-      capacitance : 0.0106;
+      capacitance : 0.0097;
     }
     pin("DO[4]") {
       direction : output;
-      capacitance : 0.0080;
+      capacitance : 0.0068;
     }
     pin("DO[3]") {
       direction : output;
-      capacitance : 0.0051;
+      capacitance : 0.0056;
     }
     pin("DO[2]") {
       direction : output;
-      capacitance : 0.0051;
+      capacitance : 0.0056;
     }
     pin("DO[1]") {
       direction : output;
-      capacitance : 0.0021;
+      capacitance : 0.0018;
     }
     pin("DO[0]") {
       direction : output;

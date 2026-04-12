@@ -1,0 +1,100 @@
+{
+  "DESIGN_NAME": "metadata_cache_m",
+  "DESIGN_IS_CORE": 0,
+  "VERILOG_FILES": [
+      "dir::../../verilog/rtl/defines.v",
+      "dir::../../verilog/rtl/user_defines/bus_stream.v",
+      "dir::../../verilog/rtl/user_defines/common_misc.v",
+      "dir::../../verilog/rtl/user_defines/core.v",
+      "dir::../../verilog/rtl/user_defines/rasterizer.v",
+      "dir::../../verilog/rtl/user_defines/vga.v",
+      "dir::../../verilog/rtl/user_defines.v",
+      
+      "dir::../../verilog/rtl/metadata_cache.v"
+  ],
+  "VERILOG_FILES_BLACKBOX": [
+      "dir::../../ip/CF_SRAM_1024x32/hdl/CF_SRAM_1024x32_stub.v"
+  ],
+    "SYNTH_DEFINES" :[
+      "HARDENING"
+  ],
+    "SYNTH_USE_PG_PINS_DEFINES": "USE_POWER_PINS",
+    "ERROR_ON_LINTER_ERRORS": false,
+    "ROUTING_CORES": 6,
+    "CLOCK_PERIOD": 25,
+    "CLOCK_PORT": "CLKin",
+    "FP_SIZING": "absolute",
+    "DIE_AREA": "0.000 0.000 600 750",
+    "PL_TARGET_DENSITY": 0.60,
+    "SYNTH_STRATEGY": "AREA 0",
+    "FP_PIN_ORDER_CFG": "dir::pin_order.cfg",
+    "VDD_NETS": [
+        "vccd1"
+    ],
+    "GND_NETS": [
+        "vssd1"
+    ],
+    "SYNTH_READ_BLACKBOX_LIB": true,
+    "EXTRA_GDS_FILES": [
+        "dir::../../ip/CF_SRAM_1024x32/gds/CF_SRAM_1024x32.gds"
+    ],
+    "EXTRA_LEFS": [
+        "dir::../../ip/CF_SRAM_1024x32/lef/CF_SRAM_1024x32.lef"
+    ],
+    "EXTRA_LIBS": [
+        "dir::../../ip/CF_SRAM_1024x32/lib/CF_SRAM_1024x32_tt_180V_25C.lib"
+    ],
+    "MACRO_PLACEMENT_CFG": "dir::macro.cfg",
+    "FP_PDN_HORIZONTAL_LAYER": "met3",
+    "FP_PDN_VERTICAL_LAYER": "met2",
+    "RUN_IRDROP_REPORT": false,
+    "FP_PDN_CHECK_NODES": false,
+    "FP_PDN_CFG": "dir::pdn.tcl",
+    "FP_PDN_MACRO_HOOKS": "i_sram vccd1 vssd1 vpwra vgnd,i_sram vccd1 vssd1 vpb vnb,i_sram vccd1 vssd1 vpwrp vgnd,i_sram vccd1 vssd1 vpwrm vgnd",
+    "QUIT_ON_LINTER_ERRORS": false,
+    "QUIT_ON_SYNTH_CHECKS": false,
+    "QUIT_ON_YOSYS_WARNINGS": false,
+    "PL_TIME_DRIVEN": false,
+    "PL_ROUTABILITY_DRIVEN": true,
+    "GRT_ALLOW_CONGESTION": true,
+    "GRT_ADJUSTMENT": 0,
+    "PL_RESIZER_DESIGN_OPTIMIZATIONS": 1,
+    "PL_RESIZER_TIMING_OPTIMIZATIONS": 1,
+    "GLB_RESIZER_DESIGN_OPTIMIZATIONS": 1,
+    "GLB_RESIZER_TIMING_OPTIMIZATIONS": 1,
+    "QUIT_ON_MAGIC_DRC": false,
+    "MAGIC_EXT_USE_GDS": false,
+    "MAGIC_CAPTURE_ERRORS": false,
+    "QUIT_ON_ILLEGAL_OVERLAPS": false,
+  "IO_SYNC": 0,
+  "BASE_SDC_FILE": "dir::base_user_proj_example.sdc",
+  "RUN_CVC": 1,
+  "pdk::sky130*": {
+      "FP_CORE_UTIL": 45,
+      "RT_MAX_LAYER": "met4",
+      "scl::sky130_fd_sc_hd": {
+          "CLOCK_PERIOD": 25
+      },
+      "scl::sky130_fd_sc_hdll": {
+          "CLOCK_PERIOD": 10
+      },
+      "scl::sky130_fd_sc_hs": {
+          "CLOCK_PERIOD": 8
+      },
+      "scl::sky130_fd_sc_ls": {
+          "CLOCK_PERIOD": 10,
+          "SYNTH_MAX_FANOUT": 5
+      },
+      "scl::sky130_fd_sc_ms": {
+          "CLOCK_PERIOD": 10
+      }
+  },
+  "pdk::gf180mcuC": {
+      "STD_CELL_LIBRARY": "gf180mcu_fd_sc_mcu7t5v0",
+      "CLOCK_PERIOD": 24.0,
+      "FP_CORE_UTIL": 40,
+      "RT_MAX_LAYER": "Metal4",
+      "SYNTH_MAX_FANOUT": 4,
+      "PL_TARGET_DENSITY": 0.45
+  }
+}

@@ -107,14 +107,14 @@ if { $::env(FP_PDN_CORE_RING) == 1 } {
     }
 }
 
-add_pdn_stripe \
-        -grid stdcell_grid \
-        -layer met4 \
-        -width 3.1 \
-        -pitch 30 \
-        -offset 5 \
-        -spacing 11.9 \
-        -starts_with POWER -extend_to_boundary
+# add_pdn_stripe \
+#         -grid stdcell_grid \
+#         -layer met4 \
+#         -width 3.1 \
+#         -pitch 30 \
+#         -offset 5 \
+#         -spacing 11.9 \
+#         -starts_with POWER -extend_to_boundary
 
 add_pdn_connect \
         -grid stdcell_grid \

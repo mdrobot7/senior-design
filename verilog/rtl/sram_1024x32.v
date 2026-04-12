@@ -7,6 +7,8 @@
  */
 module sram_1024x32_m (
 `ifdef USE_POWER_PINS
+    input wire vccd1,
+    input wire vssd1,
     input wire vpwrac,
     input wire vpwrpc,
 `endif
@@ -20,6 +22,8 @@ module sram_1024x32_m (
     output wire [`WORD] data_o
 );
 
+// Do not use this file for synthesis, we do not want to wrap the bb.
+
 `ifdef FPGA
   rams_sp_wf sram (
     .clk(clk_i),
@@ -30,7 +34,7 @@ module sram_1024x32_m (
     .dout(data_o)
   );
 `else
-  `define functional // Use this for RTL tests (we think), disables the $setuphold tests that can't be checked with RTL
+  `define functional // Use this for RTL tests, disables the $setuphold tests that can't be checked with RTL
   CF_SRAM_1024x32_macro sram (
   `ifdef USE_POWER_PINS
     .vpwrac(vpwrac),

@@ -44,3 +44,7 @@
 
 `define SPI_MEM_SIZE (32000000 / 8)
 
+// sram
+`define SRAM_READ (1'b1)
+`define SRAM_WRITE (1'b0)
+
