@@ -37,7 +37,6 @@ module wb_to_pk_m
     assign base_seqmst =
         (state == PK_STREAM_WRITE && (wcount_inc_reg + 2 > wcount_reg) && mport_i[`BUS_MI_SEQSLV]) ? 1'b1 :
         1'b0;
-        // (state == PK_WRITE_PREP && wcount_reg == 1 && mport_i[`BUS_MI_ACK]) ? 1'b1 :
     assign combinational_seqmst = base_seqmst | seqmst_hold_reg;
     assign mport_o = {
         mport_o_reg[`BUS_MOPORT_SIZE-1:`BUS_MO_SEQMST+1],
@@ -235,21 +234,10 @@ module wb_to_pk_m
                 mport_o_reg[`BUS_MO_RW] <= `BUS_WRITE;
                 mport_o_reg[`BUS_MO_SIZE]   <= `BUS_SIZE_STREAM;
 
-                // if (wcount_reg == 1) begin
-                //     if (mport_i[`BUS_MI_ACK]) begin
-                //         state <= PK_CLEANUP;
-                //         seqmst_hold_reg <= 1;
-                //     end
-                //     else
-                //         state <= PK_WRITE_PREP;
-                // end
-                // else begin
-                if(mport_i[`BUS_MI_ACK]) begin
-                    state <= PK_STREAM_WRITE;
-                end
+                if(mport_i[`BUS_MI_ACK]) 
+                    state <= PK_STREAM_WRITE;     
                 else
                     state <= PK_WRITE_PREP;
-                // end
             end
             PK_STREAM_WRITE: begin
                 status_reg <= PK_STREAM_WRITE;
@@ -262,11 +250,9 @@ module wb_to_pk_m
                         state <= PK_CLEANUP;
                     end
                 end
-
             end
             PK_CLEANUP: begin
                 status_reg <= PK_CLEANUP;
-
                 seqmst_hold_reg <= 0;
                 mport_o_reg[`BUS_MO_REQ] <= 0;
 
