@@ -47,7 +47,7 @@ module wb_to_pk_tb;
 		$dumpvars(0, wb_to_pk_tb);
 
 		// Repeat cycles of 100 clock edges as needed to complete testbench
-		repeat (250) begin
+		repeat (25000) begin
 			repeat (100) @(posedge clock);
 			// $display("+1000 cycles");
 		end

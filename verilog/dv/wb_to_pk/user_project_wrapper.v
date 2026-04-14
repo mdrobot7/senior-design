@@ -123,19 +123,35 @@ wb_to_pk_m my_wb_to_pk (
       .sports_o({ sportai })
   );
 
-  localparam SLAVE_ADDR = 20'd0;
-  localparam MEM_SIZE = 1024;
+  wire spi_clk1;
+  wire spi_cs1;
+  wire [3:0] spi_mosi1;
+  wire [3:0] spi_miso1;
+  wire spi_dqsmi1;
+  wire spi_dqsmo1;
 
-  wire bad_read;
+  spi_mem_m #(0, 4096) spi_mem1(
+      .clk_i(wb_clk_i),
+      .nrst_i(!wb_rst_i),
 
-  bus_slave_m #(SLAVE_ADDR, MEM_SIZE) slave (
-    .clk_i(wb_clk_i),
-    .nrst_i(!wb_rst_i),
+      .sport_i({ sportai }),
+      .sport_o({ sportao }),
 
-    .sport_i(sportai),
-    .sport_o(sportao),
+      .spi_clk_o(spi_clk1),
+      .spi_cs_o(spi_cs1),
+      .spi_mosi_o(spi_mosi1),
+      .spi_miso_i(spi_miso1),
+      .spi_dqsm_i(spi_dqsmi1),
+      .spi_dqsm_o(spi_dqsmo1)
+  );
 
-    .bad_read_o(bad_read)
+    spi_chip_m #(4096) spi_chip1(
+      .clk_i(spi_clk1),
+      .cs_i(spi_cs1),
+      .mosi_i(spi_mosi1),
+      .miso_o(spi_miso1),
+      .dqsm_o(spi_dqsmi1),
+      .dqsm_i(spi_dqsmo1)
   );
 
 // ---- Set pin directions ----
