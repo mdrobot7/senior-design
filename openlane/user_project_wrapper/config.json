@@ -1,0 +1,139 @@
+{
+    "DESIGN_NAME": "user_project_wrapper",
+    "DESIGN_IS_CORE": 1,
+    "VERILOG_FILES": [
+        "dir::../../verilog/rtl/defines.v",
+        "dir::../../verilog/rtl/user_defines/bus_stream.v",
+        "dir::../../verilog/rtl/user_defines/common_misc.v",
+        "dir::../../verilog/rtl/user_defines/core.v",
+        "dir::../../verilog/rtl/user_defines/rasterizer.v",
+        "dir::../../verilog/rtl/user_defines.v",
+
+        "dir::../../verilog/rtl/user_project_wrapper.v"
+    ],
+
+    "VERILOG_FILES_BLACKBOX": [
+        "dir::../../verilog/rtl/user_defines/bus_stream.v",
+        "dir::../../verilog/rtl/user_defines/common_misc.v",
+        "dir::../../verilog/rtl/user_defines/core.v",
+        "dir::../../verilog/rtl/user_defines/rasterizer.v",
+        "dir::../../verilog/rtl/user_defines/vga.v",
+
+        "dir::../../verilog/rtl/top_level_bb.v",
+
+        "dir::../../verilog/rtl/analog/CurrentSteering_3bit_rev3_bb.v",
+        "dir::../../verilog/rtl/analog/sdmay26_23_opamp_bb.v",
+
+        "dir::../../verilog/rtl/analog/inverter_bb.v",
+        "dir::../../verilog/rtl/analog/opamp_5t_bb.v"
+    ],
+
+    "EXTRA_GDS_FILES": [
+        "dir::../../gds/top_level_m.gds",
+
+        "dir::../../gds/CurrentSteering_3bit_rev3.gds",
+        "dir::../../gds/sdmay26_23_opamp.gds",
+
+        "dir::../../gds/inverter.gds",
+        "dir::../../gds/opamp_5t.gds"
+    ],
+    "EXTRA_LEFS": [
+        "dir::../../lef/top_level_m.lef",
+
+        "dir::../../lef/CurrentSteering_3bit_rev3.lef",
+        "dir::../../lef/sdmay26_23_opamp.lef",
+
+        "dir::../../lef/inverter.lef",
+        "dir::../../lef/opamp_5t.lef"
+    ],
+    "EXTRA_LIBS": [
+        "dir::../../lib/top_level_m.lib"
+    ],
+
+    "EXTRA_SPEFS": [
+        "top_level_m",
+        "dir::../../spef/multicorner/top_level_m.min.spef",
+        "dir::../../spef/multicorner/top_level_m.nom.spef",
+        "dir::../../spef/multicorner/top_level_m.max.spef"
+    ],
+
+    "FP_DEF_TEMPLATE": "dir::fixed_dont_change/user_project_wrapper.def",
+    "BASE_SDC_FILE": "dir::base_user_project_wrapper.sdc",
+    "MAX_TRANSITION_CONSTRAINT": 1.5,
+    "RUN_CVC": 0,
+    "IO_SYNC": 0,
+    "UNIT": 2.4,
+
+    "SYNTH_DEFINES": [ "HARDENING" ],
+
+    "ROUTING_CORES": 24,
+    "CLOCK_PERIOD": 20,
+    "CLOCK_PORT": "wb_clk_i",
+    "DIE_AREA": "0 0 2920 3520",
+    "RT_MAX_LAYER": "met5",
+
+    "PL_TARGET_DENSITY": 0.04,
+
+    "FP_PDN_CHECK_NODES": 0,
+    "FP_PDN_ENABLE_RAILS": 1,
+    "FP_PDN_VPITCH": 180,
+    "FP_PDN_HPITCH": 180,
+    "FP_PDN_VOFFSET": 5,
+    "FP_PDN_HOFFSET": 5,
+    "FP_PDN_CORE_RING": 1,
+    "FP_PDN_CORE_RING_VWIDTH": 3.1,
+    "FP_PDN_CORE_RING_HWIDTH": 3.1,
+    "FP_PDN_CORE_RING_VOFFSET": 12.45,
+    "FP_PDN_CORE_RING_HOFFSET": 12.45,
+    "FP_PDN_CORE_RING_VSPACING": 1.7,
+    "FP_PDN_CORE_RING_HSPACING": 1.7,
+    "FP_PDN_VWIDTH": 3.1,
+    "FP_PDN_HWIDTH": 3.1,
+    "FP_PDN_VSPACING": "expr::(5 * $FP_PDN_CORE_RING_VWIDTH)",
+    "FP_PDN_HSPACING": "expr::(5 * $FP_PDN_CORE_RING_HWIDTH)",
+    "FP_PDN_MACRO_HOOKS": "top_level vccd1 vssd1 vccd1 vssd1,red_dac vdda2 vssa2 VDD VSS,blue_dac vdda2 vssa2 VDD VSS,green_dac vdda2 vssa2 VDD VSS",
+
+
+    "SYNTH_BUFFERING": 0,
+    "SYNTH_STRATEGY": "AREA 1",
+    "SYNTH_USE_PG_PINS_DEFINES": "USE_POWER_PINS",
+    "ERROR_ON_LINTER_ERRORS": false,
+    "FP_SIZING": "absolute",
+    "FP_PIN_ORDER_CFG": "dir::pin_order.cfg",
+    "PNR_SDC_FILE": "dir::base.sdc",
+    "SIGNOFF_SDC_FILE": "dir::base.sdc",
+    "VDD_NETS": [
+        "vccd1",
+        "vccd2",
+        "vdda1",
+        "vdda2"
+    ],
+    "GND_NETS": [
+        "vssd1",
+        "vssd2",
+        "vssa1",
+        "vssa2"
+    ],
+    "MACRO_PLACEMENT_CFG": "dir::macro.cfg",
+    "RUN_IRDROP_REPORT": false,
+    "QUIT_ON_LINTER_ERRORS": false,
+    "QUIT_ON_SYNTH_CHECKS": false,
+    "QUIT_ON_YOSYS_WARNINGS": false,
+    "PL_TIME_DRIVEN": false,
+    "PL_ROUTABILITY_DRIVEN": true,
+    "GRT_ALLOW_CONGESTION": true,
+    "GRT_ADJUSTMENT": 0,
+    "GLB_RESIZER_DESIGN_OPTIMIZATIONS": true,
+    "GLB_RESIZER_TIMING_OPTIMIZATIONS": true,
+    "QUIT_ON_MAGIC_DRC": false,
+    "MAGIC_EXT_USE_GDS": false,
+    "MAGIC_CAPTURE_ERRORS": false,
+    "QUIT_ON_ILLEGAL_OVERLAPS": false,
+
+    "FP_IO_VEXTEND": "expr::2 * $UNIT",
+    "FP_IO_HEXTEND": "expr::2 * $UNIT",
+    "FP_IO_VLENGTH": "expr::$UNIT",
+    "FP_IO_HLENGTH": "expr::$UNIT",
+    "FP_IO_VTHICKNESS_MULT": 4,
+    "FP_IO_HTHICKNESS_MULT": 4
+}

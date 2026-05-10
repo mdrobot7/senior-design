@@ -1,0 +1,2 @@
+
+    "FP_PDN_MACRO_HOOKS": "top_level vccd1 vssd1 vccd1 vssd1,red_dac vdda2 vssa2 VDD VSS,green_dac vdda2 vssa2 VDD VSS,blue_dac vdda2 vssa2 VDD VSS",

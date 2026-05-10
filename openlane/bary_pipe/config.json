@@ -1,0 +1,52 @@
+{
+    "DESIGN_NAME": "bary_pipe_m",
+    "DESIGN_IS_CORE": 0,
+    "VERILOG_FILES": [
+        "dir::../../verilog/rtl/defines.v",
+        "dir::../../verilog/rtl/user_defines/bus_stream.v",
+        "dir::../../verilog/rtl/user_defines/common_misc.v",
+        "dir::../../verilog/rtl/user_defines/core.v",
+        "dir::../../verilog/rtl/user_defines/rasterizer.v",
+        "dir::../../verilog/rtl/user_defines/vga.v",
+        "dir::../../verilog/rtl/user_defines.v",
+        "dir::../../verilog/rtl/math/add.v",
+        "dir::../../verilog/rtl/math/mul.v",
+        "dir::../../verilog/rtl/math/sub.v",
+        "dir::../../verilog/rtl/rasterizer/bary_pipe.v"
+    ],
+    "ROUTING_CORES": 24,
+    "CLOCK_PERIOD": 20,
+    "CLOCK_PORT": "clk_i",
+    "DIE_AREA": "0 0 400 380",
+    "RT_MAX_LAYER": "met4",
+    "PL_TARGET_DENSITY": 0.75,
+    "SYNTH_BUFFERING": 0,
+    "SYNTH_STRATEGY": "AREA 0",
+    "SYNTH_USE_PG_PINS_DEFINES": "USE_POWER_PINS",
+    "ERROR_ON_LINTER_ERRORS": false,
+    "FP_SIZING": "absolute",
+    "FP_PIN_ORDER_CFG": "dir::pin_order.cfg",
+    "PNR_SDC_FILE": "dir::base.sdc",
+    "SIGNOFF_SDC_FILE": "dir::base.sdc",
+    "VDD_NETS": [
+        "vccd1"
+    ],
+    "GND_NETS": [
+        "vssd1"
+    ],
+    "MACRO_PLACEMENT_CFG": "dir::macro.cfg",
+    "RUN_IRDROP_REPORT": false,
+    "QUIT_ON_LINTER_ERRORS": false,
+    "QUIT_ON_SYNTH_CHECKS": false,
+    "QUIT_ON_YOSYS_WARNINGS": false,
+    "PL_TIME_DRIVEN": false,
+    "PL_ROUTABILITY_DRIVEN": true,
+    "GRT_ALLOW_CONGESTION": true,
+    "GRT_ADJUSTMENT": 0,
+    "GLB_RESIZER_DESIGN_OPTIMIZATIONS": true,
+    "GLB_RESIZER_TIMING_OPTIMIZATIONS": true,
+    "QUIT_ON_MAGIC_DRC": false,
+    "MAGIC_EXT_USE_GDS": false,
+    "MAGIC_CAPTURE_ERRORS": false,
+    "QUIT_ON_ILLEGAL_OVERLAPS": false
+}

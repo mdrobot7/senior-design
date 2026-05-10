@@ -1,0 +1,36 @@
+# Sets up SVUnit
+git submodule update --init --recursive
+
+cd ./svunit/
+export SVUNIT_INSTALL=`pwd`
+export PATH=$PATH:$SVUNIT_INSTALL"/bin"
+source Setup.bsh
+cd -
+
+# Sets up questasim
+export PATH=/usr/local/mentor/questasim/linux_x86_64:$PATH
+export SALT_LICENSE_SERVER=1717@io.ece.iastate.edu
+
+# Sets up search paths
+RTL_PATH=$(realpath $(pwd)/../verilog/rtl)
+echo +incdir+${RTL_PATH} +define+SVUNIT > ./unit_tests/rtl.f
+
+# Sets up unit test path
+export UNIT_TEST_PATH=$(pwd)/unit_tests
+
+# Run test
+# Usage: cf_run_svunit [name_of_unit_test.sv]
+cf_run_svunit() {
+    cd ${UNIT_TEST_PATH}
+    runSVUnit -s questa -f rtl.f -r "-sv_seed random" -t "$1"
+    cd - >/dev/null
+}
+
+# Run test and output waves to WLF file
+# Usage: cf_run_svunit_waves [name_of_unit_test.sv]
+# Ex: cf_run_svunit_waves vga_unit_test.sv
+cf_run_svunit_waves() {
+    cd ${UNIT_TEST_PATH}
+    runSVUnit -s questa -f rtl.f -c "+acc" -r "-voptargs=+acc" -r "-sv_seed random" -r "-do \"set WildcardFilter None\"" -r "-do \"log -r /testrunner/*\"" -t "$1"
+    cd - >/dev/null
+}

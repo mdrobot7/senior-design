@@ -1,0 +1,117 @@
+{
+    "DESIGN_NAME": "rasterizer_wrapper_m",
+    "DESIGN_IS_CORE": 1,
+    "VERILOG_FILES": [
+        "dir::../../verilog/rtl/defines.v",
+        "dir::../../verilog/rtl/user_defines/bus_stream.v",
+        "dir::../../verilog/rtl/user_defines/common_misc.v",
+        "dir::../../verilog/rtl/user_defines/core.v",
+        "dir::../../verilog/rtl/user_defines/rasterizer.v",
+        "dir::../../verilog/rtl/user_defines/vga.v",
+        "dir::../../verilog/rtl/user_defines.v",
+
+        "dir::../../verilog/rtl/rasterizer/rasterizer_wrapper.v",
+        "dir::../../verilog/rtl/rasterizer/rasterizer.v",
+
+        "dir::../../verilog/rtl/rasterizer/bary_pipe_bb.v",
+        "dir::../../verilog/rtl/rasterizer/wavg_pipe_bb.v",
+
+        "dir::../../verilog/rtl/math/mul.v",
+        "dir::../../verilog/rtl/math/add.v",
+
+        "dir::../../verilog/rtl/rasterizer/bary_check_pipe.v",
+        "dir::../../verilog/rtl/rasterizer/depth_interp.v",
+        "dir::../../verilog/rtl/rasterizer/depth_test.v",
+        "dir::../../verilog/rtl/rasterizer/tex_sample.v",
+        "dir::../../verilog/rtl/rasterizer/wdiv_pipe.v",
+
+        "dir::../../verilog/rtl/wishbone_register.v",
+        "dir::../../verilog/rtl/wishbone_helper.v"
+    ],
+
+    "VERILOG_FILES_BLACKBOX": [
+        "dir::../../verilog/rtl/user_defines/bus_stream.v",
+        "dir::../../verilog/rtl/user_defines/common_misc.v",
+        "dir::../../verilog/rtl/user_defines/core.v",
+        "dir::../../verilog/rtl/user_defines/rasterizer.v",
+        "dir::../../verilog/rtl/user_defines/vga.v",
+
+        "dir::../../verilog/rtl/rasterizer/bary_pipe_bb.v",
+        "dir::../../verilog/rtl/rasterizer/wavg_pipe_bb.v",
+        "dir::../../verilog/rtl/math/shared_div_rasterizer_bb.v"
+    ],
+
+    "EXTRA_GDS_FILES": [
+        "dir::../../gds/bary_pipe_m.gds",
+        "dir::../../gds/wavg_pipe_m.gds",
+        "dir::../../gds/shared_div_rasterizer_m.gds"
+    ],
+    "EXTRA_LEFS": [
+        "dir::../../lef/bary_pipe_m.lef",
+        "dir::../../lef/wavg_pipe_m.lef",
+        "dir::../../lef/shared_div_rasterizer_m.lef"
+    ],
+    "EXTRA_LIBS": [
+        "dir::../../lib/bary_pipe_m.lib",
+        "dir::../../lib/wavg_pipe_m.lib",
+        "dir::../../lib/shared_div_rasterizer_m.lib"
+    ],
+
+    "EXTRA_SPEFS": [
+        "bary_pipe_m",
+        "dir::../../spef/multicorner/bary_pipe_m.min.spef",
+        "dir::../../spef/multicorner/bary_pipe_m.nom.spef",
+        "dir::../../spef/multicorner/bary_pipe_m.max.spef",
+        "wavg_pipe_m",
+        "dir::../../spef/multicorner/wavg_pipe_m.min.spef",
+        "dir::../../spef/multicorner/wavg_pipe_m.nom.spef",
+        "dir::../../spef/multicorner/wavg_pipe_m.max.spef",
+        "shared_div_rasterizer_m",
+        "dir::../../spef/multicorner/shared_div_rasterizer_m.min.spef",
+        "dir::../../spef/multicorner/shared_div_rasterizer_m.nom.spef",
+        "dir::../../spef/multicorner/shared_div_rasterizer_m.max.spef"
+    ],
+
+    "ROUTING_CORES": 24,
+    "CLOCK_PERIOD": 20,
+    "CLOCK_PORT": "clk_i",
+    "DIE_AREA": "0 0 1700 1300",
+    "RT_MAX_LAYER": "met5",
+
+    "PL_TARGET_DENSITY": 0.28,
+
+    "FP_PDN_CHECK_NODES": 0,
+    "FP_PDN_CORE_RING": 1,
+    "FP_PDN_MACRO_HOOKS": "rasterizer.bary_pipe vccd1 vssd1 vccd1 vssd1,rasterizer.wavg_pipe vccd1 vssd1 vccd1 vssd1,rasterizer.divider vccd1 vssd1 vccd1 vssd1",
+
+    "SYNTH_BUFFERING": 0,
+    "SYNTH_STRATEGY": "AREA 0",
+    "SYNTH_USE_PG_PINS_DEFINES": "USE_POWER_PINS",
+    "ERROR_ON_LINTER_ERRORS": false,
+    "FP_SIZING": "absolute",
+    "FP_PIN_ORDER_CFG": "dir::pin_order.cfg",
+    "PNR_SDC_FILE": "dir::base.sdc",
+    "SIGNOFF_SDC_FILE": "dir::base.sdc",
+    "VDD_NETS": [
+        "vccd1"
+    ],
+    "GND_NETS": [
+        "vssd1"
+    ],
+    "MACRO_PLACEMENT_CFG": "dir::macro.cfg",
+    "RUN_IRDROP_REPORT": false,
+    "QUIT_ON_LINTER_ERRORS": false,
+    "QUIT_ON_SYNTH_CHECKS": false,
+    "QUIT_ON_YOSYS_WARNINGS": false,
+    "PL_TIME_DRIVEN": false,
+    "PL_ROUTABILITY_DRIVEN": true,
+    "GRT_ALLOW_CONGESTION": true,
+    "GRT_ADJUSTMENT": 0,
+    "GLB_RESIZER_DESIGN_OPTIMIZATIONS": true,
+    "GLB_RESIZER_TIMING_OPTIMIZATIONS": true,
+    "QUIT_ON_MAGIC_DRC": false,
+    "MAGIC_EXT_USE_GDS": false,
+    "MAGIC_CAPTURE_ERRORS": false,
+    "QUIT_ON_ILLEGAL_OVERLAPS": false
+}
+

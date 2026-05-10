@@ -1,0 +1,138 @@
+{
+    "DESIGN_NAME": "rasterizer_wrapper_m",
+    "DESIGN_IS_CORE": 0,
+    "VERILOG_FILES": [
+        "dir::../../verilog/rtl/defines.v",
+        "dir::../../verilog/rtl/user_defines/bus_stream.v",
+        "dir::../../verilog/rtl/user_defines/common_misc.v",
+        "dir::../../verilog/rtl/user_defines/core.v",
+        "dir::../../verilog/rtl/user_defines/rasterizer.v",
+        "dir::../../verilog/rtl/user_defines/vga.v",
+        "dir::../../verilog/rtl/user_defines.v",
+
+        "dir::../../verilog/rtl/rasterizer/rasterizer_wrapper.v",
+        "dir::../../verilog/rtl/rasterizer/rasterizer.v",
+
+        "dir::../../verilog/rtl/rasterizer/bary_pipe_bb.v",
+        "dir::../../verilog/rtl/rasterizer/wavg_pipe_bb.v",
+
+        "dir::../../verilog/rtl/math/mul.v",
+        "dir::../../verilog/rtl/math/add.v",
+
+        "dir::../../verilog/rtl/rasterizer/bary_check_pipe.v",
+        "dir::../../verilog/rtl/rasterizer/depth_interp.v",
+        "dir::../../verilog/rtl/rasterizer/depth_test.v",
+        "dir::../../verilog/rtl/rasterizer/tex_sample.v",
+        "dir::../../verilog/rtl/rasterizer/wdiv_pipe.v",
+
+        "dir::../../verilog/rtl/wishbone_register.v",
+        "dir::../../verilog/rtl/wishbone_helper.v"
+    ],
+
+    "VERILOG_FILES_BLACKBOX": [
+        "dir::../../verilog/rtl/user_defines/bus_stream.v",
+        "dir::../../verilog/rtl/user_defines/common_misc.v",
+        "dir::../../verilog/rtl/user_defines/core.v",
+        "dir::../../verilog/rtl/user_defines/rasterizer.v",
+        "dir::../../verilog/rtl/user_defines/vga.v",
+
+        "dir::../../verilog/rtl/rasterizer/bary_pipe_bb.v",
+        "dir::../../verilog/rtl/rasterizer/wavg_pipe_bb.v",
+        "dir::../../verilog/rtl/math/shared_div_rasterizer_bb.v"
+    ],
+
+    "EXTRA_GDS_FILES": [
+        "dir::../../gds/bary_pipe_m.gds",
+        "dir::../../gds/wavg_pipe_m.gds",
+        "dir::../../gds/shared_div_rasterizer_m.gds"
+    ],
+    "EXTRA_LEFS": [
+        "dir::../../lef/bary_pipe_m.lef",
+        "dir::../../lef/wavg_pipe_m.lef",
+        "dir::../../lef/shared_div_rasterizer_m.lef"
+    ],
+    "EXTRA_LIBS": [
+        "dir::../../lib/bary_pipe_m.lib",
+        "dir::../../lib/wavg_pipe_m.lib",
+        "dir::../../lib/shared_div_rasterizer_m.lib"
+    ],
+
+    "EXTRA_SPEFS": [
+        "bary_pipe_m",
+        "dir::../../spef/multicorner/bary_pipe_m.min.spef",
+        "dir::../../spef/multicorner/bary_pipe_m.nom.spef",
+        "dir::../../spef/multicorner/bary_pipe_m.max.spef",
+        "wavg_pipe_m",
+        "dir::../../spef/multicorner/wavg_pipe_m.min.spef",
+        "dir::../../spef/multicorner/wavg_pipe_m.nom.spef",
+        "dir::../../spef/multicorner/wavg_pipe_m.max.spef",
+        "shared_div_rasterizer_m",
+        "dir::../../spef/multicorner/shared_div_rasterizer_m.min.spef",
+        "dir::../../spef/multicorner/shared_div_rasterizer_m.nom.spef",
+        "dir::../../spef/multicorner/shared_div_rasterizer_m.max.spef"
+    ],
+
+    "RT_MAX_LAYER": "met4",
+    "DIE_AREA": "0 0 2200 1900",
+    "CLOCK_PERIOD": 20,
+
+    "SYNTH_READ_BLACKBOX_LIB": true,
+
+    "MACRO_PLACEMENT_CFG": "dir::macro.cfg",
+    "FP_PDN_MACRO_HOOKS": "rasterizer.bary_pipe vccd1 vssd1 vpwra vgnd,rasterizer.wavg_pipe vccd1 vssd1 vpwra vgnd",
+
+    "ROUTING_CORES": 24,
+    "RUN_LINTER": 0,
+    "CLOCK_PORT": "clk_i",
+    "CLOCK_NET": "clk_i",
+    "FP_SIZING": "absolute",
+    "FP_PIN_ORDER_CFG": "dir::pin_order.cfg",
+    "MAX_TRANSITION_CONSTRAINT": 1.0,
+    "MAX_FANOUT_CONSTRAINT": 16,
+    "PL_TARGET_DENSITY": 0.08,
+    "PL_RESIZER_SETUP_SLACK_MARGIN": 0.4,
+    "GLB_RESIZER_SETUP_SLACK_MARGIN": 0.2,
+    "GLB_RESIZER_HOLD_SLACK_MARGIN": 0.2,
+    "PL_RESIZER_HOLD_SLACK_MARGIN": 0.4,
+    "PL_RESIZER_DESIGN_OPTIMIZATIONS": 0,
+    "PL_RESIZER_TIMING_OPTIMIZATIONS": 0,
+    "GLB_RESIZER_DESIGN_OPTIMIZATIONS": 1,
+    "GLB_RESIZER_TIMING_OPTIMIZATIONS": 1,
+    "MAGIC_DEF_LABELS": 0,
+    "SYNTH_BUFFERING": 0,
+    "SYNTH_STRATEGY": "AREA 1",
+    "RUN_HEURISTIC_DIODE_INSERTION": 1,
+    "HEURISTIC_ANTENNA_THRESHOLD": 110,    
+    "GRT_REPAIR_ANTENNAS": 1,
+    "IO_SYNC": 0,
+    "RUN_CVC": 1,
+
+    "PL_TIME_DRIVEN": false,
+    "PL_ROUTABILITY_DRIVEN": true,
+
+    "FP_PDN_CORE_RING": 1,
+    "FP_PDN_HORIZONTAL_LAYER": "met5",
+    "FP_PDN_VERTICAL_LAYER": "met4",
+    "FP_PDN_CHECK_NODES": false,
+    "FP_PDN_CFG": "dir::pdn.tcl",
+    "FP_PDN_CORE_RING_VWIDTH": 3.1,
+    "FP_PDN_CORE_RING_HWIDTH": 3.1,
+    "FP_PDN_CORE_RING_VOFFSET": 12.45,
+    "FP_PDN_CORE_RING_HOFFSET": 12.45,
+    "FP_PDN_CORE_RING_VSPACING": 1.7,
+    "FP_PDN_CORE_RING_HSPACING": 1.7,
+    "FP_PDN_VWIDTH": 3.1,
+    "FP_PDN_HWIDTH": 3.1,
+    "FP_PDN_VSPACING": "expr::(5 * $FP_PDN_CORE_RING_VWIDTH)",
+    "FP_PDN_HSPACING": "expr::(5 * $FP_PDN_CORE_RING_HWIDTH)",
+
+    "SYNTH_USE_PG_PINS_DEFINES": "USE_POWER_PINS",
+
+    "VDD_NETS": [
+        "vccd1"
+    ],
+    "GND_NETS": [
+        "vssd1"
+    ]
+}
+

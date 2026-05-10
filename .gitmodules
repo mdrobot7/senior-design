@@ -1,0 +1,9 @@
+[submodule "library"]
+	path = library
+	url = git@git.ece.iastate.edu:isu-chip-fab/library
+[submodule "verification/svunit"]
+	path = verification/svunit
+	url = https://github.com/svunit/svunit.git
+[submodule "pcb"]
+	path = pcb
+	url = git@git.ece.iastate.edu:isu-chip-fab/hardware.git

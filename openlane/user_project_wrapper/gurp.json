@@ -1,0 +1,89 @@
+{
+    "DESIGN_NAME": "top_level_m",
+    "DESIGN_IS_CORE": 1,
+    "VERILOG_FILES": [
+        "dir::../../verilog/rtl/defines.v",
+        "dir::../../verilog/rtl/user_defines/bus_stream.v",
+        "dir::../../verilog/rtl/user_defines/common_misc.v",
+        "dir::../../verilog/rtl/user_defines/core.v",
+        "dir::../../verilog/rtl/user_defines/rasterizer.v",
+        "dir::../../verilog/rtl/user_defines.v",
+
+        "dir::../../verilog/rtl/user_project_wrapper.v"
+    ],
+
+    "VERILOG_FILES_BLACKBOX": [
+        "dir::../../verilog/rtl/user_defines/bus_stream.v",
+        "dir::../../verilog/rtl/user_defines/common_misc.v",
+        "dir::../../verilog/rtl/user_defines/core.v",
+        "dir::../../verilog/rtl/user_defines/rasterizer.v",
+        "dir::../../verilog/rtl/user_defines/vga.v",
+
+        "dir::../../verilog/rtl/top_level_bb.v"
+    ],
+
+    "EXTRA_GDS_FILES": [
+        "dir::../../gds/top_level_m.gds"
+    ],
+    "EXTRA_LEFS": [
+        "dir::../../lef/top_level_m.lef"
+    ],
+    "EXTRA_LIBS": [
+        "dir::../../lib/top_level_m.lib"
+    ],
+
+    "EXTRA_SPEFS": [
+        "top_level_m",
+        "dir::../../spef/multicorner/top_level_m.min.spef",
+        "dir::../../spef/multicorner/top_level_m.nom.spef",
+        "dir::../../spef/multicorner/top_level_m.max.spef"
+    ],
+
+    "ROUTING_CORES": 24,
+    "CLOCK_PERIOD": 20,
+    "CLOCK_PORT": "wb_clk_i",
+    "DIE_AREA": "0 0 2800 3400",
+    "RT_MAX_LAYER": "met4",
+
+    "PL_TARGET_DENSITY": 0.03,
+
+    "MACRO_PLACEMENT_CFG": "dir::macro.cfg",
+    "FP_PDN_CORE_RING": 1,
+    "FP_PDN_HORIZONTAL_LAYER": "met5",
+    "FP_PDN_VERTICAL_LAYER": "met4",
+    "FP_PDN_CHECK_NODES": 0,
+    "FP_PDN_MACRO_HOOKS": "top_level vccd1 vssd1 vccd1 vssd1",
+
+    "GRT_OBS": "met4 2050 1500 2600 2100",
+
+    "SYNTH_BUFFERING": 0,
+    "SYNTH_STRATEGY": "AREA 1",
+    "SYNTH_USE_PG_PINS_DEFINES": "USE_POWER_PINS",
+    "ERROR_ON_LINTER_ERRORS": false,
+    "FP_SIZING": "absolute",
+    "FP_PIN_ORDER_CFG": "dir::pin_order.cfg",
+    "PNR_SDC_FILE": "dir::base.sdc",
+    "SIGNOFF_SDC_FILE": "dir::base.sdc",
+    "VDD_NETS": [
+        "vccd1"
+    ],
+    "GND_NETS": [
+        "vssd1"
+    ],
+    "MACRO_PLACEMENT_CFG": "dir::macro.cfg",
+    "RUN_IRDROP_REPORT": false,
+    "QUIT_ON_LINTER_ERRORS": false,
+    "QUIT_ON_SYNTH_CHECKS": false,
+    "QUIT_ON_YOSYS_WARNINGS": false,
+    "PL_TIME_DRIVEN": false,
+    "PL_ROUTABILITY_DRIVEN": true,
+    "GRT_ALLOW_CONGESTION": false,
+    "GRT_ADJUSTMENT": 0,
+    "GLB_RESIZER_DESIGN_OPTIMIZATIONS": true,
+    "GLB_RESIZER_TIMING_OPTIMIZATIONS": true,
+    "QUIT_ON_MAGIC_DRC": false,
+    "MAGIC_EXT_USE_GDS": false,
+    "MAGIC_CAPTURE_ERRORS": false,
+    "QUIT_ON_ILLEGAL_OVERLAPS": false
+}
+

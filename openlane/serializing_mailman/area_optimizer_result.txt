@@ -1,0 +1,4 @@
+run=26_04_16_02_41
+run_path=/home/josh/data/sdmay26-24/openlane/serializing_mailman/runs/26_04_16_02_41
+DIE_AREA=0 0 919 1152
+PL_TARGET_DENSITY=0.5781

@@ -1,0 +1,339 @@
+#once
+
+; Local consts
+DECIMAL_POS = 16
+
+; Opcodes
+OPCODE_ADD      = 0x0`6
+OPCODE_ADDI     = 0x1`6
+OPCODE_SUB      = 0x2`6
+OPCODE_MUL      = 0x3`6
+OPCODE_MULI     = 0x4`6
+OPCODE_AND      = 0x5`6
+OPCODE_ANDI     = 0x6`6
+OPCODE_OR       = 0x7`6
+OPCODE_ORI      = 0x8`6
+OPCODE_XOR      = 0x9`6
+OPCODE_XORI     = 0xA`6
+OPCODE_SLL      = 0xB`6
+OPCODE_SRL      = 0xC`6
+OPCODE_SRA      = 0xD`6
+OPCODE_SLLV     = 0xE`6
+OPCODE_SRLV     = 0xF`6
+OPCODE_SRAV     = 0x10`6
+OPCODE_LUI      = 0x11`6
+OPCODE_LLI      = 0x12`6
+OPCODE_OUT      = 0x13`6
+OPCODE_MAC      = 0x14`6
+OPCODE_MACCL    = 0x15`6
+OPCODE_MACRD    = 0x16`6
+OPCODE_SPEQ     = 0x17`6
+OPCODE_SPLT     = 0x18`6
+OPCODE_SPLTU    = 0x19`6
+OPCODE_CLRP     = 0x1A`6
+OPCODE_SPR      = 0x1B`6
+OPCODE_SRP      = 0x1C`6
+OPCODE_SREQ     = 0x1D`6
+OPCODE_SRLT     = 0x1E`6
+OPCODE_SRLTU    = 0x1F`6
+OPCODE_LW       = 0x20`6
+OPCODE_LB       = 0x21`6
+OPCODE_SW       = 0x22`6
+OPCODE_SB       = 0x23`6
+OPCODE_JUMP     = 0x24`6
+OPCODE_JAL      = 0x25`6
+OPCODE_JRET     = 0x26`6
+OPCODE_HALT     = 0x27`6
+OPCODE_IN       = 0x28`6
+
+
+; Registers and Immediates
+#subruledef srcreg {
+    $r{n: u6} => {
+        assert(n < 64)
+        (0 + n)`6
+    }
+    $g{n: u6} => { ; Global register notation
+        assert(n < 48)
+        (16 + n)`6
+    }
+
+    ; Special register names
+    $tid  =>  0`6 ; Thread ID
+    $at   => 14`6 ; Assembler temporary
+    $sp   => 15`6 ; Stack pointer
+    $zero => 63`6 ; Zero register
+}
+
+#subruledef destreg {
+    $r{n: u4} => {
+        assert(n < 16)
+        (0 + n)`4
+    }
+
+    ; Special register names
+    $tid  =>  0`4 ; Thread ID
+    $at   => 14`4 ; Assembler temporary
+    $sp   => 15`4 ; Stack pointer
+}
+
+; Predicate bits, used as arguments to speq, splt, clrp
+#subruledef predicate_bit {
+    $p{n: u2} => {
+      assert(n < 3)
+      (1 << n)`4 ; Pad to 4-bit field
+    }
+}
+
+; Instruction predicate rule
+#subruledef predicate {
+    ; Hack: Having the 0b (0b[pred]) before every
+    ; instruction is a little messy, and bashing three
+    ; one-bit params next to each other results in (0 0 0)
+    ; (also ugly). Just enumerate everything.
+    () => 0`3
+    (000) => 0`3
+    (001) => 1`3
+    (010) => 2`3
+    (011) => 3`3
+    (100) => 4`3
+    (101) => 5`3
+    (110) => 6`3
+    (111) => 7`3
+}
+
+; Immediates
+#subruledef immediate13 {
+    ; Autodetect integer or fixed point:
+    ; 1 -> integer, 1. or 1.11123 or 2/135 -> fixed point.
+    {n: i13}         => n
+
+    ; customasm doesn't have if conditions, floats, or string processing
+    ; so we can't get leading/trailing zeros on the fractional portion.
+    ; Instead, just force the user to pad decimals to 7 places.
+    ; Math: fixed_pt(-3.14) = -3.14 * 1024 = -3 * 1024 - 0.14 * 1024 = -3 * 1024 - (140000 * 1024) / 1000
+    0.{f: u32} => {
+        i = 0
+        assert(f < 10000000)
+        int = (i << DECIMAL_POS)`13
+        frac = ((f * (1 << DECIMAL_POS)) / 10000000)`DECIMAL_POS
+        (int + frac)`13
+    }
+    -0.{f: u32} => {
+        i = 0
+        assert(f < 10000000)
+        int = (i << DECIMAL_POS)`13
+        frac = ((f * (1 << DECIMAL_POS)) / 10000000)`DECIMAL_POS
+        (int - frac)`13
+    }
+
+    {n: s32}/{d: s32} => {
+        assert(d != 0)
+        ((n * (1 << DECIMAL_POS)) / d)`13
+    }
+}
+
+#subruledef immediate16 {
+    ; Same as above but wider.
+    {n: i16}         => n
+
+    ; Reminder: Pad decimals to 6 places.
+    0.{f: u32} => {
+        i = 0
+        assert(f < 10000000)
+        int = (i << DECIMAL_POS)`16
+        frac = ((f * (1 << DECIMAL_POS)) / 10000000)`DECIMAL_POS
+        (int + frac)`16
+    }
+    -0.{f: u32} => {
+        i = 0
+        assert(f < 10000000)
+        int = (i << DECIMAL_POS)`16
+        frac = ((f * (1 << DECIMAL_POS)) / 10000000)`DECIMAL_POS
+        (int - frac)`16
+    }
+
+    {n: s32}/{d: s32} => {
+        assert(d != 0)
+        ((n * (1 << DECIMAL_POS)) / d)`16
+    }
+}
+
+#subruledef immediate32 {
+    ; Same as above but with the full integer part.
+    {n: i32}        => n
+    {i: s16}.       => i @ 0`DECIMAL_POS
+
+    ; Reminder: Pad decimals to 6 places
+    {i: s16}.{f: u32} => {
+        assert(i >= 0)
+        assert(f < 10000000)
+        int = (i << DECIMAL_POS)`32
+        frac = ((f * (1 << DECIMAL_POS)) / 10000000)`DECIMAL_POS
+        (int + frac)`32
+    }
+    {i: s16}.{f: u32} => {
+        assert(i < 0)
+        assert(f < 10000000)
+        int = (i << DECIMAL_POS)`32
+        frac = ((f * (1 << DECIMAL_POS)) / 10000000)`DECIMAL_POS
+        (int - frac)`32
+    }
+
+    {n: s32}/{d: s32} => {
+        assert(d != 0)
+        ((n * (1 << DECIMAL_POS)) / d)`32
+    }
+}
+
+#subruledef jumpoffset {
+    ; customasm uses absolute label addresses,
+    ; turn them into PC-relative addresses.
+    {absolute: s23} => {
+        relative = absolute - $ - 4
+        relative`23
+    }
+}
+
+
+; Base Instructions
+#ruledef instructions {
+    ; Basic math
+    {pred: predicate} add     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_ADD   @ pred @ rd @ rs1 @ rs2 @ 0`7
+    {pred: predicate} addi    {rd: destreg}, {rs1: srcreg}, {imm: immediate13}  => OPCODE_ADDI  @ pred @ rd @ rs1 @ imm
+    {pred: predicate} sub     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_SUB   @ pred @ rd @ rs1 @ rs2 @ 0`7
+    {pred: predicate} mul     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_MUL   @ pred @ rd @ rs1 @ rs2 @ 0`7
+    {pred: predicate} muli    {rd: destreg}, {rs1: srcreg}, {imm: immediate13}  => OPCODE_MULI  @ pred @ rd @ rs1 @ imm
+    {pred: predicate} and     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_AND   @ pred @ rd @ rs1 @ rs2 @ 0`7
+    {pred: predicate} andi    {rd: destreg}, {rs1: srcreg}, {imm: immediate13}  => OPCODE_ANDI  @ pred @ rd @ rs1 @ imm
+    {pred: predicate} or      {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_OR    @ pred @ rd @ rs1 @ rs2 @ 0`7
+    {pred: predicate} ori     {rd: destreg}, {rs1: srcreg}, {imm: immediate13}  => OPCODE_ORI   @ pred @ rd @ rs1 @ imm
+    {pred: predicate} xor     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_XOR   @ pred @ rd @ rs1 @ rs2 @ 0`7
+    {pred: predicate} xori    {rd: destreg}, {rs1: srcreg}, {imm: immediate13}  => OPCODE_XORI  @ pred @ rd @ rs1 @ imm
+    {pred: predicate} sll     {rd: destreg}, {rs1: srcreg}, {shift: u5}         => OPCODE_SLL   @ pred @ rd @ rs1 @ 0`8 @ shift
+    {pred: predicate} srl     {rd: destreg}, {rs1: srcreg}, {shift: u5}         => OPCODE_SRL   @ pred @ rd @ rs1 @ 0`8 @ shift
+    {pred: predicate} sra     {rd: destreg}, {rs1: srcreg}, {shift: u5}         => OPCODE_SRA   @ pred @ rd @ rs1 @ 0`8 @ shift
+    {pred: predicate} sllv    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_SLLV  @ pred @ rd @ rs1 @ rs2 @ 0`7
+    {pred: predicate} srlv    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_SRLV  @ pred @ rd @ rs1 @ rs2 @ 0`7
+    {pred: predicate} srav    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_SRAV  @ pred @ rd @ rs1 @ rs2 @ 0`7
+    {pred: predicate} out                                                       => OPCODE_OUT   @ pred @ 0`23
+
+    ; Load immediate
+    {pred: predicate} lui     {rd: destreg}, {imm: immediate16} => OPCODE_LUI @ pred @ rd @ 0`3 @ imm
+    {pred: predicate} lli     {rd: destreg}, {imm: immediate16} => OPCODE_LLI @ pred @ rd @ 0`3 @ imm
+
+    ; MAC
+    {pred: predicate} mac     {rs1: srcreg}, {rs2: srcreg}  => OPCODE_MAC   @ pred @ 0`4 @ rs1 @ rs2 @ 0`7
+    {pred: predicate} maccl                                 => OPCODE_MACCL @ pred @ 0`23
+    {pred: predicate} macrd   {rd: destreg}                 => OPCODE_MACRD @ pred @ rd @ 0`19
+
+    ; Branching and Predication
+    {pred: predicate} speq    {pred_data: predicate_bit}, {rs1: srcreg}, {rs2: srcreg}  => OPCODE_SPEQ  @ pred @ pred_data @ rs1 @ rs2 @ 0`7
+    {pred: predicate} splt    {pred_data: predicate_bit}, {rs1: srcreg}, {rs2: srcreg}  => OPCODE_SPLT  @ pred @ pred_data @ rs1 @ rs2 @ 0`7
+    {pred: predicate} spltu   {pred_data: predicate_bit}, {rs1: srcreg}, {rs2: srcreg}  => OPCODE_SPLTU @ pred @ pred_data @ rs1 @ rs2 @ 0`7
+                      clrp    {pred_data: predicate}                                    => OPCODE_CLRP  @  0`3 @ 0`1 @ pred_data @ 0`19
+                      spr     {rd: destreg}                                             => OPCODE_SPR   @  0`3 @ rd @ 0`19
+    {pred: predicate} srp     {rs: destreg}                                             => OPCODE_SRP   @ pred @ rs @ 0`2 @ rs  @ 0`13
+    {pred: predicate} sreq    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}               => OPCODE_SREQ  @ pred @ rd @ rs1 @ rs2 @ 0`7
+    {pred: predicate} srlt    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}               => OPCODE_SRLT  @ pred @ rd @ rs1 @ rs2 @ 0`7
+    {pred: predicate} srltu   {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}               => OPCODE_SRLTU @ pred @ rd @ rs1 @ rs2 @ 0`7
+
+    ; Memory
+    {pred: predicate} lw      {rd: destreg}, {imm: immediate13}[{roff: srcreg}] => OPCODE_LW   @ pred @ rd @ roff @ imm
+    {pred: predicate} lb      {rd: destreg}, {imm: immediate13}[{roff: srcreg}] => OPCODE_LB   @ pred @ rd @ roff @ imm
+    {pred: predicate} sw      {rs: destreg}, {imm: immediate13}[{roff: srcreg}] => OPCODE_SW   @ pred @ rs @ roff @ imm
+    {pred: predicate} sb      {rs: destreg}, {imm: immediate13}[{roff: srcreg}] => OPCODE_SB   @ pred @ rs @ roff @ imm
+
+    ; Jump
+    {pred: predicate} jump    {offset: jumpoffset} => OPCODE_JUMP @ pred @ offset
+    {pred: predicate} jal     {offset: jumpoffset} => OPCODE_JAL  @ pred @ offset
+    jret                                           => OPCODE_JRET @ 0`26
+
+    ; Halt
+    halt => OPCODE_HALT @ 0`26
+
+    {pred: predicate} in => OPCODE_IN    @ 0`26
+}
+
+
+; Pseudoinstructions
+#ruledef pseudoinstructions {
+    ; Linalg
+    {pred: predicate} dot4 {vector1: srcreg}, {vector2: srcreg} => asm {
+        {pred} maccl
+        {pred} mac {vector1} + 0, {vector2} + 0
+        {pred} mac {vector1} + 1, {vector2} + 1
+        {pred} mac {vector1} + 2, {vector2} + 2
+        {pred} mac {vector1} + 3, {vector2} + 3
+    }
+    {pred: predicate} dot3 {vector1: srcreg}, {vector2: srcreg} => asm {
+        {pred} maccl
+        {pred} mac {vector1} + 0, {vector2} + 0
+        {pred} mac {vector1} + 1, {vector2} + 1
+        {pred} mac {vector1} + 2, {vector2} + 2
+    }
+    {pred: predicate} cross3 {vecdest: destreg}, {vector1: srcreg}, {vector2: srcreg} => asm {
+        ; v[0] = a[1] * b[2] - a[2] * b[1];
+        {pred} mul {vecdest} + 0, {vector1} + 1, {vector2} + 2
+        {pred} mul           $at, {vector1} + 2, {vector2} + 1
+        {pred} sub {vecdest} + 0, {vecdest} + 0, $at
+
+        ; v[1] = a[2] * b[0] - a[0] * b[2];
+        {pred} mul {vecdest} + 1, {vector1} + 2, {vector2} + 0
+        {pred} mul           $at, {vector1} + 0, {vector2} + 2
+        {pred} sub {vecdest} + 1, {vecdest} + 1, $at
+
+        ; v[2] = a[0] * b[1] - a[1] * b[0];
+        {pred} mul {vecdest} + 2, {vector1} + 0, {vector2} + 1
+        {pred} mul           $at, {vector1} + 1, {vector2} + 0
+        {pred} sub {vecdest} + 2, {vecdest} + 2, $at
+    }
+    {pred: predicate} addv4 {vecdest: destreg}, {vector1: srcreg}, {vector2: srcreg} => asm {
+        {pred} add {vecdest} + 0, {vector1} + 0, {vector2} + 0
+        {pred} add {vecdest} + 1, {vector1} + 1, {vector2} + 1
+        {pred} add {vecdest} + 2, {vector1} + 2, {vector2} + 2
+        {pred} add {vecdest} + 3, {vector1} + 3, {vector2} + 3
+    }
+    {pred: predicate} subv4 {vecdest: destreg}, {vector1: srcreg}, {vector2: srcreg} => asm {
+        {pred} sub {vecdest} + 0, {vector1} + 0, {vector2} + 0
+        {pred} sub {vecdest} + 1, {vector1} + 1, {vector2} + 1
+        {pred} sub {vecdest} + 2, {vector1} + 2, {vector2} + 2
+        {pred} sub {vecdest} + 3, {vector1} + 3, {vector2} + 3
+    }
+    {pred: predicate} addv3 {vecdest: destreg}, {vector1: srcreg}, {vector2: srcreg} => asm {
+        {pred} add {vecdest} + 0, {vector1} + 0, {vector2} + 0
+        {pred} add {vecdest} + 1, {vector1} + 1, {vector2} + 1
+        {pred} add {vecdest} + 2, {vector1} + 2, {vector2} + 2
+    }
+    {pred: predicate} subv3 {vecdest: destreg}, {vector1: srcreg}, {vector2: srcreg} => asm {
+        {pred} sub {vecdest} + 0, {vector1} + 0, {vector2} + 0
+        {pred} sub {vecdest} + 1, {vector1} + 1, {vector2} + 1
+        {pred} sub {vecdest} + 2, {vector1} + 2, {vector2} + 2
+    }
+    {pred: predicate} scalev3 {vecdest: destreg}, {vector: srcreg}, {scalar: srcreg} => asm {
+        {pred} mul {vecdest} + 0, {vector} + 0, {scalar}
+        {pred} mul {vecdest} + 1, {vector} + 1, {scalar}
+        {pred} mul {vecdest} + 2, {vector} + 2, {scalar}
+    }
+
+    ; Miscellaneous
+    ; Load immediate directly generates lui, lli instructions.
+    ; Required because of how customasm expands subruledefs.
+    {pred: predicate} li {rd: destreg}, {imm: immediate32} => {
+        OPCODE_LUI @ pred @ rd @ 0`3 @ imm[31:16] @ OPCODE_LLI @ pred @ rd @ 0`3 @ imm[15:0]
+    }
+    {pred: predicate} mov {rd: destreg}, {rs: srcreg} => asm {
+        {pred} addi {rd}, {rs}, 0
+    }
+    {pred: predicate} trunc {rd: destreg}, {rs: srcreg} => asm {
+        {pred} srl {rd}, {rs}, DECIMAL_POS
+        {pred} sll {rd}, {rd}, DECIMAL_POS
+    }
+    {pred: predicate} nop => asm {
+        {pred} addi $r0, $r0, 0
+    }
+    {pred: predicate} not {rd: destreg}, {rs: srcreg} => asm {
+        {pred} addi $at, $zero, -1
+        {pred} xor {rd}, {rs}, $at
+    }
+}

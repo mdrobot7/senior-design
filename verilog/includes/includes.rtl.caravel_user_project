@@ -1,0 +1,122 @@
+# SPDX-FileCopyrightText: 2020 Efabless Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
+
+# Caravel user project includes
+-v $(USER_PROJECT_VERILOG)/rtl/user_defines/bus_stream.v
+-v $(USER_PROJECT_VERILOG)/rtl/user_defines/common_misc.v
+-v $(USER_PROJECT_VERILOG)/rtl/user_defines/core.v
+-v $(USER_PROJECT_VERILOG)/rtl/user_defines/core_controller.v
+-v $(USER_PROJECT_VERILOG)/rtl/user_defines/rasterizer.v
+-v $(USER_PROJECT_VERILOG)/rtl/user_defines/vga.v
+
+-v $(USER_PROJECT_VERILOG)/rtl/user_defines.v
+
+-v $(USER_PROJECT_VERILOG)/rtl/wishbone_helper.v
+
+-v $(USER_PROJECT_VERILOG)/rtl/test/bus_master.v
+-v $(USER_PROJECT_VERILOG)/rtl/test/bus_slave.v
+-v $(USER_PROJECT_VERILOG)/rtl/test/debug_log_config.v
+-v $(USER_PROJECT_VERILOG)/rtl/test/debug_log.v
+-v $(USER_PROJECT_VERILOG)/rtl/test/virtual_vga.v
+-v $(USER_PROJECT_VERILOG)/rtl/test/spi_chip.v
+-v $(USER_PROJECT_VERILOG)/rtl/test/stream_master.v
+-v $(USER_PROJECT_VERILOG)/rtl/test/stream_slave.v
+-v $(USER_PROJECT_VERILOG)/rtl/test/stream_stat.v
+-v $(USER_PROJECT_VERILOG)/rtl/test/wishbone_master.v
+-v $(USER_PROJECT_VERILOG)/rtl/test/clk_rst.v
+-v $(USER_PROJECT_VERILOG)/rtl/test/core_spy.v
+
+-v $(USER_PROJECT_VERILOG)/rtl/bus/address_coalescer.v
+-v $(USER_PROJECT_VERILOG)/rtl/bus/busarb.v
+-v $(USER_PROJECT_VERILOG)/rtl/bus/core_busarb.v
+-v $(USER_PROJECT_VERILOG)/rtl/bus/dummy_slave.v
+-v $(USER_PROJECT_VERILOG)/rtl/bus/word_stripe_cache.v
+-v $(USER_PROJECT_VERILOG)/rtl/bus/byte_stripe_cache.v
+
+-v $(USER_PROJECT_VERILOG)/rtl/core/accumulator.v
+-v $(USER_PROJECT_VERILOG)/rtl/core/alu.v
+-v $(USER_PROJECT_VERILOG)/rtl/core/core.v
+-v $(USER_PROJECT_VERILOG)/rtl/core/decoder.v
+-v $(USER_PROJECT_VERILOG)/rtl/core/forward.v
+-v $(USER_PROJECT_VERILOG)/rtl/core/inbox.v
+-v $(USER_PROJECT_VERILOG)/rtl/core/mem_bus.v
+-v $(USER_PROJECT_VERILOG)/rtl/core/outbox.v
+-v $(USER_PROJECT_VERILOG)/rtl/core/predicate.v
+-v $(USER_PROJECT_VERILOG)/rtl/core/regfile.v
+-v $(USER_PROJECT_VERILOG)/rtl/core/signext.v
+
+-v $(USER_PROJECT_VERILOG)/rtl/core_controller/core_controller_wrapper.v
+-v $(USER_PROJECT_VERILOG)/rtl/core_controller/core_controller.v
+-v $(USER_PROJECT_VERILOG)/rtl/core_controller/dispatch.v
+-v $(USER_PROJECT_VERILOG)/rtl/core_controller/global_regfile.v
+-v $(USER_PROJECT_VERILOG)/rtl/core_controller/index_fetch.v
+-v $(USER_PROJECT_VERILOG)/rtl/core_controller/inst_fetch.v
+
+-v $(USER_PROJECT_VERILOG)/rtl/stream/stream_fifo.v
+
+-v $(USER_PROJECT_VERILOG)/rtl/math/add.v
+-v $(USER_PROJECT_VERILOG)/rtl/math/sub.v
+-v $(USER_PROJECT_VERILOG)/rtl/math/mul.v
+-v $(USER_PROJECT_VERILOG)/rtl/math/div.v
+-v $(USER_PROJECT_VERILOG)/rtl/math/inv.v
+-v $(USER_PROJECT_VERILOG)/rtl/math/div_pipe.v
+-v $(USER_PROJECT_VERILOG)/rtl/math/div_pipe_rasterizer.v
+-v $(USER_PROJECT_VERILOG)/rtl/math/shared_div.v
+-v $(USER_PROJECT_VERILOG)/rtl/math/shared_div_rasterizer.v
+-v $(USER_PROJECT_VERILOG)/rtl/math/full_adder.v
+-v $(USER_PROJECT_VERILOG)/rtl/math/addsub.v
+-v $(USER_PROJECT_VERILOG)/rtl/math/sqrt.v
+
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/rasterizer.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/rasterizer_wrapper.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/wdiv_pipe.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/bary_pipe.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/bary_check_pipe.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/depth_interp.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/wavg_pipe.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/wavg_pipe_in.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/wavg_pipe_out.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/lerpinator.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/lerpinator_in.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/lerpinator_mid.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/lerpinator_out.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/depth_test.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/tex_sample.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/normal_pipe.v
+
+-v $(USER_PROJECT_VERILOG)/rtl/fragment_fifo/fragment_fifo.v
+-v $(USER_PROJECT_VERILOG)/rtl/fragment_fifo/serializing_mailman.v
+-v $(USER_PROJECT_VERILOG)/rtl/fragment_fifo/vertex_serializer.v
+
+-v $(USER_PROJECT_VERILOG)/rtl/spi_mem.v
+-v $(USER_PROJECT_VERILOG)/rtl/vertex_order_buffer.v
+-v $(USER_PROJECT_VERILOG)/rtl/shaded_vertex_cache.v
+-v $(USER_PROJECT_VERILOG)/rtl/vertex_reorder_controller.v
+-v $(USER_PROJECT_VERILOG)/rtl/vga.v
+-v $(USER_PROJECT_VERILOG)/rtl/wishbone_register.v
+-v $(USER_PROJECT_VERILOG)/rtl/image.v
+-v $(USER_PROJECT_VERILOG)/rtl/vertex_deserializer.v
+-v $(USER_PROJECT_VERILOG)/rtl/mem_write.v
+-v $(USER_PROJECT_VERILOG)/rtl/wb_mul_accel.v
+-v $(USER_PROJECT_VERILOG)/rtl/cache.v
+-v $(USER_PROJECT_VERILOG)/rtl/pre_rasterizer.v
+
+-v $(USER_PROJECT_VERILOG)/rtl/wbslave_pkmaster/wb_to_pk.v
+
+# -v $(USER_PROJECT_VERILOG)/../ip/CF_SRAM_1024x32/hdl/beh_models/CF_SRAM_1024x32.tt_180V_25C.v
+-v $(USER_PROJECT_VERILOG)/rtl/sram_1024x32.v
+
+-v $(USER_PROJECT_VERILOG)/rtl/user_project_wrapper.v
+-v $(USER_PROJECT_VERILOG)/rtl/top_level.v

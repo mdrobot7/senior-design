@@ -1,0 +1,181 @@
+{
+    "DESIGN_NAME": "top_level_m",
+    "DESIGN_IS_CORE": 1,
+    "VERILOG_FILES": [
+        "dir::../../verilog/rtl/defines.v",
+        "dir::../../verilog/rtl/user_defines/bus_stream.v",
+        "dir::../../verilog/rtl/user_defines/common_misc.v",
+        "dir::../../verilog/rtl/user_defines/core.v",
+        "dir::../../verilog/rtl/user_defines/rasterizer.v",
+        "dir::../../verilog/rtl/user_defines.v",
+
+        "dir::../../verilog/rtl/bus/busarb.v",
+        "dir::../../verilog/rtl/bus/address_coalescer.v",
+
+        "dir::../../verilog/rtl/stream/stream_fifo.v",
+
+        "dir::../../verilog/rtl/math/mul.v",
+
+        "dir::../../verilog/rtl/wbslave_pkmaster/wb_to_pk.v",
+
+        "dir::../../verilog/rtl/wishbone_register.v",
+        "dir::../../verilog/rtl/wishbone_helper.v",
+
+        "dir::../../verilog/rtl/spi_mem.v",
+
+        "dir::../../verilog/rtl/vertex_deserializer.v",
+        "dir::../../verilog/rtl/vertex_order_buffer.v",
+        "dir::../../verilog/rtl/vertex_reorder_controller.v",
+
+        "dir::../../verilog/rtl/top_level.v"
+    ],
+
+    "VERILOG_FILES_BLACKBOX": [
+        "dir::../../verilog/rtl/user_defines/bus_stream.v",
+        "dir::../../verilog/rtl/user_defines/common_misc.v",
+        "dir::../../verilog/rtl/user_defines/core.v",
+        "dir::../../verilog/rtl/user_defines/rasterizer.v",
+        "dir::../../verilog/rtl/user_defines/vga.v",
+
+        "dir::../../verilog/rtl/core_controller/core_controller_wrapper_bb.v",
+        "dir::../../verilog/rtl/core/core_bb.v",
+        "dir::../../verilog/rtl/rasterizer/rasterizer_wrapper_bb.v",
+        "dir::../../verilog/rtl/vga_bb.v",
+        "dir::../../verilog/rtl/bus/core_busarb_bb.v",
+        "dir::../../verilog/rtl/bus/main_busarb_bb.v",
+        "dir::../../verilog/rtl/pre_rasterizer_bb.v",
+        "dir::../../verilog/rtl/fragment_fifo/serializing_mailman_bb.v",
+        "dir::../../verilog/rtl/wb_mul_accel_bb.v",
+        "dir::../../verilog/rtl/spi_block_bb.v"
+    ],
+
+    "EXTRA_GDS_FILES": [
+        "dir::../../gds/core_controller_wrapper_m.gds",
+        "dir::../../gds/pre_rasterizer_m.gds",
+        "dir::../../gds/core_m.gds",
+        "dir::../../gds/serializing_mailman_m.gds",
+        "dir::../../gds/rasterizer_wrapper_m.gds",
+        "dir::../../gds/vga_wrapper_m.gds",
+        "dir::../../gds/core_busarb_m.gds",
+        "dir::../../gds/main_busarb_m.gds",
+        "dir::../../gds/wb_mul_accel_m.gds",
+        "dir::../../gds/spi_block_m.gds"
+    ],
+    "EXTRA_LEFS": [
+        "dir::../../lef/core_controller_wrapper_m.lef",
+        "dir::../../lef/pre_rasterizer_m.lef",
+        "dir::../../lef/core_m.lef",
+        "dir::../../lef/serializing_mailman_m.lef",
+        "dir::../../lef/rasterizer_wrapper_m.lef",
+        "dir::../../lef/vga_wrapper_m.lef",
+        "dir::../../lef/core_busarb_m.lef",
+        "dir::../../lef/main_busarb_m.lef",
+        "dir::../../lef/wb_mul_accel_m.lef",
+        "dir::../../lef/spi_block_m.lef"
+    ],
+    "EXTRA_LIBS": [
+        "dir::../../lib/core_controller_wrapper_m.lib",
+        "dir::../../lib/pre_rasterizer_m.lib",
+        "dir::../../lib/core_m.lib",
+        "dir::../../lib/serializing_mailman_m.lib",
+        "dir::../../lib/rasterizer_wrapper_m.lib",
+        "dir::../../lib/vga_wrapper_m.lib",
+        "dir::../../lib/core_busarb_m.lib",
+        "dir::../../lib/main_busarb_m.lib",
+        "dir::../../lib/wb_mul_accel_m.lib",
+        "dir::../../lib/spi_block_m.lib"
+    ],
+
+    "EXTRA_SPEFS": [
+        "core_controller_wrapper_m",
+        "dir::../../spef/multicorner/core_controller_wrapper_m.min.spef",
+        "dir::../../spef/multicorner/core_controller_wrapper_m.nom.spef",
+        "dir::../../spef/multicorner/core_controller_wrapper_m.max.spef",
+        "pre_rasterizer_m",
+        "dir::../../spef/multicorner/pre_rasterizer_m.min.spef",
+        "dir::../../spef/multicorner/pre_rasterizer_m.nom.spef",
+        "dir::../../spef/multicorner/pre_rasterizer_m.max.spef",
+        "core_m",
+        "dir::../../spef/multicorner/core_m.min.spef",
+        "dir::../../spef/multicorner/core_m.nom.spef",
+        "dir::../../spef/multicorner/core_m.max.spef",
+        "rasterizer_wrapper_m",
+        "dir::../../spef/multicorner/rasterizer_wrapper_m.min.spef",
+        "dir::../../spef/multicorner/rasterizer_wrapper_m.nom.spef",
+        "dir::../../spef/multicorner/rasterizer_wrapper_m.max.spef",
+        "serializing_mailman_m",
+        "dir::../../spef/multicorner/serializing_mailman_m.min.spef",
+        "dir::../../spef/multicorner/serializing_mailman_m.nom.spef",
+        "dir::../../spef/multicorner/serializing_mailman_m.max.spef",
+        "vga_wrapper_m",
+        "dir::../../spef/multicorner/vga_wrapper_m.min.spef",
+        "dir::../../spef/multicorner/vga_wrapper_m.nom.spef",
+        "dir::../../spef/multicorner/vga_wrapper_m.max.spef",
+        "core_busarb_m",
+        "dir::../../spef/multicorner/core_busarb_m.min.spef",
+        "dir::../../spef/multicorner/core_busarb_m.nom.spef",
+        "dir::../../spef/multicorner/core_busarb_m.max.spef",
+        "main_busarb_m",
+        "dir::../../spef/multicorner/main_busarb_m.min.spef",
+        "dir::../../spef/multicorner/main_busarb_m.nom.spef",
+        "dir::../../spef/multicorner/main_busarb_m.max.spef",
+        "wb_mul_accel_m",
+        "dir::../../spef/multicorner/wb_mul_accel_m.min.spef",
+        "dir::../../spef/multicorner/wb_mul_accel_m.nom.spef",
+        "dir::../../spef/multicorner/wb_mul_accel_m.max.spef",
+        "spi_block_m",
+        "dir::../../spef/multicorner/spi_block_m.min.spef",
+        "dir::../../spef/multicorner/spi_block_m.nom.spef",
+        "dir::../../spef/multicorner/spi_block_m.max.spef"
+    ],
+
+    "ROUTING_CORES": 24,
+    "CLOCK_PERIOD": 20,
+    "CLOCK_PORT": "wb_clk_i",
+    "DIE_AREA": "0 0 2800 2900",
+    "RT_MAX_LAYER": "met5",
+
+    "PL_TARGET_DENSITY": 0.04,
+
+    "MACRO_PLACEMENT_CFG": "dir::macro.cfg",
+    "FP_PDN_CORE_RING": 1,
+    "FP_PDN_CORE_RING_VOFFSET": 6,
+    "FP_PDN_CORE_RING_HOFFSET": 6,
+    "FP_PDN_VPITCH": 200,
+    "FP_PDN_HPITCH": 200,
+    "FP_PDN_HORIZONTAL_LAYER": "met5",
+    "FP_PDN_VERTICAL_LAYER": "met4",
+    "FP_PDN_CHECK_NODES": 0,
+    "FP_PDN_MACRO_HOOKS": "rasterizer vccd1 vssd1 vccd1 vssd1,pre_rasterizer vccd1 vssd1 vccd1 vssd1,vga vccd1 vssd1 vccd1 vssd1,mailman vccd1 vssd1 vccd1 vssd1,mul_accel vccd1 vssd1 vccd1 vssd1,arb_cores vccd1 vssd1 vccd1 vssd1,core_cont vccd1 vssd1 vccd1 vssd1,CORES.CORES_GENLOOP.*.core vccd1 vssd1 vccd1 vssd1,arb_main vccd1 vssd1 vccd1 vssd1,spi_block vccd1 vssd1 vccd1 vssd1",
+
+    "SYNTH_BUFFERING": 0,
+    "SYNTH_STRATEGY": "AREA 1",
+    "SYNTH_USE_PG_PINS_DEFINES": "USE_POWER_PINS",
+    "ERROR_ON_LINTER_ERRORS": false,
+    "FP_SIZING": "absolute",
+    "FP_PIN_ORDER_CFG": "dir::pin_order.cfg",
+    "PNR_SDC_FILE": "dir::base.sdc",
+    "SIGNOFF_SDC_FILE": "dir::base.sdc",
+    "VDD_NETS": [
+        "vccd1"
+    ],
+    "GND_NETS": [
+        "vssd1"
+    ],
+    "MACRO_PLACEMENT_CFG": "dir::macro.cfg",
+    "RUN_IRDROP_REPORT": false,
+    "QUIT_ON_LINTER_ERRORS": false,
+    "QUIT_ON_SYNTH_CHECKS": false,
+    "QUIT_ON_YOSYS_WARNINGS": false,
+    "PL_TIME_DRIVEN": false,
+    "PL_ROUTABILITY_DRIVEN": true,
+    "GRT_ALLOW_CONGESTION": true,
+    "GRT_ADJUSTMENT": 0,
+    "GLB_RESIZER_DESIGN_OPTIMIZATIONS": true,
+    "GLB_RESIZER_TIMING_OPTIMIZATIONS": true,
+    "QUIT_ON_MAGIC_DRC": false,
+    "MAGIC_EXT_USE_GDS": false,
+    "MAGIC_CAPTURE_ERRORS": false,
+    "QUIT_ON_ILLEGAL_OVERLAPS": false
+}
+

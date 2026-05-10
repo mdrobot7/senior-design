@@ -1,0 +1,29 @@
+#ifndef _UGPU_H_
+#define _UGPU_H_
+
+#ifndef __packed
+#define __packed __attribute__((packed))
+#endif
+
+#include "core_controller.h"
+#include "gpio.h"
+#include "multinator.h"
+#include "math.h"
+#include "qspi.h"
+#include "rasterizer.h"
+#include "vga.h"
+
+#define CC        ((volatile CC_t *)       0x32000000)
+#define RAST      ((volatile RAST_t *)     0x31000000)
+#define QSPI0     ((volatile QSPI_t *)     0x30000000)
+#define QSPI1     ((volatile QSPI_t *)     0x30000000)
+#define QSPI2     ((volatile QSPI_t *)     0x30000000)
+#define QSPIDATA1 ((volatile QSPIDATA_t *) 0x34000000)
+#define QSPIDATA2 ((volatile QSPIDATA_t *) 0x37000000)
+#define QSPIDATA3 ((volatile QSPIDATA_t *) 0x38000000)
+#define VGA       ((volatile VGA_t *)      0x30000000)
+
+// Must be included after peripheral defines
+#include "util.h"
+
+#endif

@@ -1,0 +1,90 @@
+{
+    "DESIGN_NAME": "core_controller_wrapper_m",
+    "DESIGN_IS_CORE": 0,
+    "VERILOG_FILES": [
+        "dir::../../verilog/rtl/defines.v",
+        "dir::../../verilog/rtl/user_defines/bus_stream.v",
+        "dir::../../verilog/rtl/user_defines/common_misc.v",
+        "dir::../../verilog/rtl/user_defines/core_controller.v",
+        "dir::../../verilog/rtl/user_defines/core.v",
+        "dir::../../verilog/rtl/user_defines/rasterizer.v",
+        "dir::../../verilog/rtl/user_defines/vga.v",
+        "dir::../../verilog/rtl/user_defines.v",
+
+        "dir::../../verilog/rtl/wishbone_register.v",
+        "dir::../../verilog/rtl/wishbone_helper.v",
+        "dir::../../verilog/rtl/sram_1024x32.v",
+        "dir::../../verilog/rtl/stream/stream_fifo.v",
+        "dir::../../verilog/rtl/core/regfile.v",
+        "dir::../../verilog/rtl/core_controller/index_fetch.v",
+        "dir::../../verilog/rtl/core_controller/inst_fetch.v",
+        "dir::../../verilog/rtl/core_controller/dispatch.v",
+        "dir::../../verilog/rtl/core_controller/global_regfile.v",
+
+        "dir::../../verilog/rtl/core_controller/core_controller.v",
+        "dir::../../verilog/rtl/core_controller/core_controller_wrapper.v"
+    ],
+
+    "VERILOG_FILES_BLACKBOX": [
+        "dir::../../ip/CF_SRAM_1024x32/hdl/CF_SRAM_1024x32_stub.v"
+    ],
+    "EXTRA_GDS_FILES": [
+        "dir::../../ip/CF_SRAM_1024x32/gds/CF_SRAM_1024x32.gds"
+    ],
+    "EXTRA_LEFS": [
+        "dir::../../ip/CF_SRAM_1024x32/lef/CF_SRAM_1024x32.lef"
+    ],
+    "EXTRA_LIBS": [
+        "dir::../../ip/CF_SRAM_1024x32/lib/CF_SRAM_1024x32_tt_180V_25C.lib"
+    ],
+
+    "ROUTING_CORES": 24,
+    "CLOCK_PERIOD": 20,
+    "CLOCK_PORT": "wb_clk_i",
+    "DIE_AREA": "0 0 800 800",
+    "RT_MAX_LAYER": "met4",
+
+    "SYNTH_READ_BLACKBOX_LIB": true,
+
+    "SYNTH_DEFINES" :[
+        "HARDENING"
+    ],
+
+    "PL_TARGET_DENSITY": 0.40,
+
+    "FP_PDN_MACRO_HOOKS": "core_controller.inst_fetch.imem vccd1 vssd1 vpwrac vgnd,core_controller.inst_fetch.imem vccd1 vssd1 vpwrpc vgnd,core_controller.inst_fetch.imem vccd1 vssd1 vpwrm vgnd,core_controller.inst_fetch.imem vccd1 vssd1 vpwra vgnd,core_controller.inst_fetch.imem vccd1 vssd1 vpwrp vgnd,core_controller.inst_fetch.imem vccd1 vssd1 vpb vnb",
+
+    "GRT_OBS": "met1 50 50 445 350,met2 50 50 445 350,met3 50 50 445 350,met4 50 50 445 350,met5 50 50 445 350",
+
+    "SYNTH_BUFFERING": 0,
+    "SYNTH_STRATEGY": "AREA 0",
+    "SYNTH_USE_PG_PINS_DEFINES": "USE_POWER_PINS",
+    "ERROR_ON_LINTER_ERRORS": false,
+    "FP_SIZING": "absolute",
+    "FP_PIN_ORDER_CFG": "dir::pin_order.cfg",
+    "PNR_SDC_FILE": "dir::base.sdc",
+    "SIGNOFF_SDC_FILE": "dir::base.sdc",
+    "VDD_NETS": [
+        "vccd1"
+    ],
+    "GND_NETS": [
+        "vssd1"
+    ],
+    "MACRO_PLACEMENT_CFG": "dir::macro.cfg",
+    "RUN_IRDROP_REPORT": false,
+    "QUIT_ON_LINTER_ERRORS": false,
+    "QUIT_ON_SYNTH_CHECKS": false,
+    "QUIT_ON_YOSYS_WARNINGS": false,
+    "PL_TIME_DRIVEN": false,
+    "PL_ROUTABILITY_DRIVEN": true,
+    "GRT_ALLOW_CONGESTION": true,
+    "GRT_ADJUSTMENT": 0,
+    "GLB_RESIZER_DESIGN_OPTIMIZATIONS": true,
+    "GLB_RESIZER_TIMING_OPTIMIZATIONS": true,
+    "QUIT_ON_MAGIC_DRC": false,
+    "MAGIC_EXT_USE_GDS": false,
+    "MAGIC_CAPTURE_ERRORS": false,
+    "QUIT_ON_ILLEGAL_OVERLAPS": false,
+    "BASE_SDC_FILE": "dir::base_user_proj_example.sdc",
+    "IO_SYNC": 0
+}
